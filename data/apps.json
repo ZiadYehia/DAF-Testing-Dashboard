@@ -1,0 +1,32 @@
+[
+  {
+    "slug": "dawana",
+    "name": "Dawana",
+    "description": "Pharmaceutical serialization & traceability mobile app (Android).",
+    "icon": "💊",
+    "enabled": true,
+    "type": "mobile",
+    "platform": "Android",
+    "capabilities": { "testCaseWriter": true, "featureWizard": true, "moduleKnowledge": false }
+  },
+  {
+    "slug": "eptts",
+    "name": "EPTTS Agent",
+    "description": "Masar Agent — desktop pharmacy serialization & traceability (Windows).",
+    "icon": "🖥️",
+    "enabled": true,
+    "type": "desktop",
+    "platform": "Windows",
+    "capabilities": { "testCaseWriter": true, "featureWizard": true, "moduleKnowledge": false }
+  },
+  {
+    "slug": "eptts-mobile",
+    "name": "EPTTS Mobile",
+    "description": "EPTTS Mobile — pharmacy serialization & traceability mobile app (Android & iOS).",
+    "icon": "📱",
+    "enabled": true,
+    "type": "mobile",
+    "platform": "Android & iOS",
+    "capabilities": { "testCaseWriter": true, "featureWizard": true, "moduleKnowledge": false }
+  }
+]

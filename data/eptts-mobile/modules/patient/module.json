@@ -1,0 +1,8 @@
+{
+  "slug": "patient",
+  "name": "Patient",
+  "icon": "User",
+  "order": 5,
+  "description": "Patient — public access flow for verifying pharmaceutical products.",
+  "pathPrefix": "patient"
+}

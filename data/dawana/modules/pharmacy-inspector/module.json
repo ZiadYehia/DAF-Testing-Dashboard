@@ -1,0 +1,8 @@
+{
+  "slug": "pharmacy-inspector",
+  "name": "Pharmacy Inspector",
+  "icon": "Shield",
+  "order": 2,
+  "pathPrefix": "pharmacy-inspector",
+  "description": "Incident review and acceptance by the pharmacy inspector."
+}

@@ -1,0 +1,8 @@
+{
+  "slug": "inspector",
+  "name": "Inspector",
+  "icon": "ShieldCheck",
+  "order": 4,
+  "description": "Inspector account — supervisory and audit-level access.",
+  "pathPrefix": "inspector"
+}

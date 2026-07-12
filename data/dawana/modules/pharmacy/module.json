@@ -1,0 +1,8 @@
+{
+  "slug": "pharmacy",
+  "name": "Pharmacy",
+  "icon": "Package",
+  "order": 1,
+  "pathPrefix": "",
+  "description": "Pharmacy operations - registration, stock and returns (Owner, Manager, Pharmacist)."
+}

@@ -1,0 +1,18 @@
+{
+  "android": {
+    "appium:deviceName": "Samsung Galaxy Note 10+",
+    "appium:platformVersion": "12",
+    "appium:automationName": "UiAutomator2",
+    "appium:udid": "RF8MC0D6CVA",
+    "appium:appPackage": "com.daf.eda.eptts",
+    "appium:appActivity": ".MainActivity",
+    "appium:noReset": true
+  },
+  "ios": {
+    "appium:app": "/path/to/eptts-mobile.ipa",
+    "appium:deviceName": "iPhone 15 Pro",
+    "appium:platformVersion": "17.0",
+    "appium:automationName": "XCUITest",
+    "appium:udid": "your-device-udid-here"
+  }
+}

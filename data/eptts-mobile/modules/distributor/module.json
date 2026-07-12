@@ -1,0 +1,8 @@
+{
+  "slug": "distributor",
+  "name": "Distributor",
+  "icon": "Truck",
+  "order": 3,
+  "description": "Distributor account — supply-chain dispatch and returns.",
+  "pathPrefix": "distributor"
+}
