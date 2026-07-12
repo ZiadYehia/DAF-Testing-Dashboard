@@ -1,0 +1,22 @@
+{
+  "name": "eptts-landing-smoke",
+  "title": "EPTTS Landing Smoke",
+  "app": "eptts-mobile",
+  "createdVia": "manual",
+  "linkedTestcaseId": null,
+  "linkedTestcase": null,
+  "createdAt": "2026-07-09T18:55:17.000Z",
+  "lastStatus": null,
+  "runs": [],
+  "tags": [
+    "smoke",
+    "eptts"
+  ],
+  "engine": "appium",
+  "appium": {
+    "udid": "RF8MC0D6CVA",
+    "appPackage": "com.daf.eda.eptts",
+    "appActivity": ".MainActivity",
+    "noReset": true
+  }
+}
