@@ -1,0 +1,36 @@
+<!-- generated-from-intake -->
+# Pharmacy Inspector — Module Overview
+
+## Overview
+
+The Pharmacy Inspector module is a review/oversight module within the Dawana app rather than a module built around its own set of data-entry features. It exists to give a distinct Inspector account type the ability to sit in judgment over Incident reports that pharmacy staff (Owner, Manager, Pharmacist) raise in the Pharmacy module. There is no Inspector-side feature for creating incidents — the underlying incident data, its fields (Reason, Product, Quantity, batch/expiry, barcode, supporting document), and its creation workflow all live in the Pharmacy module's Incident feature. The Inspector module's entire job is the back half of that same workflow: pulling up a queue of submitted incidents and ruling Approve or Reject on each one, with that ruling being the single decision that determines whether pharmacy stock is actually adjusted and whether the change propagates to Masar (the national traceability platform) for regulatory visibility. In effect, Pharmacy Inspector functions as a quality-control/compliance gate sitting between 'a pharmacy claims stock was damaged/expired/stolen/lost' and 'that stock is actually written off the books.'
+
+## Roles involved
+
+**Pharmacy Inspector** is the only role in this module. It is a fully separate, selectable account/login type in the app (chosen at the same role-selection screen where a user picks 'Pharmacy' vs 'Inspector' before logging in, confirmed by incident test case INC_053: 'Select Inspector Role -> Tap Get Started -> Login with a valid Inspector account -> User is on Inspector Home screen'). Inspectors do not perform any of the Pharmacy module's data-entry actions — confirmed negative testing (INC_053) shows Inspector accounts are explicitly blocked from creating an incident via the pharmacy app; their only avenue of interaction with incidents is reviewing ones already submitted by Owner/Manager/Pharmacist. There does not appear to be any other role sharing this module (no secondary approver, no escalation role documented).
+
+## Main workflows
+
+1) Inspector logs in via the Inspector Role path and lands on an Inspector Home screen (distinct from the Pharmacy Home screen). 2) Inspector opens a list of incidents awaiting/having received review — each entry shows its current status (Pending / Approved / Rejected) and any comments already attached. 3) Inspector opens an individual incident to see its full submitted detail (reason, product, quantity, batch/expiry, any uploaded supporting document/barcode data — all originally entered by the pharmacy user in the Pharmacy module's Incident Form). 4) Inspector rules on the incident: either **Approve** or **Reject**. The available options and required comments for this decision can vary depending on the specific incident (e.g., a Stolen-reason incident may prompt for different context than a Damaged-reason one — exact per-reason UI variation is not fully documented, flagged as a gap). 5) On **Approve**: the reported item(s)/quantity are permanently removed from that pharmacy's stock; the incident's status flips to Approved; the removal is reflected on the Masar dashboard with an updated status (e.g., 'Returned' or 'Damaged') so the item's national traceability record matches reality. 6) On **Reject**: the incident's status flips to Rejected; pharmacy stock is left completely unchanged; the inspector may optionally supply a rejection reason/comment that becomes visible back to the pharmacy user who submitted it.
+
+## Business rules
+
+- The inspector is the sole authority that finalizes an incident's disposition — pharmacy users (Owner/Manager/Pharmacist) cannot self-approve or self-reject their own incidents; they can only submit and wait.
+- Approve is a permanent, apparently non-reversible action: reported items are permanently removed from pharmacy stock and the Masar dashboard is updated to reflect the new status — there is no documented 'undo' path once approved.
+- Reject leaves stock completely untouched — no partial or provisional stock adjustment happens pending review; the ledger only ever changes on Approve.
+- A rejection may (not must) carry a comment/reason back to the submitting pharmacy user; whether the user can then edit and resubmit the same incident, or must create a brand-new one, is unresolved (TBD per the Pharmacy module's Incident workflow doc).
+- Approve/Reject options and required comments can differ 'depending on the specific incident' per the domain doc — implying the review UI is not one-size-fits-all across the four incident reasons (Damaged/Expired/Stolen/Lost), though the exact variation isn't spelled out.
+- There is no documented time limit / SLA for how long an incident can sit in Pending before an inspector acts on it (explicitly called out as unconfirmed in the Pharmacy module's open questions — currently assumed 'no auto-expiry').
+- Inspector accounts are blocked from the incident-creation path entirely — enforcing a clean separation of duties between the party reporting a stock discrepancy and the party who rules on it.
+
+## Key fields & enums
+
+- Incident Status — Pending / Approved / Rejected — set exclusively by inspector action, never by the pharmacy submitter
+- Decision — Approve or Reject — the two possible inspector rulings on an incident
+- Comments / Rejection Reason — Free-text, optional on reject, surfaced back to the pharmacy user; options/requirement vary by incident type per domain notes
+- Masar Dashboard Status (post-approval) — e.g. 'Returned' / 'Damaged' — reflects the approved incident's disposition for national traceability
+- Incident List entry fields (as seen by inspector) — Status badge, submission/creation context, and any existing comments
+
+## Open questions
+
+1) This module has no feature page/screen documentation of its own beyond the domain-knowledge summary — there is no workflow.md, metadata.json, or screenshot set specific to the inspector's review UI (list screen layout, approve/reject dialog fields, comment box, filters) the way the Pharmacy module's Incident feature has. This is the single biggest documentation gap: the inspector-side screens themselves have not been captured/tested yet, only the effects of their decisions (as observed from the pharmacy side in incident-testcases.md). 2) Whether Approve/Reject decisions can be reversed or amended after the fact is undocumented (Approve is described as 'permanent'). 3) Whether there's an SLA/auto-expiry on Pending incidents is unresolved. 4) The stated variability of 'options and comments depend on the specific incident' is not broken down per Reason type (Damaged/Expired/Stolen/Lost) — unclear if Stolen, for example, requires a mandatory comment or supporting evidence review step that Damaged does not. 5) No information on whether an inspector is scoped to a single assigned pharmacy or can review incidents across multiple pharmacies, nor how inspector-to-pharmacy assignment is configured. 6) The end-to-end verification that an approved incident actually shows correctly on the Masar dashboard was marked Blocked/Skipped in existing test coverage (INC_024), so this module's core success criterion is not yet confirmed working in practice.

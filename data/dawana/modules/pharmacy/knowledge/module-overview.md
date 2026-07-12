@@ -1,0 +1,65 @@
+<!-- generated-from-intake -->
+# Pharmacy — Module Overview
+
+## Overview
+
+The Pharmacy module is the core operational module of the Dawana mobile app for pharmacy-side users. It covers everything a pharmacy business does inside the app end-to-end: onboarding the pharmacy account (Registration), receiving new serialized/traceable stock from distributors (New Stock), sending stock back to the distributor (Return to Distributor), and reporting stock that is damaged, expired, stolen, or lost (Incident). The module integrates tightly with Masar (the Egyptian national pharmaceutical traceability platform) and EDA (Egyptian Drug Authority) invoices/SGTIN-SSCC serialization, meaning most stock movements recorded in Dawana must be mirrored correctly on the Masar side for regulatory traceability. Pharmacy is effectively the 'supply side' module: it establishes the pharmacy's identity in the system, builds up its stock ledger, and then provides the mechanisms to correct that ledger (returns, incidents) when stock doesn't sell through normally. The Incident feature is also the hand-off point into the separate Pharmacy Inspector module — an incident raised here is queued for inspector review, and the inspector's approve/reject decision is what ultimately finalizes whether stock is permanently removed.
+
+## Roles involved
+
+Three pharmacy-side roles operate in this module, selected at login (the app has a role-selection step: Pharmacy Role -> specific role -> Get Started -> login): 
+- **Owner** — registers/onboards the pharmacy account (Registration feature) and can raise Incident reports (e.g., OWN_FR_15 for incident creation). The Owner is the account holder of record for the pharmacy.
+- **Pharmacy Manager** — the most active operational role. Receives new stock via invoices from Masar/EDA (New Stock, MGR_FR_23), returns stock to the distributor (Return to Distributor, MGR_FR_25), and raises Incident reports (MGR_FR_29). The Manager is also implicated in stock initialization ('First-Time Setup / Adding Quantities', MGR_FR_22) which must happen before incidents can reference stock.
+- **Pharmacist** — a narrower role that can only raise Incident reports; pharmacists do not have access to Registration, New Stock, or Return to Distributor in this module. Confirmed negative test coverage shows the Pharmacist role does NOT have access to the Incident module itself in at least one tested build (INC_052 marked the Incident module as not accessible for Pharmacist — this may be a version-specific restriction worth re-validating, since domain notes elsewhere say Pharmacist can raise incidents; treat as an open question).
+A separate **Inspector** role also exists as a distinct login/account type (selectable at the same role-selection screen as 'Inspector Role') but its actions belong to the Pharmacy Inspector module, not this one — the pharmacy app explicitly blocks Inspector accounts from creating incidents (they can only review them).
+
+## Main workflows
+
+**Registration** (Owner): Onboards/creates the pharmacy account in the app. No detailed step-by-step workflow doc exists yet for this feature (only a stub metadata file mapping it to the pharmacy module) — treat the internal steps as an open gap to be documented/tested.
+
+**New Stock / Receiving** (Manager, MGR_FR_23, path Home -> New Stock -> Select Invoice): Manager receives pharmaceutical products via invoices originating from Masar or EDA. Receiving can be done either by scanning individual SGTINs (unit-level serialized items) or by scanning entire SSCCs (case/pallet-level aggregated units). An invoice may bundle multiple SSCCs and multiple distinct products. The manager can Partial Approve an invoice — approving some line items/products while rejecting others — and both the Dawana app and Masar must end up reflecting the same final accepted/rejected state. The invoice's source (Masar vs EDA) changes the scanning/approval flow. (Happy-path step sequence is not yet fully documented — flagged as an open gap.)
+
+**Return to Distributor** (Manager, MGR_FR_25, path Home -> Return to Distributor): Manager returns pharmaceutical stock from the pharmacy back to the distributor. Completing a return must decrement Dawana's own stock ledger for the returned items, and Masar must simultaneously record the return as a trace transaction so the item's chain-of-custody stays accurate nationally. SSCC packaging hierarchy (item -> case -> pallet groupings) must remain internally consistent after the return completes. (Happy-path step sequence is not yet fully documented — flagged as an open gap.)
+
+**Incident** (Owner, Manager, Pharmacist per docs — though Pharmacist access was blocked in at least one build; path Login -> Home -> Incident -> Add New): This is the most thoroughly documented workflow. 1) User opens the Incidents List (shows prior incidents with status badges Pending/Approved/Rejected, a Filter control, and an Add New button). 2) Tapping Add New opens the Incident Form. 3) User selects a Reason from a required dropdown: Expired / Damaged / Stolen / Lost (shown in Arabic in the UI: انتهاء الصلاحية / تالف / السرقة / فقدان). 4) User searches and selects a Product Name from a type-ahead list scoped to the pharmacy's current in-stock products (out-of-stock/zero-quantity products do not appear). 5) If the selected product originated from Masar Integration, barcode scanning becomes mandatory: the app opens a full-screen barcode scanner (with a Manual Input tab as a fallback) OR a manual SGTIN entry dialog requiring GTIN + Serial Number; submitting validates the barcode against the pharmacy's actual stock and auto-fills the matched batch/expiry — a non-matching barcode is rejected with an error and the product is not added. Non-Masar products skip this step entirely. 6) If the product has multiple expiry dates, an Expiry Date dropdown appears and a selection is required (it's suppressed entirely when only one expiry exists). 7) If the chosen expiry has multiple batch numbers, a Batch Number dropdown appears and a selection is required. 8) Generic Name and Dosage auto-fill as read-only fields once the product/batch is resolved. 9) User enters a numeric Quantity — must be a positive whole number, and capped at the available stock of the specific scanned batch (Masar products) or the selected batch's total stock (non-Masar products). 10) User may optionally attach a Supporting Document: either an Image (via Camera or Gallery, max 15 MB) or a File such as PDF (max 5 MB). 11) User can repeat steps 3-10 to add more product lines to the same incident via + Add Product, and can delete any added row before submitting. 12) Tapping Submit creates the incident with Pending status, visible immediately in the Incidents List, and routes it to the inspector assigned to that pharmacy. 13) The Pharmacy Inspector module takes over from here: Approve permanently removes the reported items from pharmacy stock, flips status to Approved, and reflects the change on the Masar dashboard (e.g., status 'Returned'/'Damaged'); Reject flips status to Rejected, leaves stock untouched, and may carry a rejection reason back to the pharmacy user.
+
+## Business rules
+
+General: Roles are gated per feature — Registration is Owner-only; New Stock and Return to Distributor are Manager-only; Incident creation is available to Owner/Manager (and per docs, Pharmacist, though this was blocked for Pharmacist in at least one tested build — needs reconciliation); Inspector accounts cannot create incidents through the pharmacy app at all.
+
+New Stock: An invoice can contain multiple SSCCs and multiple products; partial approval (approve some products, reject others on the same invoice) must be supported and must keep Dawana and Masar in the same final state; invoice source (Masar vs EDA) changes the scan/approval flow.
+
+Return to Distributor: Returning stock must decrement Dawana's stock count; Masar must record the return as a trace transaction; SSCC hierarchy must stay consistent post-return. Known bug: SSCC can remain stuck in Pending status after Masar cancels a return (see bugs/return-to-distributor/sscc-remains-pending-after-masar-cancels-return.md).
+
+Incident (most detailed rule set):
+- Reason is mandatory, one of exactly four fixed options (Damaged/Expired/Stolen/Lost).
+- Product must exist in current pharmacy stock to be selectable; products with zero available stock are excluded from search results.
+- Masar-Integration products mandate barcode scan (camera) or manual GTIN+Serial Number entry before the line can be added; non-Masar products skip this requirement.
+- Expiry Date selection is required only when a product has multiple expiries; Batch Number selection is required only when the chosen expiry itself has multiple batches.
+- Generic Name and Dosage are always auto-filled/read-only, never user-editable.
+- Quantity must be a positive whole number greater than 0; decimals, negatives, zero, and non-numeric input are all rejected; for scanned Masar items the ceiling is the specific batch's available stock, for non-Masar items it's the selected batch's total stock — quantity above available stock is rejected at submission.
+- Document upload is optional; Image (Camera/Gallery) capped at 15 MB, File (e.g. PDF) capped at 5 MB; oversized or unsupported-format files are rejected with a validation message.
+- Multiple product lines can be added to one incident via + Add Product, and any line can be deleted before submit; the same product/batch CAN be reported again in a new incident while a prior incident for it is still Pending (confirmed allowed).
+- After submit, incident status starts at Pending and is routed to that pharmacy's assigned inspector.
+- Inspector Approve => permanent stock removal, status -> Approved, reflected on Masar dashboard with updated status (e.g. Returned/Damaged).
+- Inspector Reject => status -> Rejected, stock unchanged, optional rejection reason surfaced to the submitter; user may be able to resubmit with corrections (unconfirmed/TBD).
+- Robustness rules also verified: form state survives device rotation, app backgrounding, and incoming-call interruption without data loss; rapid duplicate taps on Submit must not create duplicate incidents; barcode/manual-entry fields must safely reject SQL-injection strings, XSS strings, emoji, and excessively long (500+ char) input without crashing or executing injected code.
+
+## Key fields & enums
+
+- Reason (Incident) — Damaged (تالف) / Expired (انتهاء الصلاحية) / Stolen (السرقة) / Lost (فقدان) — required dropdown, exactly these four options
+- Product Name (Incident) — Type-ahead search scoped to current pharmacy stock only; required; empty/no-match shows an empty state
+- Generic Name / Dosage (Incident) — Read-only, auto-filled after product selection
+- Expiry Date (Incident) — Conditional dropdown — appears only if the product has multiple expiry dates; required when shown
+- Batch Number (Incident) — Conditional dropdown — appears only if the selected expiry has multiple batches; required when shown
+- Quantity (Incident) — Positive whole number > 0; capped at available stock of the specific batch (Masar) or selected batch total (non-Masar); rejects 0, negative, decimal, non-numeric
+- SGTIN / Barcode (Incident) — Mandatory for Masar-Integration products only; camera scan or manual GTIN + Serial Number entry; validated against pharmacy stock
+- Supporting Document (Incident) — Optional; Image via Camera/Gallery max 15 MB, or File (e.g. PDF) max 5 MB
+- Incident Status — Pending -> Approved or Rejected (set by inspector decision, not by pharmacy user)
+- Invoice Source (New Stock) — Masar or EDA — changes scanning/approval flow
+- Scan granularity (New Stock) — Individual SGTIN or full SSCC
+- Invoice line approval (New Stock) — Full Approve, or Partial Approve (per-product accept/reject within one invoice)
+
+## Open questions
+
+1) Registration feature has no documented step-by-step workflow yet (only a module-mapping stub file) — needs a real workflow.md written up. 2) New Stock and Return to Distributor workflow.md files are stubs with business rules captured but no documented happy-path step sequence — needs to be filled in from actual testing. 3) Incident: whether document upload is mandatory for specific reasons (e.g., Stolen requiring a police report) is unresolved — currently optional in UI per docs. 4) Incident: unclear if there is a time limit before an inspector's pending review auto-expires (currently: no). 5) Incident: unclear whether a user can edit/resubmit an incident after inspector rejection versus having to create a brand-new one. 6) Role/feature access conflict: domain docs say Pharmacist can raise incidents, but test case INC_052 recorded the Incident module as NOT accessible to the Pharmacist role in the tested build (v5.2.9) — this discrepancy needs to be reconciled (version-specific change vs. doc error). 7) Masar dashboard reflection of approved incidents (INC_024) and the mid-flight-stock-depletion race condition (INC_058) were both marked Blocked/Skipped in testing and remain unverified end-to-end.

@@ -7,7 +7,11 @@
     "enabled": true,
     "type": "mobile",
     "platform": "Android",
-    "capabilities": { "testCaseWriter": true, "featureWizard": true, "moduleKnowledge": false }
+    "capabilities": {
+      "testCaseWriter": true,
+      "featureWizard": true,
+      "moduleKnowledge": true
+    }
   },
   {
     "slug": "eptts",
@@ -17,7 +21,11 @@
     "enabled": true,
     "type": "desktop",
     "platform": "Windows",
-    "capabilities": { "testCaseWriter": true, "featureWizard": true, "moduleKnowledge": false }
+    "capabilities": {
+      "testCaseWriter": true,
+      "featureWizard": true,
+      "moduleKnowledge": false
+    }
   },
   {
     "slug": "eptts-mobile",
@@ -27,6 +35,10 @@
     "enabled": true,
     "type": "mobile",
     "platform": "Android & iOS",
-    "capabilities": { "testCaseWriter": true, "featureWizard": true, "moduleKnowledge": false }
+    "capabilities": {
+      "testCaseWriter": true,
+      "featureWizard": true,
+      "moduleKnowledge": true
+    }
   }
 ]

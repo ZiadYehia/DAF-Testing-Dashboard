@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "updatedAt": "2026-07-12T13:23:57.578Z",
+  "answers": {
+    "overview": {
+      "summary": "The Branch module represents the warehouse/storage-facility tier of the EPTTS mobile app's serialized pharmaceutical supply chain (Manufacturer -> Distributor -> Branch -> Pharmacy -> Patient). A Branch account (e.g. testbranch@eptts.com, Admin@123456) sits mid-chain: it receives bulk shipments upstream from manufacturers/distributors into its own warehouse inventory, and it dispatches outbound shipments downstream to pharmacies. It also participates in the returns chain both as an initiator (Manufacturer Return, sending packs/SSCCs back up to the manufacturer) and as a receiver (Incoming Returns, accepting returns sent down from pharmacies). Every action (shipping, receiving, unpacking) is submitted as an EPCIS event to the national EPTTS registry ('Masar'), viewable in the Branch's own EPCIS History log. The Branch role has the largest tile set of all staff roles (7 tiles) because it exposes both supply-side (upstream) and demand-side (downstream) operations plus account-management actions (Delete Account, Logout) not shown on the Distributor home grid.",
+      "rolesInvolved": "Branch staff user — logs in via Keycloak Sign In with a branch account (e.g. testbranch@eptts.com / Admin@123456); the branch's registered GLN entity name is shown in the home header as 'Hello / <Branch name>' (e.g. 'Hello / Main warehouse'). No separate sub-roles or permission tiers are documented within the Branch module itself — all branch users see the same 7-tile home screen and have access to all branch operations (create/receive shipments, all 3 return sub-flows, EPCIS history, delete account, logout).",
+      "mainWorkflows": "1) Branch Home: Login with branch credentials -> Home screen shows header 'Hello / Main warehouse' and 7 tiles in a grid (3 rows of 2 + 1 standalone): Create Shipment (teal), My Shipments (purple), Receive Shipment (peach/salmon), Returns (blue/grey), EPCIS History (green), Delete Account (pink/red, destructive), Logout (grey/white). Tap any tile to navigate.\n\n2) Create Shipment: Branch Home -> Create Shipment -> form shows Destination GLN field (search input, 'Search by name or GLN', autocomplete) and ERP Invoice Number field (free text, 'Enter invoice number') -> enter/select destination GLN via autocomplete -> enter ERP invoice number -> tap Create Draft -> draft shipment is created -> proceed to pack-scanning screen -> scan serialised pack barcodes to populate the shipment -> submit/dispatch when complete. After creation the shipment appears in My Shipments with 'Draft' status. Form is identical to the Distributor's Create Shipment form. Branch shipments are typically destined for pharmacies (downstream), not distributors.\n\n3) My Shipments: Branch Home -> My Shipments -> Shipments list shows page title 'My Shipments', a 'Filter by status' dropdown, and shipment cards (composite content-desc) with status badges Draft/Dispatched/Delivered. Each card shows shipment name, sender ('Main warehouse' or upstream party e.g. 'Janssen'), receiver (pharmacy name), items x packs, date, status. Tap a card -> 'Shipment Details' page: summary card (Name, status, From, To, Items, Packs, Dispatched date, Created date), Items section listing SSCC codes + status (e.g. '6 pack(s) • in_transit'), and a red 'Cancel Shipment' button that appears ONLY for Dispatched-status shipments (allows cancelling the dispatch). Tapping an item inside Shipment Details does NOT navigate deeper. Observed data mixes inbound shipments (From Janssen, To Main warehouse) and outbound shipments (From Main warehouse, To pharmacy) in the same list.\n\n4) Receive Shipment: Branch Home -> Receive Shipment -> Screen 1 'Incoming Invoices' list (page title literally 'Incoming Invoices', NOT 'Receive Shipment') shows invoice cards formatted as '<name>\\n<status>\\n<sender>\\n<pack count>\\n<date>' -> tap an invoice card to open Screen 2 directly. Screen 2 page title 'Receive Shipment': shows Invoice summary (Invoice, From, To, Items, Packs labels), a 'Scan Progress' card with progress bar + X/Y counter, a 'Scan Barcode' labelled scan circle/button that opens the camera, a 'Scanned (0)' tab and 'Remaining (0)' tab, and an empty state 'No items scanned yet' shown until the first scan. Tap Scan Barcode -> camera opens -> scan each pack -> progress increments and pack moves from Remaining to Scanned -> at 100% scan completion, submit to confirm receipt. Observed upstream senders: Bio Egypt, Janssen, Upjohn EESV, Pharmaoverseas Importer. Partial receipt results in 'Partially Delivered' status. UI is identical to the Distributor's Receive Shipment screen.\n\n5) Returns (sub-menu with 3 tiles): Manufacturer Return (blue) -> scan pack/SSCC via a scan circle (no content-desc; must tap the 'Tap to scan pack / SSCC' label to propagate the click) -> optionally type a return reason in the 'Note (optional)' EditText -> tap 'Initiate Return' button -> return created with PENDING status. My Returns (green) -> list screen (page title 'My Returns') with a 'Filter' button opening a panel (From Date picker, To Date picker, Status dropdown [All, CONFIRMED, CANCELLED, PENDING], Apply Filter) and return cards (composite content-desc: Return #, Status, From/To GLN, Items, Created) -> tap a card -> 'Return Details' page showing Return # (e.g. RET-2026-000006), Status badge (CONFIRMED green / CANCELLED / PENDING), From (branch GLN), To (manufacturer GLN), Items count, Type ('branch to manufacturer'), Note (optional reason, e.g. 'test'), Created timestamp (e.g. '9/6/2026 09:34'), Confirmed timestamp (only for CONFIRMED), and an Items section listing SSCC code + 'SSCC' label. CONFIRMED and CANCELLED returns are read-only with no action buttons. Incoming Returns (yellow/tan) -> list screen (page title 'Incoming Returns') with same Filter panel; statuses observed: PENDING (yellow), CANCELLED (pink), CONFIRMED (green) -> tap a PENDING card -> 'Return Details' page with Type 'pharmacy to branch' (i.e. the return is FROM a pharmacy TO this branch), Note field (e.g. 'expired'), and two action buttons: green 'Confirm Return' (accepts the return, moves inventory to branch) and red-outline 'Cancel Return' (rejects the return). Once confirmed/cancelled, the action buttons disappear and the return becomes read-only.\n\n6) EPCIS History: Branch Home -> EPCIS History -> Status filter dropdown (default 'All statuses', filters Completed/Failed) -> event list cards show event hash ID (UUID), event type (SHIPPING/RECEIVING/UNPACKING), Sender, Receiver, Items, Event Time, and a status badge (Completed green / Failed red). Failed entries show a failed-count summary and an embedded 'View event errors' link (NOT a separate tappable element — tapping the WHOLE card opens the detail). Tap a Failed card -> an error detail bottom sheet slides up (does not navigate to a new page): shows the event UUID hash as title, a Close (x), and per-sequence entries (Sequence N badge, Status badge 'Failed', Event type e.g. SHIPPING, Error code e.g. INTEGRITY_ERROR, Error message e.g. 'SSCCs not found in system: 705413868924425286'). Observed event data mixes Arabic and English receiver/sender party names (e.g. 'صيدلية د. هشام ابراهيم', 'Main warehouse', 'PH Aswan esaaf 24').\n\n7) Delete Account and Logout tiles are present on Branch Home (unlike Distributor Home) — Delete Account is destructive and requires confirmation (per platform-wide pattern); Logout requires a confirmation dialog ('Are you sure you want to logout?' Cancel/Confirm) per the shared cross-cutting pattern documented for other roles.",
+      "businessRules": "Shipment statuses: Draft (editable, packs can be added/dispatched), Dispatched (read-only until confirmed as delivered by recipient; only status from which 'Cancel Shipment' is available), Delivered (fully read-only), Partially Delivered (result of a partial scan at receive time). Return statuses: PENDING (awaiting action by receiving party; requires Confirm Return or Cancel Return before further action), CONFIRMED (green badge, read-only, has a Confirmed timestamp), CANCELLED (red/pink badge, read-only, cannot be reactivated). Return numbering: RET-YYYY-NNNNNN (sequential) or AGENT-RTB-<UUID> (agent-generated) per platform-wide convention. EPCIS event statuses: Completed (green) or Failed (red); Failed events carry a structured error (error code such as INTEGRITY_ERROR + human-readable message) surfaced only via a bottom-sheet, never a full-page navigation. Validation rules for Create Shipment: Destination GLN is required (cannot create draft without a valid selection; GLN not found shows a 'no results' state in the autocomplete) and ERP Invoice Number is required (cannot be blank); duplicate invoice numbers should trigger a system warning; network errors should show a graceful error with retry. Receive Shipment scan validation: scanning a barcode not on the invoice manifest or a duplicate scan should produce an error/warning (documented generically per platform pattern, not explicitly re-verified for Branch but called out as 'same as Distributor Receive Shipment'). Returns validation: PENDING incoming returns require branch action (Confirm/Cancel) before they expire; CANCELLED returns cannot be reactivated. Note fields on both Manufacturer Return and returns generally are optional and must not block submission when empty. Cancel Shipment is scoped strictly to Dispatched-status shipments — the button does not appear for Draft or Delivered shipments.",
+      "keyFields": [
+        {
+          "name": "Destination GLN",
+          "values": "Search by name or GLN, autocomplete; required for Create Shipment"
+        },
+        {
+          "name": "ERP Invoice Number",
+          "values": "Free text; required for Create Shipment; duplicate should warn"
+        },
+        {
+          "name": "Shipment Status",
+          "values": "Draft, Dispatched, Delivered, Partially Delivered"
+        },
+        {
+          "name": "Return #",
+          "values": "RET-YYYY-NNNNNN (sequential) or AGENT-RTB-<UUID> (agent-generated)"
+        },
+        {
+          "name": "Return Status",
+          "values": "PENDING, CONFIRMED, CANCELLED"
+        },
+        {
+          "name": "Return Type",
+          "values": "'branch to manufacturer' (My Returns / Manufacturer Return) or 'pharmacy to branch' (Incoming Returns)"
+        },
+        {
+          "name": "Note (return reason)",
+          "values": "Optional free text, e.g. 'test', 'expired'"
+        },
+        {
+          "name": "EPCIS Event Type",
+          "values": "SHIPPING, RECEIVING, UNPACKING"
+        },
+        {
+          "name": "EPCIS Event Status",
+          "values": "Completed (green), Failed (red)"
+        },
+        {
+          "name": "EPCIS Error Code",
+          "values": "e.g. INTEGRITY_ERROR, with message such as 'SSCCs not found in system: <SSCC>'"
+        },
+        {
+          "name": "Scan Progress",
+          "values": "X/Y counter + percentage; Scanned (n) / Remaining (n) tabs"
+        }
+      ],
+      "openQuestions": "Partial-receipt behavior for Receive Shipment is only asserted generically ('same as Distributor Receive Shipment') and not independently re-verified with Branch-specific screenshots for duplicate/wrong-pack scan errors. The workflow doc does not specify what happens when a Draft shipment with zero scanned packs is dispatched, nor whether Draft shipments can be deleted (only 'edited/dispatched' is mentioned). Delete Account confirmation dialog content/behavior for Branch is not explicitly captured (only inferred as 'should prompt a warning dialog', worded as an edge-case expectation rather than a verified observation). No explicit maximum/expiry duration for PENDING returns is documented ('before they expire' is stated but the expiry window/TBD is not specified)."
+    }
+  }
+}
