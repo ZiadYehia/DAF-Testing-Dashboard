@@ -4,7 +4,7 @@
  * Fluent chain core shared by every TS page object (automation-hub/pages/<app>/*.page.ts).
  *
  * Playwright actions are async, but the user-facing test API is a TRUE fluent chain:
- *   await AssetCreatePage.open(page).selectFamily('Evidence').fillAssetName(name).create()
+ *   await ItemCreatePage.open(page).selectFamily('Sample').fillItemName(name).create()
  * Every public page method queues its work onto a promise chain and returns `this`
  * (or the next page object) SYNCHRONOUSLY — nothing actually runs until the single
  * `await` at the head of the chain, which drains the queue through `then()` below.
@@ -13,12 +13,12 @@
  * plain sync function returning a FluentPage instance, never `async`. An `async`
  * function whose return value is a thenable (FluentPage implements `then`) gets
  * unwrapped by the JS runtime before the caller ever sees it, so
- * `await AssetCreatePage.open(page)` would resolve to `void` instead of the page
+ * `await ItemCreatePage.open(page)` would resolve to `void` instead of the page
  * object, and the following `.selectFamily(...)` call would throw on `undefined`.
  * Example (see pages/<app>/*.page.ts for real usage):
  *
- *   static open(page: Page): AssetCreatePage {
- *     return new AssetCreatePage(page).step(() => ensureLoggedIn(page, 'myapp', '/myapp/items/create'))
+ *   static open(page: Page): ItemCreatePage {
+ *     return new ItemCreatePage(page).step(() => ensureLoggedIn(page, 'myapp', '/myapp/items/create'))
  *   }
  *
  * An un-awaited chain still fails loudly: a rejected step becomes an unhandled

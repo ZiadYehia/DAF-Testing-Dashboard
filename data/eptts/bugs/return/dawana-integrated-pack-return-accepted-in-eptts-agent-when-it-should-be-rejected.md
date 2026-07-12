@@ -8,6 +8,11 @@ reported_at: '2026-06-09T12:41:54.624Z'
 feature: return
 priority: P1 – Critical
 bug_type: Functional
+parent_key: null
+severity: ''
+layer: unknown
+jira_status: DONE
+jira_reporter: '712020:b6f2ccdf-1ea7-4b3c-85ca-0bf6ed8291ed'
 ---
 The EPTTS Agent incorrectly accepts the return of a Dawana-integrated pack, which should be rejected as only non-Dawana packs are accepted in the Agent. 
    

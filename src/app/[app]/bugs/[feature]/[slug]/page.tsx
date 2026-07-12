@@ -243,7 +243,7 @@ export default function BugDetailPage() {
 
   const confirmReport = async () => {
     if (reportScope === 'story' && !reportParentKey.trim()) {
-      toast.error('Enter the parent story key (e.g. DT-2840)')
+      toast.error('Enter the parent story key (e.g. ABC-123)')
       return
     }
     setReporting(true)
@@ -352,7 +352,7 @@ export default function BugDetailPage() {
                 <Input
                   value={reportParentKey}
                   onChange={(e) => setReportParentKey(e.target.value.toUpperCase())}
-                  placeholder="e.g. DT-2840"
+                  placeholder="e.g. ABC-123"
                   autoFocus
                 />
                 <p className="text-xs text-muted-foreground">Jira key of the story this bug belongs to</p>

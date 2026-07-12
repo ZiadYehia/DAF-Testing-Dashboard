@@ -70,19 +70,19 @@ Framework conventions (the vendored automation-hub/python/ pytest framework):
     from autotest_framework.src.utils.data import unique_suffix
 
 
-    @allure.feature("Asset Manager")
-    @allure.story("Asset Create Manual")
+    @allure.feature("Item Manager")
+    @allure.story("Item Create Manual")
     class TestCRT172:
 
         @pytest.mark.regression
-        @allure.title("CRT_172: Evidence File asset created with required fields only")
-        def test_evidence_file_minimal_create(self, asset_create_page):
+        @allure.title("CRT_172: Sample Item created with required fields only")
+        def test_sample_item_minimal_create(self, item_create_page):
             uniq = unique_suffix()
-            name = f"QA Evidence File {uniq}"
-            (asset_create_page
-                .select_family("Evidence")
-                .select_type("Evidence File")
-                .fill_asset_name(name)
+            name = f"QA Sample Item {uniq}"
+            (item_create_page
+                .select_family("Sample")
+                .select_type("Sample Item")
+                .fill_item_name(name)
                 .fill_field("System File ID / File Hash", f"EF-HASH-{uniq}")
                 .next_step()
                 .create()
@@ -90,12 +90,12 @@ Framework conventions (the vendored automation-hub/python/ pytest framework):
                 .assert_field("System File ID / File Hash", f"EF-HASH-{uniq}"))
     \`\`\`
   - Use \`unique_suffix()\` (never hardcoded literals) for any value that must be unique
-    per run (asset names, identifiers, emails, etc).
+    per run (item names, identifiers, emails, etc).
 - Fixtures available${app ? ` for app "${slug}"` : ''} (declared in tests/${slug}/conftest.py — take
   ONE as the test method's argument, whichever already lands on the right screen):
   - \`logged_in_page\` — an authenticated Playwright \`Page\`, no navigation yet.
-  - \`assets_page\` — logged in, already on the app's list page (e.g. the app’s list route).
-  - \`asset_create_page\` — logged in, already on the create wizard's first step.
+  - \`items_page\` — logged in, already on the app's list page (e.g. the app’s list route).
+  - \`item_create_page\` — logged in, already on the create wizard's first step.
   Do not re-implement login or navigation in the test — pick the fixture that already
   starts where the flow needs to begin.
 - Page-object API: page objects live under \`pages/${slug}/*.py\`, extend \`BasePage\`
@@ -112,7 +112,7 @@ Framework conventions (the vendored automation-hub/python/ pytest framework):
     overlapped by a floating UI element) via \`.dispatch_event("click")\`, not \`.click()\`.
   - Pass \`exact=True\` to \`get_by_role(...)\` whenever the accessible name is short or a
     substring of another control's name (e.g. "Next" vs "Next Month", "Name *" vs
-    "Asset Name *") — role-name matching is a case-insensitive substring match by default.
+    "Item Name *") — role-name matching is a case-insensitive substring match by default.
   - Follow the docstring/method style already used in the page objects above (short
     docstring explaining any quirk being encoded).
 
@@ -176,17 +176,17 @@ Framework conventions (this hub's own TypeScript fluent Playwright page-object f
   import { test } from '@playwright/test'
   import { stateFor } from '../../lib/apps'
   import { uniqueSuffix } from '../../lib/framework/data'
-  import { AssetCreatePage } from '../../pages/myapp/asset-create.page'
+  import { ItemCreatePage } from '../../pages/myapp/item-create.page'
 
   test.use({ storageState: stateFor('${slug}') })
 
-  test('CRT_001: Evidence File asset created with required fields only', async ({ page }) => {
+  test('CRT_001: Sample Item created with required fields only', async ({ page }) => {
     const uniq = uniqueSuffix()
-    const name = \`QA Evidence File \${uniq}\`
-    await AssetCreatePage.open(page)
-      .selectFamily('Evidence')
-      .selectType('Evidence File')
-      .fillAssetName(name)
+    const name = \`QA Sample Item \${uniq}\`
+    await ItemCreatePage.open(page)
+      .selectFamily('Sample')
+      .selectType('Sample Item')
+      .fillItemName(name)
       .fillField('System File ID / File Hash', \`EF-HASH-\${uniq}\`)
       .nextStep()
       .create()
@@ -199,7 +199,7 @@ Framework conventions (this hub's own TypeScript fluent Playwright page-object f
     static entry then navigates and transparently re-authenticates if needed — NEVER
     script login steps (password fields, SSO buttons) yourself.
   - Use \`uniqueSuffix()\` (from \`lib/framework/data\`, never a hardcoded literal) for any
-    value that must be unique per run (asset names, identifiers, emails, etc).
+    value that must be unique per run (item names, identifiers, emails, etc).
   - Exactly one \`await\`, at the head of the whole chain — every chained call returns
     \`this\` or the next page object synchronously; never split the chain across multiple
     \`await\`s or intermediate variables.
@@ -231,7 +231,7 @@ Framework conventions (this hub's own TypeScript fluent Playwright page-object f
     \`.click()\`.
   - Pass \`exact: true\` (via \`roleExact\`, or directly on \`getByRole\`) whenever the
     accessible name is short or a substring of another control's name (e.g. "Next" vs
-    "Next Month", "Name *" vs "Asset Name *") — role-name matching is a case-insensitive
+    "Next Month", "Name *" vs "Item Name *") — role-name matching is a case-insensitive
     substring match by default.
   - Wait for asynchronously-rendered fields to be visible (\`waitVisible\`) before
     interacting, rather than assuming the DOM is settled immediately after a

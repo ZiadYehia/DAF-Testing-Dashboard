@@ -8,6 +8,11 @@ reported_at: '2026-06-09T11:07:21.326Z'
 feature: receive
 priority: P2 – High
 bug_type: Functional / Integration
+parent_key: null
+severity: ''
+layer: unknown
+jira_status: Testing
+jira_reporter: '712020:b6f2ccdf-1ea7-4b3c-85ca-0bf6ed8291ed'
 ---
 The user is able to bypass the Dawana integration by entering the SSCC number that contains Dawana products and receiving it through the Agent. 
    

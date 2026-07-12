@@ -9,6 +9,11 @@ reported_at: '2026-06-07T09:19:45.359Z'
 feature: transaction-processing
 priority: P2
 bug_type: Functional / Integration
+parent_key: null
+severity: ''
+layer: unknown
+jira_status: Testing
+jira_reporter: '712020:b6f2ccdf-1ea7-4b3c-85ca-0bf6ed8291ed'
 ---
 When a user attempts to perform critical transaction operations such as selling, partial dispensing, returning to pharmacy, or returning to a distributor, the system displays a backend validation error. This error specifically indicates that the 'InstanceIdentifier' being processed exceeds its maximum allowed length of 40 characters, preventing the completion of any affected transaction.
 

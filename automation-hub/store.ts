@@ -391,7 +391,7 @@ export async function applyPyArtifacts(
 //
 // Shared, app-level page objects that generated/revised fluent tests call into —
 // the TS analog of the Python page-file functions just above. `relPath` below is
-// always relative to HUB_ROOT (not python/), e.g. "pages/myapp/asset-create.page.ts".
+// always relative to HUB_ROOT (not python/), e.g. "pages/myapp/item-create.page.ts".
 // The framework files under lib/framework/ are structurally unwritable through
 // this path family: TS_PAGE_FILE_RE only ever admits paths under "pages/".
 
@@ -446,7 +446,7 @@ export async function saveTsPageFile(
 }
 
 // Matches a top-level class-member declaration line inside a 2-space-indented
-// TS class body, e.g. "  async fillAssetName(name: string) {" or
+// TS class body, e.g. "  async fillItemName(name: string) {" or
 // "  private _resolveTextbox<T>(...)" — captures the member name. Used both to
 // read the EXISTING members of a page file (duplicate-append guard) and to
 // split an INCOMING methods block into individually-addressable methods.

@@ -29,7 +29,7 @@ await runSpec(async (driver) => {
 })
 `
 
-/** "asset-create" -> "AssetCreate" (PascalCase from a hyphenated slug). */
+/** "item-create" -> "ItemCreate" (PascalCase from a hyphenated slug). */
 function pascalCase(slug: string): string {
   return slug
     .split('-')

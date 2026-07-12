@@ -648,7 +648,7 @@ export default function RequirementsPage() {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && linkDialogFor) saveStoryLink(linkDialogFor, linkDialogValue.trim())
                 }}
-                placeholder="e.g. DT-2840"
+                placeholder="e.g. ABC-123"
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ring/50"
                 autoFocus
               />
@@ -711,7 +711,7 @@ export default function RequirementsPage() {
                 <Input
                   value={addForm.module}
                   onChange={(e) => setAddForm((f) => ({ ...f, module: e.target.value }))}
-                  placeholder="e.g. Asset Register"
+                  placeholder="e.g. Orders List"
                 />
               </div>
               <div className="space-y-1.5">
@@ -754,7 +754,7 @@ export default function RequirementsPage() {
                 <Input
                   value={addForm.storyKey}
                   onChange={(e) => setAddForm((f) => ({ ...f, storyKey: e.target.value }))}
-                  placeholder="e.g. DT-2840"
+                  placeholder="e.g. ABC-123"
                   className="font-mono"
                 />
               )}
@@ -801,7 +801,7 @@ export default function RequirementsPage() {
                   <Input
                     value={splitStory}
                     onChange={(e) => setSplitStory(e.target.value)}
-                    placeholder="e.g. DT-2840 (fetched live from Jira if not cached)"
+                    placeholder="e.g. ABC-123 (fetched live from Jira if not cached)"
                     className="font-mono"
                   />
                 )}

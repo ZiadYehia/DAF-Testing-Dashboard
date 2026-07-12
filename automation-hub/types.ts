@@ -100,7 +100,7 @@ export interface ProjectMeta {
   lastStatus: RunStatus
   /** Newest first; trimmed to MAX_RUN_HISTORY. */
   runs: RunRecord[]
-  /** Free-form labels ("smoke", "assets", …) used to slice regression runs. */
+  /** Free-form labels ("smoke", "orders", …) used to slice regression runs. */
   tags?: string[]
   /** Suite folder the project is filed under in the UI; null/absent = unfiled. */
   folder?: string | null
@@ -152,7 +152,7 @@ export interface ProjectDetail extends ProjectMeta {
 
 /** One page-file edit produced alongside a generated/revised TS test. */
 export interface TsPageAppend {
-  /** Path relative to automation-hub/, e.g. "pages/myapp/asset-create.page.ts". */
+  /** Path relative to automation-hub/, e.g. "pages/myapp/item-create.page.ts". */
   path: string
   /** 'append' = methods-only block for an existing file; 'new' = complete file source. */
   mode: 'append' | 'new'

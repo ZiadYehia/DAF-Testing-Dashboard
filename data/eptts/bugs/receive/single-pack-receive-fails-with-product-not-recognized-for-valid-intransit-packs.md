@@ -6,7 +6,12 @@ jira_key: DW-790
 reported_at: '2026-06-03T09:31:07.971Z'
 feature: receive
 priority: P2
-bug_type: 'Functional'
+bug_type: Functional
+parent_key: null
+severity: ''
+layer: unknown
+jira_status: Testing
+jira_reporter: '712020:b6f2ccdf-1ea7-4b3c-85ca-0bf6ed8291ed'
 ---
 Users of the Masar Agent are encountering an issue when attempting to add serialized products via DataMatrix scan or paste during receive operations. For seemingly valid products that are in the `InTransit` state and are not expired, the system displays an error message such as "Product not recognized" or "Pack URN not found". This prevents the successful reception of individual packs into pharmacy inventory, directly impacting stock management and daily operations. The user also noted seeing "product has expired" messages, which could indicate either incorrect validation for unexpired packs or expected validation for actually expired packs being perceived as a bug.
 

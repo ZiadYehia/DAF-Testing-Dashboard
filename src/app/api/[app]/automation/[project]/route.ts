@@ -48,7 +48,7 @@ export async function GET(
  * linkedTestcase is completed with the route's app; null unlinks. pageFile.path is
  * relative to automation-hub/python/ (e.g. "pages/<app>/login_page.py") and must
  * already exist — 400 on an invalid/unknown path. tsPageFile.path is relative to
- * automation-hub/ (e.g. "pages/<app>/asset-create.page.ts") and, symmetrically,
+ * automation-hub/ (e.g. "pages/<app>/item-create.page.ts") and, symmetrically,
  * must already exist — 400 on an invalid/unknown path.
  */
 export async function PUT(

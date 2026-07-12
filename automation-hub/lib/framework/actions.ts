@@ -37,7 +37,7 @@ export async function clickSafe(locator: Locator): Promise<void> {
  *
  * `getByRole(..., { name })` is a case-insensitive SUBSTRING match unless
  * `exact: true` is passed — e.g. a bare 'Next' would also match the datepicker's
- * 'Next Month' button, and 'Name *' would match 'Asset Name *'. Prefer this over
+ * 'Next Month' button, and 'Name *' would match 'Item Name *'. Prefer this over
  * calling `getByRole` directly whenever the name must match exactly one control.
  */
 export function roleExact(page: Page, role: Role, name: string | RegExp): Locator {

@@ -8,6 +8,11 @@ reported_at: '2026-06-09T08:51:56.335Z'
 feature: sell
 priority: P2 – High
 bug_type: Functional
+parent_key: null
+severity: ''
+layer: unknown
+jira_status: Testing
+jira_reporter: '712020:b6f2ccdf-1ea7-4b3c-85ca-0bf6ed8291ed'
 ---
 The Agent incorrectly reports a pack as already dispensed when the user attempts to copy a DataMatrix that has been previously received in the pharmacy but is still in an Active state in Masar.
 

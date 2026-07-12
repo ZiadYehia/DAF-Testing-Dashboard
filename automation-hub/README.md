@@ -80,7 +80,7 @@ An in-process lock allows one replay per project at a time.
 - Server-side regressions post a summary to the configured webhook
   (`AUTOMATION_WEBHOOK_URL`) as `{ text }` — Slack/Teams compatible.
 
-Projects carry **tags** (e.g. `smoke`, `assets`) to slice regressions, file into suite
+Projects carry **tags** (e.g. `smoke`, `orders`) to slice regressions, file into suite
 **folders** (collapsible groups in the UI, each runnable as a unit), and belong to the
 dashboard **app** they were created under (legacy projects show everywhere).
 

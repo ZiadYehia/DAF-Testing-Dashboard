@@ -35,11 +35,11 @@ export async function expectUrl(page: Page, pattern: string | RegExp): Promise<v
 /**
  * Assert an inline field-validation error is visible.
  *
- * Rendered by the portal as `small.text-allendevaux-red-50` below the field,
+ * Rendered by the portal as a small red helper-text element below the field,
  * with the standard wording `'{field} is required.'` — pass `message` for the
  * handful of fields whose live error text deviates from that pattern (e.g. the
- * base Asset Name field surfaces the generic "This field is required" instead
- * of "Asset Name is required.").
+ * base Item Name field surfaces the generic "This field is required" instead
+ * of "Item Name is required.").
  */
 export async function expectFieldError(page: Page, field: string, message?: string): Promise<void> {
   const text = message ?? `${field} is required.`

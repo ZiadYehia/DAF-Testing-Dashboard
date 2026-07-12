@@ -2096,7 +2096,7 @@ export default function FeatureDetailPage() {
                 value={storyEditValue}
                 onChange={(e) => setStoryEditValue(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && saveStoryKey(storyEditValue.trim())}
-                placeholder="e.g. DT-2840"
+                placeholder="e.g. ABC-123"
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ring/50"
                 autoFocus
               />

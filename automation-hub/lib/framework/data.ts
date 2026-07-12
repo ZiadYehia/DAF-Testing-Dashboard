@@ -8,7 +8,7 @@
 /**
  * Digits unique per call — timestamp tail + 3 random digits (parallel-safe).
  * Used to build unique names/identifiers in generated tests, e.g.
- * `` `QA Evidence File ${uniqueSuffix()}` ``.
+ * `` `QA Sample Item ${uniqueSuffix()}` ``.
  *
  * Note: the Python original takes the last 8 digits of a SECONDS timestamp
  * (`time.time()`); this takes the last 8 digits of a MILLISECONDS timestamp

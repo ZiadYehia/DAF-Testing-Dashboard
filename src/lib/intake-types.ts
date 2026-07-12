@@ -97,7 +97,7 @@ export const APP_INTAKE_GROUPS: IntakeGroup[] = [
         label: 'Purpose',
         type: 'long-text',
         help: 'In a sentence or two, what does this app do and who uses it?',
-        placeholder: 'e.g. A governance, risk & compliance platform used by auditors and asset owners to track…',
+        placeholder: 'e.g. An order-management platform used by staff and managers to track…',
       },
       {
         id: 'roles',
@@ -113,9 +113,9 @@ export const APP_INTAKE_GROUPS: IntakeGroup[] = [
         id: 'entities',
         label: 'Core concepts & entities',
         type: 'list',
-        help: 'What are the main objects or records in the system (e.g. Asset, Policy, Risk), and how do they relate to each other?',
+        help: 'What are the main objects or records in the system (e.g. Order, Item, Customer), and how do they relate to each other?',
         itemFields: [
-          { key: 'name', label: 'Entity', placeholder: 'e.g. Asset' },
+          { key: 'name', label: 'Entity', placeholder: 'e.g. Order' },
           { key: 'description', label: 'What it represents', long: true },
         ],
       },
@@ -320,7 +320,7 @@ export const MODULE_INTAKE_GROUPS: IntakeGroup[] = [
         type: 'key-value',
         help: 'What important fields or fixed value-lists (enums/dropdowns) exist in this module?',
         itemFields: [
-          { key: 'name', label: 'Field / Enum', placeholder: 'e.g. Asset Status' },
+          { key: 'name', label: 'Field / Enum', placeholder: 'e.g. Order Status' },
           { key: 'values', label: 'Values / notes', long: true, placeholder: 'e.g. Active, Draft, Expired, Archived' },
         ],
       },
@@ -395,7 +395,7 @@ export const FEATURE_INTAKE_GROUPS: IntakeGroup[] = [
         type: 'list',
         help: 'What screens or pages are involved in this feature?',
         itemFields: [
-          { key: 'name', label: 'Screen name', placeholder: 'e.g. Asset List' },
+          { key: 'name', label: 'Screen name', placeholder: 'e.g. Orders List' },
           { key: 'description', label: 'What it shows / lets the user do', long: true },
         ],
       },

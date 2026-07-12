@@ -5,8 +5,13 @@ status: reported
 jira_key: DW-804
 reported_at: '2026-06-08T13:36:05.028Z'
 feature: sell
-priority: 'P1'
-bug_type: 'Functional'
+priority: P1
+bug_type: Functional
+parent_key: null
+severity: ''
+layer: unknown
+jira_status: Testing
+jira_reporter: '712020:b6f2ccdf-1ea7-4b3c-85ca-0bf6ed8291ed'
 ---
 The Masar Agent is incorrectly allowing users to dispense (sell) pharmaceutical products that are currently in an 'InTransit' state. According to system rules, only products in an 'Active' state should be eligible for dispensing. This behavior leads to incorrect product lifecycle management and potential data inconsistencies regarding pack ownership and traceability, violating a core business rule.
 

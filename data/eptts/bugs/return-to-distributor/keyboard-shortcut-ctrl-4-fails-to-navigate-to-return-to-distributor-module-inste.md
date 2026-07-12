@@ -8,6 +8,11 @@ reported_at: '2026-06-07T08:39:48.045Z'
 feature: return-to-distributor
 priority: P3
 bug_type: Functional
+parent_key: null
+severity: ''
+layer: unknown
+jira_status: Testing
+jira_reporter: '712020:b6f2ccdf-1ea7-4b3c-85ca-0bf6ed8291ed'
 ---
 The keyboard shortcut 'Ctrl + 4', which is designed to provide quick navigation to the 'Return to Distributor' module, is currently non-functional. When a user attempts to use this shortcut, the application does not switch to the intended module, requiring manual navigation and impacting workflow efficiency.
 

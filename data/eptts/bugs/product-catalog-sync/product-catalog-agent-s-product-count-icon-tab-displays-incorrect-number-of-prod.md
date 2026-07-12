@@ -8,6 +8,11 @@ reported_at: '2026-06-08T10:16:02.843Z'
 feature: product-catalog-sync
 priority: P2 – High
 bug_type: Functional / Integration
+parent_key: null
+severity: ''
+layer: unknown
+jira_status: Testing
+jira_reporter: '712020:b6f2ccdf-1ea7-4b3c-85ca-0bf6ed8291ed'
 ---
 The Masar Agent's product count, as shown in the application's icon/summary area and the dedicated 'Products' tab, incorrectly displays 2 products. This occurs even when the Masar backend system clearly contains 3 active products in its catalog. The discrepancy persists even after multiple product list updates or synchronization attempts, indicating a data consistency issue between the Agent and the backend.
 ---

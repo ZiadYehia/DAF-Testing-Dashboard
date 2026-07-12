@@ -6,8 +6,12 @@ reported_at: '2026-06-08T07:14:15.616Z'
 feature: receive
 priority: P2 – High
 bug_type: Functional
+parent_key: null
+severity: ''
+layer: unknown
+jira_status: Testing
+jira_reporter: '712020:b6f2ccdf-1ea7-4b3c-85ca-0bf6ed8291ed'
 ---
-
 ### Summary
 The user is experiencing an issue when trying to receive a single pack from an SSCC. After pasting the DataMatrix and confirming the receive, an error appears stating that the pack URN is not found.
 

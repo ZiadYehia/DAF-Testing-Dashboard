@@ -306,8 +306,8 @@ function buildBugSystemPrompt(
   // JSON contract fields — priority/bug_type/severity are only present when the
   // app's bug format config has that field enabled.
   const jsonLines: string[] = [
-    `  "title": "A natural language sentence describing the bug — what is broken and in what context. GOOD examples: 'Asset list table becomes empty when all columns are deselected from the column visibility menu', 'Save button remains disabled after all required fields are filled on the asset creation form', 'Filter panel closes without applying selections when clicking outside the modal'. BAD examples (never do this): 'asset-list-bug', 'table-empty-bug', 'error in filter'."`,
-    `  "feature": "kebab-case feature name — use one of the available features above if it matches, OR suggest a new descriptive kebab-case name (e.g. 'registration', 'asset-create') if none of the existing ones fit"`,
+    `  "title": "A natural language sentence describing the bug — what is broken and in what context. GOOD examples: 'Orders list table becomes empty when all columns are deselected from the column visibility menu', 'Save button remains disabled after all required fields are filled on the order creation form', 'Filter panel closes without applying selections when clicking outside the modal'. BAD examples (never do this): 'order-list-bug', 'table-empty-bug', 'error in filter'."`,
+    `  "feature": "kebab-case feature name — use one of the available features above if it matches, OR suggest a new descriptive kebab-case name (e.g. 'registration', 'order-create') if none of the existing ones fit"`,
   ]
   if (vc.fields.priority) {
     jsonLines.push(`  "priority": "exactly one of: ${format.priorityOptions.join(' | ')}"`)
@@ -476,18 +476,18 @@ ${examples || 'No examples available — follow the format rules from the Domain
     ? 'This is a SCENARIO-DIRECTED request — generate ONLY what the scenario directive below asks for. Do NOT perform a broad coverage sweep.'
     : 'Generate a comprehensive set of test cases: happy paths, negative/invalid inputs, edge cases, error handling, access control, and lifecycle flows.'}
 3. Output ONLY raw markdown — the H1 heading followed immediately by the table. No preamble, no explanation, no code fences, no metadata block.
-4. First line is the H1 heading — the feature name only (no "Test Cases" suffix). Example: \`# Assets List\`
+4. First line is the H1 heading — the feature name only (no "Test Cases" suffix). Example: \`# Orders List\`
 5. Table columns — EXACT order, EXACT names (note: "Enviroment" is intentionally misspelled):
    \`|Feature ID|TestCase ID|Tester|Validity|Test Cases Title / Objective|Enviroment|Pre-condition|Test Data|Steps|Expected Results|Status|Attachment|Type |\`
    \`|---|---|---|---|---|---|---|---|---|---|---|---|---|\`
 6. Column rules:
    - **Feature ID**: FR ID from FRs.md (e.g. \`AM_FR_01\`). Use \`N/A\` if no FR applies. Multiple FRs space-separated.
-   - **TestCase ID**: \`<PREFIX>_<NNN>\` — 3–4 letter feature abbreviation + 3-digit zero-padded number. Derive prefix from feature name (e.g. LST for Assets List, CRT for Asset Create, LFE for Lifecycle, REL for Relationships, EVI for Evidence, LOG for Activity Log). Example: \`LST_001\`.
+   - **TestCase ID**: \`<PREFIX>_<NNN>\` — 3–4 letter feature abbreviation + 3-digit zero-padded number. Derive prefix from feature name (e.g. LST for Orders List, CRT for Order Create, LFE for Lifecycle, REL for Relationships, EVI for Evidence, LOG for Activity Log). Example: \`LST_001\`.
    - **Tester**: Always \`${settings?.testerName ?? 'QA Tester'}\`
    - **Validity**: \`Positive\` for valid/happy-path; \`Negative\` for errors, invalid inputs, edge cases, access-control denial.
    - **Test Cases Title / Objective**: Sentence starting with "Validate that…". One behaviour per test case.
    - **Enviroment**: \`${settings?.testcaseEnvironment ?? 'Browser: <browser + version> | OS: <OS> | Environment: Design only — not yet implemented | Role: <role>'}\`. Match role to the test scenario.
-   - **Pre-condition**: Numbered inline steps (e.g. \`1. User is logged in as Admin. 2. Assets exist.\`). Use \`Not Applicable\` when none needed.
+   - **Pre-condition**: Numbered inline steps (e.g. \`1. User is logged in as Admin. 2. Orders exist.\`). Use \`Not Applicable\` when none needed.
    - **Test Data**: Concrete values (field names, example names, codes). Use \`Not Applicable\` (never "N/A") when none needed.
    - **Steps**: Numbered inline action steps starting from 1.
    - **Expected Results**: One or more falsifiable statements.

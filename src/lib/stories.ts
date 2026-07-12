@@ -211,7 +211,7 @@ export async function fetchStories(
 }
 
 /**
- * Fetch a single Jira story by its issue key (e.g. "DT-2840").
+ * Fetch a single Jira story by its issue key (e.g. "ABC-123").
  * Uses the single-issue REST endpoint rather than a JQL search.
  * Returns null on any error so callers can treat it as fire-and-forget.
  */

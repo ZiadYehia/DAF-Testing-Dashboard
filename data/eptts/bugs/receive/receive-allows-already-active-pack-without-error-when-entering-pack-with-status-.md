@@ -8,6 +8,11 @@ reported_at: '2026-06-17T08:09:46.059Z'
 feature: receive
 priority: P2 – High
 bug_type: Functional
+parent_key: null
+severity: ''
+layer: unknown
+jira_status: READY
+jira_reporter: '712020:b6f2ccdf-1ea7-4b3c-85ca-0bf6ed8291ed'
 ---
 The Agent allows receiving a pack that is already in the Active state without displaying an error message when the user enters a pack with an Active status.
 

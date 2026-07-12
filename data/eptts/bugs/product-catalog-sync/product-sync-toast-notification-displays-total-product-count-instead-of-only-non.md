@@ -8,6 +8,11 @@ reported_at: '2026-06-07T08:55:14.351Z'
 feature: product-catalog-sync
 priority: P3
 bug_type: Functional
+parent_key: null
+severity: ''
+layer: unknown
+jira_status: Testing
+jira_reporter: '712020:b6f2ccdf-1ea7-4b3c-85ca-0bf6ed8291ed'
 ---
 The Masar Agent's product synchronization toast notification provides an incorrect count of synced products. When the Agent performs a product catalog sync, the toast message indicates a total count (e.g., "113 products synced"), which includes both Dawana-integrated and non-Dawana-integrated products. The expected behavior is for this notification to display only the count of non-Dawana-integrated products, as these are the products relevant to the Agent's specific inventory and display. The actual 'Products' list in the application correctly filters and displays only non-Dawana products, indicating the issue is confined to the toast notification's displayed count. This leads to user confusion regarding the actual number of relevant products synchronized.
 

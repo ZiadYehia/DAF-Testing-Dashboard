@@ -5,8 +5,13 @@ status: reported
 jira_key: DW-802
 reported_at: '2026-06-08T07:29:23.891Z'
 feature: sell
-priority: 'P1'
-bug_type: 'Functional / Integration'
+priority: P1
+bug_type: Functional / Integration
+parent_key: null
+severity: ''
+layer: unknown
+jira_status: Testing
+jira_reporter: '712020:b6f2ccdf-1ea7-4b3c-85ca-0bf6ed8291ed'
 ---
 ### Summary
 The EPTTS Agent is not correctly updating the product status to 'Dispensed' in Masar after a full dispense, allowing the same product to be dispensed again, both fully and partially. This discrepancy can lead to inaccurate inventory tracking and potential security risks.

@@ -294,7 +294,7 @@ export default function NewBugPage() {
                   <Input
                     value={parentKey}
                     onChange={(e) => setParentKey(e.target.value.toUpperCase())}
-                    placeholder="e.g. DT-2840"
+                    placeholder="e.g. ABC-123"
                   />
                 </div>
               )}

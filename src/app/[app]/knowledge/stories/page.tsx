@@ -241,8 +241,8 @@ export default function ModuleKnowledgePage() {
               onChange={(e) => setModule(e.target.value)}
               placeholder={
                 source === 'local'
-                  ? 'Filter by key/text (e.g. assets-list, DT-2840, bulk import)'
-                  : 'Module / Jira component (e.g. Asset Module)'
+                  ? 'Filter by key/text (e.g. items-list, ABC-123, bulk import)'
+                  : 'Module / Jira component (e.g. Orders Module)'
               }
               className="flex-1"
             />

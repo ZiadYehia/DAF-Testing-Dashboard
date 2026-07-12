@@ -152,7 +152,7 @@ export function AutomationHub({ app }: { app: string }) {
   const [improvingPy, setImprovingPy] = useState(false)
   const pyFiles = useArtifactFiles({ testContent: '', files: [] })
   const [savingPageFile, setSavingPageFile] = useState<string | null>(null)
-  // Python analog: the test method's single page fixture (e.g. asset_create_page → pages/<app>/<page>_page.py).
+  // Python analog: the test method's single page fixture (e.g. item_create_page → pages/<app>/<page>_page.py).
   const pyPrimaryPages = useMemo(() => {
     const fixture = pyFiles.testDraft.match(/def\s+test_\w+\s*\(\s*self\s*,\s*(\w+)/)?.[1]
     return fixture ? pyFiles.files.filter((f) => f.path.endsWith(`/${fixture}.py`)).map((f) => f.path) : []
