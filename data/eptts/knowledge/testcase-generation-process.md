@@ -1,54 +1,6 @@
-# Test Case Generation Process — EPTTS Masar Agent
+<!-- generated-from-intake -->
+# Test-Case Generation Process
 
-The QA workflow for Masar Agent is:
+## Coverage expectations
 
-1. Create Functional Requirements (FRs)
-2. Break module into features
-3. Assign:
-   - Feature ID
-   - Priority
-   - Status
-4. Analyze screenshots and workflow
-5. Generate test scenarios
-6. Generate detailed test cases
-
-The AI MUST follow this workflow.
-
----
-
-## Modules
-
-The Masar Agent has the following core modules:
-
-| Module | Description | TestCase Prefix |
-|--------|-------------|-----------------|
-| Authentication & Activation | Login, OTP, activation key, device linking | `AUTH_` |
-| Receive | Receive packs from distributor (InTransit → Active) | `RCV_` |
-| Sell / Dispense | Dispense packs to patient (Active → Dispensed / Partial Dispensed) | `SEL_` |
-| Return | Patient returns item to pharmacy (Dispensed / Partial Dispensed → Returned) | `RET_` |
-| Return to Distributor | Pharmacy returns Active packs back to distributor/branch | `RTD_` |
-| Queue | Technical sync log — Pending / Failed / Synced transactions | `QUE_` |
-
----
-
-## Role Context
-
-Masar Agent has **no role system**. Only pharmacy users operate the application.
-
-- All test cases are written from the **pharmacy user** perspective.
-- There are no Owner / Manager / Pharmacist / Inspector role distinctions.
-- Do NOT add role prefixes to TestCase IDs.
-- Do NOT write role-isolation test cases.
-
-Instead, cover **access control** scenarios using device deactivation and pharmacy unlink flows where applicable.
-
----
-
-## Feature ID Traceability
-
-Each test case must be linked to a valid Feature ID from `data/eptts/requirements/FRs.md`.
-
-Example:
-`EPTTS_FR_01` → Authentication (Login)
-
-All generated test cases must maintain requirement traceability.
+Test cases within a feature file must be generated in this fixed order: 1) Navigation/Access (open screen, back navigation, header visible), 2) Core Positive (main happy path end-to-end), 3) Variation Positive (SSCC vs single pack, pack mode vs strip mode, multiple items), 4) Downstream Effects (pack state changed, History record created, Queue Synced, counters updated), 5) Positive Edge Cases (boundary/max/min valid values), 6) UX/Desktop Positive (minimize/restore, resize, clipboard paste, reconnect mid-operation), 7) Mandatory Field Validation (one empty field per test), 8) Format/Range Validation (invalid DataMatrix, out-of-range quantity, whitespace, special characters), 9) State Validation (wrong pack state, wrong GLN ownership), 10) Access Control (pharmacy deactivated, device unlinked, session expired, activation key reused), 11) Network Failure (offline → Queue Pending → retry → Synced, no crash), 12) Concurrent/Sync (retry must not duplicate business actions, failed sync stays visible, Queue integrity across retries), 13) Security/Injection (SQL injection, XSS, emoji, whitespace-only, max-length overflow). A coverage checklist mandates verifying: screen renders, navigation, every required field's empty/invalid-format cases, every scan/paste method (valid + invalid DataMatrix), SSCC input (activates all inner packs), one full happy-path transaction, downstream state/History/Queue effects, wrong-state and wrong-GLN blocking, offline→Pending→retry→Synced, no duplicate sync actions, deactivation/unlink access control, and security/injection inputs.

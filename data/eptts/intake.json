@@ -1,0 +1,179 @@
+{
+  "version": 1,
+  "updatedAt": "2026-07-12T13:09:16.418Z",
+  "answers": {
+    "domain": {
+      "purpose": "Masar Agent (also called EPTTS Agent) is a desktop pharmacy application (Windows) integrated with the Masar Track & Trace ecosystem. It is the execution layer for pharmacy-side serialized pharmaceutical operations: receiving products from distributors/warehouses, selling/dispensing products to patients, returning products (patient-to-pharmacy and pharmacy-to-distributor/branch), and synchronizing all transactions with the central Masar backend. The system is built on pharmaceutical traceability and GS1 serialization standards. Its core business objectives are: track every pharmaceutical pack individually by serial number; prevent duplicate ownership of packs across locations; maintain accurate lifecycle states for serialized products (InTransit, Active, Dispensed, Partial Dispensed, Returned, Expired, Decommissioned); ensure all product movements are fully traceable; and keep pharmacy actions synchronized with the central Masar system, including while offline. Masar Agent is explicitly NOT a simple CRUD application — testing philosophy centers on serialization integrity, lifecycle/state-machine correctness, ownership validation (GLN), synchronization correctness, offline reliability, queue consistency, and traceability/aggregation integrity rather than basic form validation alone.",
+      "roles": [
+        {
+          "name": "Pharmacy User",
+          "permissions": "The only user role in the system — Masar Agent has NO role system and no Owner/Manager/Pharmacist/Inspector distinctions. A single authenticated pharmacy user, after login, OTP verification, and (when enabled) activation key validation, gets full access to all modules tied to their pharmacy's GLN (Global Location Number) context: Receive, Sell/Dispense, Return, Return to Distributor, Queue, History, Products/Settings. All operations are scoped to the pharmacy GLN the device is linked to. Access control is enforced not via role permissions but via device/pharmacy activation state — if the pharmacy is deactivated or the device is unlinked from the Masar backend, the user should be force-logged-out and blocked from new operations (this is a known defect area, see Known Issues)."
+        }
+      ],
+      "entities": [
+        {
+          "name": "GLN (Global Location Number)",
+          "description": "Identifies a physical business location (pharmacy GLN, distributor GLN, warehouse GLN). A serialized pack must belong to only one GLN at a time. The pharmacy opened in the Agent is linked to a specific GLN, and all pack ownership/validation rules are checked against this GLN."
+        },
+        {
+          "name": "GTIN (Global Trade Item Number)",
+          "description": "Identifies the product type/model itself (e.g., Panadol 500mg, Augmentin 1g). Does NOT identify an individual pack — multiple packs share the same GTIN."
+        },
+        {
+          "name": "Serial Number (SSN)",
+          "description": "Unique identifier for each individual pharmaceutical pack. Two packs can share the same GTIN, batch, and expiry but still have different serial numbers — this is what makes each pack individually traceable."
+        },
+        {
+          "name": "DataMatrix",
+          "description": "The serialized pharmaceutical barcode encoding GTIN, Serial Number, Batch Number, and Expiry Date, in the format `01{GTIN}21{SSN}10{Batch}17{Expiry}`. The Agent primarily consumes this via barcode Scan or Copy/Paste of the DataMatrix value."
+        },
+        {
+          "name": "SSCC (Serial Shipping Container Code)",
+          "description": "Identifies a shipping container/carton that aggregates multiple packs/serial numbers. Represents an aggregation relationship — receiving or returning an SSCC should correctly propagate to all inner packs."
+        },
+        {
+          "name": "Pack / Product (serialized item)",
+          "description": "An individual serialized pharmaceutical unit that moves through a lifecycle state machine: Manufacturing → Distribution → Pharmacy Shipment (InTransit) → Receive (Active) → Dispense/Sell (Dispensed / Partial Dispensed) → Return (Returned), with Expired and Decommissioned as terminal/exception states."
+        },
+        {
+          "name": "Products Module",
+          "description": "Displays product master data / product catalog (product types, definitions, metadata). Does NOT necessarily represent actual pharmacy inventory — this is the source of a known product-count-mismatch defect area (Agent vs Masar)."
+        },
+        {
+          "name": "Queue Module",
+          "description": "Technical synchronization log. Displays Pending, Failed, and Synced transactions plus retry attempts/sync status. Supports Retry and Resync actions. Represents synchronization state, not business state."
+        },
+        {
+          "name": "History Module",
+          "description": "Business transaction log recording Receive, Sell, and Return operations (and failed business actions where applicable). Represents completed business actions, distinct from Queue's sync-state tracking."
+        },
+        {
+          "name": "Settings Module",
+          "description": "Contains Overview (counters, Sync Now, Export Log, Test Connection, Server Address), Products Catalog (search/refresh), History Log (filter by transaction type), and Keyboard Shortcuts (customizable bindings) tabs/panels. Also where the Masar API Server Address can be viewed/changed."
+        },
+        {
+          "name": "Activation Key",
+          "description": "One-time-use key with an expiration date that validates a specific device is authorized for a given pharmacy/GLN. Cannot be used simultaneously on multiple devices. Currently disabled in the live flow per the Authentication workflow doc, but still part of the functional requirements and validation rules."
+        },
+        {
+          "name": "Transaction",
+          "description": "A Receive, Sell, or Return business action performed against one or more packs. Every transaction follows: scan/paste DataMatrix → product auto-added → user adjusts quantity if needed → confirm → appears in Queue → appears in History."
+        }
+      ],
+      "workflows": "AUTHENTICATION FLOW: User launches the app on Windows → Login screen (Email + Password fields, collapsible '▼ Advanced' section with pre-filled Server URL, e.g. https://masar-api.v2.daf-holding.com, editable) → user enters email/password → clicks Sign In → OTP Verification screen appears ('A 6-digit code was sent to your email {email}') with 6 individual digit boxes → user retrieves code from email and enters it → clicks Verify → (Activation Key step — currently disabled in the live build, but defined: app would prompt for a one-time activation key tied to the pharmacy/GLN, validate it, and link the device) → Main Screen loads with mode buttons SELL / RECEIVE / RETURN / RTN BRANCH, sync status '✓ All synced', and pharmacy name/Email/Location ID (GLN) visible under Settings → Overview. Validation: empty email/password blocks Sign In; invalid credentials show an error and keep user on Login; wrong/expired OTP shows an error (Resend Code invalidates the prior code); reused/expired/multi-device activation keys are rejected; unreachable Server URL blocks Sign In with a network error.\n\nRECEIVE FLOW (InTransit → Active): User switches to RECEIVE mode (Ctrl+2) → opens the hidden scan input field (double-click white border area) → scans or pastes DataMatrix (single pack) or an SSCC barcode (multiple aggregated packs) → item(s) added to a scanned list and item counter increments → user can clear the list (Ctrl+Shift+X) before confirming → confirms the transaction (click item counter or Ctrl+Shift+D) → pack state(s) change from InTransit to Active, the 'In' counter in the counters bar increments, and the transaction appears in History and Queue (Synced, or Pending if offline). No partial receive is supported — an SSCC either receives fully or is rejected if any inner pack is in an invalid state (behavior TBD with PO per test notes). Receive can happen by SSCC (activates all inner packs) or by single pack (validates Pack URN/ownership/state) — single-pack receive has a known defect: 'Pack URN not found' error even for valid InTransit packs belonging to the correct GLN. Preconditions for a valid receive: correct GLN, pack exists in Masar, valid state, not already received, not expired, not a duplicate DataMatrix/SSCC within the same transaction.\n\nSELL / DISPENSE FLOW (Active → Dispensed or Partial Dispensed): User switches to SELL mode → scans/pastes DataMatrix of an Active pack → selects Pack Mode (dispense entire pack) or Strip Mode (dispense partial quantity, e.g., a number of strips/tablets) → manually enters/adjusts quantity (system shows the maximum allowed quantity) → confirms transaction → pack state changes to Dispensed (full) or Partial Dispensed (partial), transaction appears in History and Queue. Key business rule (high risk area): after a partial strip dispense, a subsequent full-pack dispense on the same pack may no longer be allowed — this area has known bugs (e.g., pack in Active state incorrectly reported as already dispensed; partial dispense failing to sync with Masar when performed twice; full-pack dispense allowed after a partial dispense already occurred). Preconditions: pack must be Active, belong to the same pharmacy GLN, not expired, not already dispensed; system must reject InTransit packs, wrong-GLN packs, expired packs, invalid/negative/zero/decimal quantities, and quantities exceeding the max.\n\nRETURN FLOW — Patient to Pharmacy (Dispensed/Partial Dispensed → Returned): Allowed only for packs previously dispensed, belonging to the same pharmacy GLN, and in a state that permits return. Rejects never-dispensed products, wrong-GLN packs, and already-returned packs.\n\nRETURN TO DISTRIBUTOR FLOW — Pharmacy to Distributor/Branch (Active → InTransit pending branch approval): Used for damaged, expired, recalled, or unsellable products; supports both single-pack and SSCC return. Known defects include: agent allows returning an InTransit pack to distributor with a success message when it should be rejected; agent rejects return-to-distributor for an expired pack instead of allowing it; keyboard shortcut Ctrl+4 fails to navigate to the Return to Distributor module; and a validation message bug where sourceList/destinationList incorrectly report containing the same GLN.\n\nQUEUE / SYNCHRONIZATION FLOW: Offline action performed → UI/counters update immediately and the transaction is saved locally → Queue status = Pending → internet restored → automatic or manual sync (Sync Now in Settings → Overview) → Queue status = Synced, and the corresponding pack state/History record is finalized. Failed syncs must remain visible, support Retry, preserve transaction integrity, and must never create duplicate business actions in Masar on retry/reconnect. All three core operations (Receive, Sell, Return) are supported offline.\n\nPRODUCT CATALOG SYNC: When products are added/updated in Masar, they should sync correctly into the Agent's Products/Settings catalog (search, refresh) both online and offline without corruption; known defects exist around product count mismatches between the Agent's Products tab and Masar, and around sync toast notifications showing total product count instead of only new/changed products.\n\nSESSION / DEVICE LIFECYCLE: App restart should preserve session, activation, and pending queue state (known defect: app currently re-prompts for login/activation after reopening). If the pharmacy is deactivated or the device is unlinked, the user should be force-logged-out and blocked from new operations immediately (known defect: operations may continue after deactivation/unlink).",
+      "environments": [
+        {
+          "label": "Production Masar API (default Server URL, pre-filled in app Advanced settings)",
+          "url": "https://masar-api.v2.daf-holding.com"
+        },
+        {
+          "label": "Test/QA Masar API (used in Settings → Server Address test cases)",
+          "url": "https://test-masar-api.v2.daf-holding.com"
+        },
+        {
+          "label": "Desktop application platform",
+          "url": "N/A — Windows 10/11 native desktop app (Masar Agent v2.3.5 in current test cases; some logged bugs reference v2.4.0), no browser URL"
+        }
+      ],
+      "testAccounts": [],
+      "glossary": [
+        {
+          "term": "GLN",
+          "meaning": "Global Location Number — identifies a physical business location (pharmacy, distributor, warehouse); a pack belongs to only one GLN at a time"
+        },
+        {
+          "term": "GTIN",
+          "meaning": "Global Trade Item Number — identifies the product type/model, not an individual pack"
+        },
+        {
+          "term": "SSN",
+          "meaning": "Serial Number — unique identifier of an individual pharmaceutical pack"
+        },
+        {
+          "term": "DataMatrix",
+          "meaning": "Serialized pharmaceutical barcode encoding GTIN, Serial Number, Batch Number, and Expiry Date"
+        },
+        {
+          "term": "SSCC",
+          "meaning": "Serial Shipping Container Code — identifies a shipping container aggregating multiple packs"
+        },
+        {
+          "term": "URN",
+          "meaning": "Unique serialized identifier used internally to reference a pack (e.g., 'pack urn:epc:id:sgtin:...')"
+        },
+        {
+          "term": "Serialization",
+          "meaning": "Unique pack-level tracking using GTIN + Serial Number + Batch + Expiry"
+        },
+        {
+          "term": "Traceability",
+          "meaning": "Ability to track a pack's full lifecycle history"
+        },
+        {
+          "term": "Dispense",
+          "meaning": "Synonym for the Sell operation — converting Active stock to Dispensed/Partial Dispensed"
+        },
+        {
+          "term": "Decommission",
+          "meaning": "Removing a pack from active circulation"
+        },
+        {
+          "term": "Aggregation",
+          "meaning": "The relationship linking individual packs to an SSCC container"
+        },
+        {
+          "term": "Sync",
+          "meaning": "Uploading locally-stored offline transactions to the Masar backend"
+        },
+        {
+          "term": "Retry",
+          "meaning": "Reattempting a failed synchronization from the Queue"
+        },
+        {
+          "term": "InTransit",
+          "meaning": "Product state: shipped but not yet received at the current GLN"
+        },
+        {
+          "term": "Active",
+          "meaning": "Product state: received and available for dispensing"
+        },
+        {
+          "term": "Dispensed / Partial Dispensed",
+          "meaning": "Product state: fully or partially sold to a patient"
+        },
+        {
+          "term": "Returned",
+          "meaning": "Product state: returned (from patient or to distributor)"
+        },
+        {
+          "term": "Pack Mode vs Strip Mode",
+          "meaning": "Sell sub-modes: Pack Mode dispenses the entire pack; Strip Mode dispenses a partial quantity (strips/tablets)"
+        },
+        {
+          "term": "RTN BRANCH",
+          "meaning": "Main-screen mode button label for the Return to Distributor module"
+        },
+        {
+          "term": "Queue vs History",
+          "meaning": "Queue = technical sync-state log (Pending/Failed/Synced/Retry); History = business transaction log (Receive/Sell/Return records)"
+        }
+      ]
+    },
+    "testing": {
+      "idScheme": "Flat module-prefix + 3-digit zero-padded counter, no role component (Masar Agent has no role system): AUTH_001 (Authentication), RCV_001 (Receive), SEL_001 (Sell/Dispense), RET_001 (Return), RTD_001 (Return to Distributor), QUE_001 (Queue). Counter resets to _001 per feature module file, is strictly sequential, and never skips numbers.",
+      "tableFormat": "Every test case file starts with a single H1 heading (module name) followed by one markdown table with these exact 13 columns in order (case-sensitive, preserve spacing/typos): Feature ID | TestCase ID | Tester | Validity | Test Cases Title / Objective | Environment | Pre-condition | Test Data | Steps | Expected Results | Status | Attachment | Type. Feature ID must reference a valid ID from requirements/FRs.md (space-separated if multiple, e.g. 'EPTTS_FR_07 EPTTS_FR_09'). Status values: Pass, Fail (requires Attachment bug ID), Blocked/Skipped, Under Testing. Attachment is empty unless Status=Fail, in which case it holds a DW-### Jira bug ID (EPTTS and Dawana share the same Jira board/prefix; multiple IDs space-separated). Type is always 'Functional'.",
+      "stepStyle": "Steps are a numbered list on a single line inside the cell: '1. {Action}. 2. {Action}. 3. {Action}.' Each step is exactly one atomic action using verbs like Click, Enter, Select, Scan, Copy, Paste, Observe, Navigate, Open, Disable, Enable, Leave, Wait, Scroll, Retry, Confirm, Minimize, Restore, Pull to refresh. Use 'Paste' for DataMatrix copy/paste input and 'Scan' for barcode-scanner input; since this is a desktop app, never use 'Tap' — always 'Click'. 'Observe {element/behavior}' is used for passive checks, and 'Leave {field} empty' for empty-field tests. Max ~10 steps per test (split into multiple tests if more are needed); 'Repeat steps X-Y' is acceptable for repetition. Steps must not repeat pre-condition steps and must flow logically from the pre-condition's ending state. Pre-conditions themselves are also a single-line numbered list, e.g. for non-auth modules: '1. Install Masar Agent 2. Access to Internet (Wifi or Ethernet) 3. Launch the app 4. Login with a valid pharmacy account 5. OTP verified 6. Activation key validated 7. Open {Module Name} module 8. User is on {Screen Name} screen' (auth-module tests drop steps 4-7's login-related items since login IS the test; offline/network-failure tests insert a 'Disable internet connection' step before opening the module). Expected Results are single declarative present-tense sentences with NO modal verbs (no should/will/would/shall), naming the exact system behavior (e.g., 'Pack state changes to Active and transaction appears in History and Queue.'); unclear business rules get '(as per business rules)' or '(TBD with PO)' appended. Test Data uses 'Not Applicable' (never 'N/A') when nothing specific is needed, 'FieldName: value' format for specific values, and semicolon-separated for multiples (e.g. 'DataMatrix: <value>; Quantity: 2').",
+      "priorityScale": "Test cases themselves don't carry a priority column, but the underlying Functional Requirements (FRs.md) are tiered P1/P2/P3 (P1 = core auth/receive/sell/queue flows; P2 = return/return-to-distributor/history; P3 = settings/products-catalog/keyboard-shortcuts). Bugs use a 4-level priority scale: P1 – Critical | P2 – High | P3 – Medium | P4 – Low (observed values in practice: 'P1', 'P2 – High', 'P2', 'P3' — the em-dash + word suffix is the documented/canonical form from the bug template).",
+      "coverage": "Test cases within a feature file must be generated in this fixed order: 1) Navigation/Access (open screen, back navigation, header visible), 2) Core Positive (main happy path end-to-end), 3) Variation Positive (SSCC vs single pack, pack mode vs strip mode, multiple items), 4) Downstream Effects (pack state changed, History record created, Queue Synced, counters updated), 5) Positive Edge Cases (boundary/max/min valid values), 6) UX/Desktop Positive (minimize/restore, resize, clipboard paste, reconnect mid-operation), 7) Mandatory Field Validation (one empty field per test), 8) Format/Range Validation (invalid DataMatrix, out-of-range quantity, whitespace, special characters), 9) State Validation (wrong pack state, wrong GLN ownership), 10) Access Control (pharmacy deactivated, device unlinked, session expired, activation key reused), 11) Network Failure (offline → Queue Pending → retry → Synced, no crash), 12) Concurrent/Sync (retry must not duplicate business actions, failed sync stays visible, Queue integrity across retries), 13) Security/Injection (SQL injection, XSS, emoji, whitespace-only, max-length overflow). A coverage checklist mandates verifying: screen renders, navigation, every required field's empty/invalid-format cases, every scan/paste method (valid + invalid DataMatrix), SSCC input (activates all inner packs), one full happy-path transaction, downstream state/History/Queue effects, wrong-state and wrong-GLN blocking, offline→Pending→retry→Synced, no duplicate sync actions, deactivation/unlink access control, and security/injection inputs.",
+      "testerName": "Ziad Yehia",
+      "browserOs": "Desktop app — Windows 10/11 (Masar Agent v2.3.5 per current test-case Environment column; some already-logged bugs were reported against v2.4.0)",
+      "envLabel": "Platform: Windows 10/11 , App: Masar Agent v2.3.5"
+    },
+    "bugs": {
+      "formatSections": "Bug reports (both the bugs/_template.md and actual bugs/**/*.md files) use YAML frontmatter followed by a structured markdown body. Frontmatter fields: title, status (draft | reported), jira_key (DW-### or null), reported_at (ISO timestamp or null), feature (matches the feature folder name, e.g. receive, sell, return, return-to-distributor, queue, transaction-processing, product-catalog-sync, authentication), priority, bug_type. Body sections in order: a descriptive H1 title (no vague words) or Summary paragraph (1-3 paragraphs describing what's broken, context, and why it matters — including serialization/sync/offline context when relevant) — divided by '---' horizontal rules — then: 'Steps to Reproduce:' (numbered list, e.g. Open the Agent application → Navigate to Module/Screen → Action → Action → Observe X), 'Expected Result:' (one clear sentence), 'Actual Result:' (one clear sentence), 'Environment:' (Windows version, Agent Version X.X.X, Online/Offline state), 'Priority:' (repeats the frontmatter priority value), 'Bug Type:' (repeats the frontmatter bug_type value). Real bug files sometimes use a plain 'Summary:' label instead of an H1, and environment is sometimes written as a bulleted list ('- Platform: Windows 10/11', '- App: Masar Agent v2.x.x', '- Internet connection: Available') rather than the template's three plain lines — both forms are acceptable/observed.",
+      "severityConventions": "Priority field uses 4 levels: P1 – Critical, P2 – High, P3 – Medium, P4 – Low (in practice bug files use both the full 'P2 – High' form and bare 'P1'/'P2'/'P3' shorthand — the full em-dash form is the canonical template value). Bug Type field is a closed set: Functional | Functional / Integration | Functional (Backend/API) | Functional — Intermittent / Flaky | UI/UX. Status field values observed: draft (not yet filed in Jira, jira_key/reported_at are null) and reported (has a jira_key like DW-801, DW-804 and a reported_at ISO timestamp). EPTTS and Dawana share the same Jira board, so bug/Jira keys use the shared 'DW-' prefix (not an EPTTS-specific prefix) regardless of which app the bug came from. Test-case Attachment column mirrors this: Fail status requires one or more space-separated DW-### keys.",
+      "browserOs": "Desktop app — Windows 10/11 (bug template also asks to record Online/Offline state at time of the bug, plus the specific Agent Version, e.g. Agent Version 2.3.5 or 2.4.0)",
+      "envLabel": "Windows {version} / Agent Version {X.X.X} / Online or Offline: {state}  (e.g. 'Windows 10, Agent Version 2.3.5, Online')"
+    }
+  }
+}

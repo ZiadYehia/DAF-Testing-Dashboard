@@ -1,0 +1,148 @@
+{
+  "version": 1,
+  "updatedAt": "2026-07-12T13:09:16.165Z",
+  "answers": {
+    "domain": {
+      "purpose": "Dawana is a mobile Android application (native app, tested as an installed APK) for a pharmaceutical / healthcare supply-chain and serialization ecosystem. It is used by pharmacies (Owners, Managers, Pharmacists) and by regulatory Inspectors to manage the full lifecycle of serialized pharmaceutical products: registration and onboarding of owners/pharmacies, receiving of stock (first-time entry and new-stock requests), dispensing/selling of serialized drug units to patients, handling of returns to distributors, reporting of incidents for problematic inventory (damaged, expired, incorrect quantity, discrepancies), and inspection/audit workflows. Dawana integrates with an external traceability/serialization system called Masar, which is the source of truth for SSCC hierarchy, SGTIN-level trace transactions, and product state transitions (e.g., marking items out-of-service after an accepted incident). The platform is built around GS1 serialization standards: GTIN (product identity), SGTIN (serialized/unique saleable unit = GTIN + serial number), SSCC (Serial Shipping Container Code, representing a logistics unit such as a carton/case/pallet), batch, and expiry. A single invoice/shipment can contain multiple SSCCs and multiple products, and receiving can happen either by scanning individual SGTINs or by receiving whole SSCCs (aggregation/disaggregation). Because the domain is pharmaceutical, the platform is safety- and compliance-critical: every inventory mutation is expected to produce a corresponding transaction/trace entry, and Dawana's UI state must remain synchronized with backend stock state and with Masar's trace state. The most dangerous class of defect in this domain is not a UI bug but silent data corruption — e.g., Dawana showing a success message (\"Dispense completed\") while Masar shows the SSCC quantity decreasing with no corresponding trace transaction, indicating a synchronization or transaction-persistence failure between the two systems. Testing strategy must therefore always validate not just the UI result but also the backend response, inventory state, SSCC state, the Masar trace transaction, and rollback behavior after any failure — never trust a success toast or frontend state alone.",
+      "roles": [
+        {
+          "name": "Owner (Pharmacy Owner)",
+          "permissions": "Registers as an Owner and registers a pharmacy; uploads owner/pharmacy documents; pharmacy has a Pending/Approved status. Can log in as Pharmacy > Pharmacy Owner. Can request changes to Manager/Pharmacy data (Request Change flow), perform Dispense (Owner flow), view pharmacy list and details, request a new pharmacy, view owner reports, inspection history, notifications, and manage own profile. Can submit Incident Form (Owner variant, OWN_FR_15). Is blocked from accessing Manager, Pharmacist, and Inspector modules (role isolation is enforced and tested)."
+        },
+        {
+          "name": "Manager (Pharmacy Manager)",
+          "permissions": "Registers/logs in as Pharmacy > Pharmacy Manager. Performs First-Time Setup (adding initial quantities/stock), Dispense (Manager flow), views Transactions History and Stock Quantity, requests Renewal Dispense Letter, views the Manager Home Dashboard, manages expiry dates, submits the Incident Form (primary role for incident reporting, MGR_FR_29 — scans/selects a product, selects an incident reason such as Damaged/Expired, the system validates quantity/batch/stock/serialized units, and the user confirms the incident which triggers backend inventory changes), adds new Pharmacists, creates New Stock Requests, handles Returned Products Requests, views Laws & Regulations, Manager Reports, and manages own profile and leave. A resigned/removed Manager account is blocked from login with a clear message (a pharmacy can only have one active manager at a time in the system). Is blocked from Owner/Pharmacist/Inspector modules."
+        },
+        {
+          "name": "Pharmacist",
+          "permissions": "Logs in as Pharmacy > Pharmacist, then selects a pharmacy (Pharmacy Selection). Performs Dispense (Pharmacist flow), including selling using an agent in Strip mode or Pack mode (dispensing serialized packs, updating SSCC contents, deducting inventory, registering a trace transaction). Views Transaction History, processes Return Items, performs Stock Lookup, views Pharmacist Reports/Notifications, and manages own profile. Is blocked from Owner/Manager/Inspector modules."
+        },
+        {
+          "name": "Inspector",
+          "permissions": "Regulatory/auditor role, logs in via a separate Inspector role-selection path (no Pharmacy/Owner/Manager/Pharmacist sub-role selection). Searches for pharmacies, starts and submits inspections, performs inventory verification and transaction audits, documents offenses, reviews first-time product entries, reviews expiry-warning reports, investigates incidents, and — critically — accepts or rejects pending incidents raised by Pharmacy Managers/Owners (Incident module: incidents sit in \"Wait to Accept or Reject\" status until an Inspector acts on them; accepting triggers a Masar operation that marks items out-of-service). Views Inspector Dashboard, Inspector Reports, and manages own profile. Is blocked from all Pharmacy-role modules. Multiple roles can exist on one account/device (e.g., Owner + Pharmacist), with the app switching context correctly based on the role selected at each login."
+        }
+      ],
+      "entities": [
+        {
+          "name": "GTIN (Global Trade Item Number)",
+          "description": "Represents the identity of a pharmaceutical product (not unit-specific)."
+        },
+        {
+          "name": "SGTIN (Serialized GTIN)",
+          "description": "GTIN + unique serial number; identifies a single saleable/serialized pharmaceutical pack. Format example observed: urn:epc:id:sgtin:<company>.<item>.<serial> (e.g., urn:epc:id:sgtin:08401496.05208.TC07XANAX0002). SGTINs must be unique and are the atomic unit of traceability."
+        },
+        {
+          "name": "SSCC (Serial Shipping Container Code)",
+          "description": "Identifies an entire logistics unit (carton/case/pallet) that can contain multiple SGTINs/products. An invoice may reference multiple SSCCs; receiving can be done per-SGTIN or per whole SSCC (aggregation/disaggregation), and parent-child SSCC hierarchy must remain correct after any product removal."
+        },
+        {
+          "name": "Batch",
+          "description": "Production lot identifier for a pharmaceutical product; used together with expiry and stock validation."
+        },
+        {
+          "name": "Invoice / Bill",
+          "description": "A receiving document with fields such as branch_code, pharmacy_code, bill_number, total_price, and a products[] list (each product having name, batch, expiry, quantity, and serialized identifiers)."
+        },
+        {
+          "name": "Incident",
+          "description": "A record raised (typically by a Pharmacy Manager or Owner) against one or more serialized products for a reason such as Damaged, Expired, incorrect quantity, or inventory discrepancy. Moves through statuses including \"Wait to Accept or Reject\" -> \"Pending Masar\" -> Accepted/Rejected. Acceptance is performed by an Inspector and triggers a downstream Masar operation."
+        },
+        {
+          "name": "Transaction / Trace entry",
+          "description": "A record in Masar of a serialized-product movement or state change (e.g., dispense, incident acceptance). Every inventory mutation in Dawana is expected to generate a corresponding trace transaction in Masar; a missing trace transaction after a successful-looking operation is considered a critical defect."
+        },
+        {
+          "name": "Masar",
+          "description": "External/integrated traceability system responsible for serialization traceability, SSCC hierarchy tracking, product state transitions, and transaction/trace history. Dawana's UI/backend state must stay synchronized with Masar's state."
+        },
+        {
+          "name": "Dispense / Sell Using Agent",
+          "description": "The workflow of selling/removing pharmaceutical units to a patient, with Strip mode and Pack mode variants; deducts inventory, updates SSCC contents, and should register a Masar trace transaction."
+        },
+        {
+          "name": "Return (Return to Distributor / Return Item)",
+          "description": "Workflow for returning previously received or dispensed serialized products, handled at both Manager (Returned Products Requests) and Pharmacist (Return Item) levels."
+        },
+        {
+          "name": "New Stock Request",
+          "description": "Manager-level workflow for requesting/receiving new stock into the pharmacy's inventory."
+        }
+      ],
+      "workflows": "Authentication/onboarding: A user launches the app and first chooses a top-level role — Pharmacy or Inspector. If Pharmacy is chosen, the user must then choose a sub-role (Pharmacy Owner, Pharmacy Manager, or Pharmacist) before tapping 'Get Started', which navigates to a Login screen; Inspector skips the sub-role step. Login requires Email + Password (mandatory validation on both), supports password show/hide, a 'Forgot your password?' link into the Forget Password flow, and is rate-limited after repeated failed attempts. The selected role must match the account's actual role on the backend — a mismatch is blocked with a role-specific 'not authorized' message rather than a generic error. After login the user lands on a role-specific dashboard/home; logout invalidates back-button access to any previously-opened protected screen. Owner registration/pharmacy registration: Owner registers, registers a pharmacy, and uploads owner/pharmacy documents; the pharmacy then has a Pending/Approved status gating further access. Owners can also request changes to Manager or Pharmacy data via a Request Change flow. Manager first-time setup: after being onboarded, a Manager performs a First-Time Entry to add initial stock quantities before other Manager features (dispense, incidents, reports) become meaningful. New Stock / Receiving: stock can be received by scanning individual SGTINs (serialized packs) or by receiving a whole SSCC (carton/case), supporting hierarchical/aggregated receiving; an invoice can contain multiple SSCCs and multiple products. Dispense (Owner/Manager/Pharmacist flows): the selling workflow supports Strip mode and Pack mode when 'selling using an agent'; the flow deducts inventory, updates SSCC contents, and should register a trace transaction in Masar. A known critical defect pattern is the UI showing a dispense-success message while Masar shows the SSCC quantity decreasing, the product disappearing from the SSCC, and no corresponding trace/transaction appearing — i.e., a UI-success/backend-failure desync. Incident workflow: a Manager (or Owner) opens the Incident module, selects or searches for a product, selects an incident reason (e.g., Damaged, Expired), scans the product/carton, the system is expected to validate quantity against available stock, batch, and serialized-unit correctness, and the user then confirms the incident, which should trigger backend inventory changes and place the incident into 'Wait to Accept or Reject' status. Two known high-priority defects exist here: (1) if a product fails barcode-scan validation, the system correctly shows a validation error but incorrectly still adds the product to the incident's product list/cart, leaving invalid, non-scanned entries in the UI that keep failing on resubmission; (2) stock-quantity validation (e.g., max quantity 30, user enters 31) may not block early enough on the frontend. An Inspector then reviews pending incidents and taps Accept or Reject; accepting triggers a 'Pending Masar' status and a downstream Masar operation that should mark the affected serialized items out-of-service. A known critical cross-system defect: when two active incidents share an SGTIN, accepting the second (after the first is already accepted) can silently fail on Dawana's side — the status briefly shows 'Pending Masar' then reverts to 'Wait to Accept or Reject' with no error shown, while Masar nonetheless processes and commits the acceptance for all items including the duplicate SGTIN, producing a Dawana/Masar desync and a duplicate-processing risk. Return workflows: Pharmacists can return individual items; Managers handle returned-product requests at the pharmacy level. Inspection workflow: an Inspector searches for a pharmacy, starts an inspection, verifies inventory, audits transactions, documents offenses, and submits the inspection; Inspectors also review first-time product entries, expiry-warning reports, and investigate incidents (including accept/reject as above). Cross-cutting testing mindset for every workflow: always verify (1) UI result, (2) backend response, (3) inventory state, (4) SSCC state, (5) the Masar trace transaction, (6) Dawana<->Masar synchronization, and (7) rollback behavior after a failure — a success toast or frontend state alone is never sufficient evidence that an operation truly completed.",
+      "environments": [],
+      "testAccounts": [
+        {
+          "role": "Pharmacy Manager",
+          "username": "test2@test.Dawana",
+          "password": ""
+        }
+      ],
+      "glossary": [
+        {
+          "term": "GTIN",
+          "meaning": "Global Trade Item Number — represents pharmaceutical product identity (not unit-specific)."
+        },
+        {
+          "term": "SGTIN",
+          "meaning": "Serialized GTIN — GTIN + serial number; identifies a single saleable/serialized pharmaceutical unit."
+        },
+        {
+          "term": "SSCC",
+          "meaning": "Serial Shipping Container Code — identifies an entire logistics unit (carton/case/pallet); can contain multiple SGTINs/products."
+        },
+        {
+          "term": "Trace / Trace transaction",
+          "meaning": "A transaction history entry in Masar recording movement or state change of a serialized product."
+        },
+        {
+          "term": "Dispense",
+          "meaning": "Selling / removing pharmaceutical units from stock to a patient."
+        },
+        {
+          "term": "Incident",
+          "meaning": "A reported problematic-inventory workflow item (damaged, expired, incorrect quantity, discrepancy) that must be accepted or rejected by an Inspector."
+        },
+        {
+          "term": "Batch",
+          "meaning": "A production lot identifier for a pharmaceutical product."
+        },
+        {
+          "term": "Agent Selling / Sell Using Agent",
+          "meaning": "An assisted selling/dispense workflow supporting Strip mode and Pack mode."
+        },
+        {
+          "term": "Masar",
+          "meaning": "External integrated traceability/serialization system that Dawana synchronizes inventory and trace state with."
+        },
+        {
+          "term": "Aggregation/Disaggregation",
+          "meaning": "The process of grouping serialized items into an SSCC (aggregation) or breaking an SSCC apart into its constituent items (disaggregation)."
+        },
+        {
+          "term": "Wait to Accept or Reject",
+          "meaning": "Incident status while pending Inspector decision."
+        },
+        {
+          "term": "Pending Masar",
+          "meaning": "Transient incident status while the Masar-side operation for an accepted incident is being processed."
+        }
+      ]
+    },
+    "testing": {
+      "idScheme": "3-part TestCase IDs, always 3-digit zero-padded and sequential per feature file (resets to _001 for each new feature module, never skips numbers). Cross-role/general features use a fixed prefix: LGN_{###} (Login), DSP_{###} (Dispense), REG_{###} (Registration), FRPW_{###} (Forget Password). Role-specific features use ROLE_FEATURE_{###} (e.g., MGR_FTE_{###} Manager First-Time Entry, MGR_NST_{###} Manager New Stock, MGR_INC_{###} Manager Incident Form, OWN_RCH_{###} Owner Request Change, PHR_INC_{###} Pharmacist Incident Reporting). When one file covers both Manager and Pharmacist variants of the same feature, use the primary role's prefix. Each test case also carries a Feature ID column referencing requirements/FRs.md (e.g., GEN_FR_00 for general/cross-role tests, or the specific role Feature ID such as MGR_FR_29; if a test spans multiple features, list all Feature IDs space-separated).",
+      "tableFormat": "Every test-case file begins with a single H1 heading naming the module, followed by one markdown table with this exact 13-column, case-sensitive order (preserve the source's own typos verbatim, e.g. 'Enviroment' and trailing space in 'Type '): Feature ID | TestCase ID | Tester | Validity | Test Cases Title / Objective | Environment | Pre-condition | Test Data | Steps | Expected Results | Status | Attachment | Type. Status column values: Pass (executed and passed), Fail (executed and failed — MUST have a bug ID in Attachment), Blocked/Skipped (cannot test yet: pending backend, TBD rule, environment unavailable, or confirmed future work), Under Testing (currently being actively tested). Attachment column: empty when Status is Pass/Blocked-Skipped/Under Testing; a bug ID formatted DW-{###} (e.g., DW-320) when Status is Fail, multiple bugs space-separated (e.g., 'DW-320 DW-321'); a Fail status with no Attachment is treated as an authoring error. Type column is always 'Functional'.",
+      "stepStyle": "Pre-condition: all steps written on a SINGLE table-cell line as a numbered list (no line breaks), following fixed role-based templates. Manager template: '1. Install Dawana App -> Test APK 2. Access to Wifi or Mobile data (prefered 4G or above) 3. Launch the app 4. Select Pharmacy Role 5. Select Pharmacy Manager 6. Tap Get Started button 7. Login with a Pharmacy Manager account 8. Open {Module Name} module'. Owner/Pharmacist templates are the same shape but end with '{Navigation to screen} ... User is on {Screen Name} screen'. Inspector template omits the Pharmacy sub-role step ('4. Select Inspector Role 5. Tap Get Started button 6. Login with a valid Inspector account ...'). Preserve exact wording quirks: 'Wifi' (not 'WiFi'), 'prefered' (not 'preferred'), 'Test APK' (no URL required in newer entries though older examples include a Google Drive APK link), always end with 'User is on {Screen Name} screen' or 'Open {Module} module'; add specific pre-existing state when relevant (e.g., 'At least one incident exists', 'Manager account; pharmacy has no stock on system'); for role-isolation negative tests the precondition intentionally describes use of the WRONG role. Test Data: 'Not Applicable' when nothing specific is needed (never 'N/A'); otherwise 'FieldName: value', multiple values semicolon-separated (e.g., 'Email: existing email; Password: Aa1!aaaa'). Standard test-data values used repeatedly: valid password Aa1!aaaa; too-short (7 chars) Aa1!aaa; no uppercase aa1!aaaa; no lowercase AA1!AAAA; no number Aa!aaaaa; no special char Aa1aaaaa; has spaces 'Aa1! aaA'; zero quantity 0; negative quantity -5; decimal quantity 2.5; scientific notation 1e3; SQL injection \"' OR 1=1 --\"; XSS injection '<script>alert(1)</script>'; emoji in field '123😀'; whitespace-only '   '. Steps column: numbered list on a single line, one atomic action per step, using verbs like Tap, Enter, Select, Upload, Observe, Scan, Open, Navigate, Disable, Enable, Leave, Wait, Rotate, Paste, Copy, Scroll, Repeat, Confirm, Pull to refresh; 'Observe {element/behavior}' for passive checks, 'Leave {field} empty' for empty-field tests; max ~10 steps per case (split into another test case if more are needed); 'Repeat steps X-Y' is acceptable for repetition; never repeat pre-condition steps inside the Steps column; steps must flow logically from where the pre-condition leaves off. Expected Results: a single declarative present-tense sentence, subject is 'System', the screen name, the actor, or 'Validation message' — never modal verbs ('should'/'will'/'would'/'shall'); be specific about the exact behavior; for unclear business rules append '(as per business rules)' or '(TBD with PO)'. Template patterns: screen opens -> '{Screen Name} is displayed successfully.'; back navigation -> 'User returns to {previous screen} without crash.'; successful save -> '{Entity} is saved successfully and {downstream effect}.'; mandatory field empty -> 'Mandatory validation message is displayed and {action} is not submitted.'; invalid format -> '{Field} format validation message is displayed and {action} is not submitted.'; role blocked -> '{Module} module is not accessible for {Role} role.'; network error -> 'System shows a clear network error and {stays on screen / allows retry}.'; duplicate blocked -> 'System prevents duplicate {entity} or merges according to business rules with clear behavior.'; loading state -> 'Loading indicator is shown until {operation} completes.'; quantity exceeded -> 'System blocks submission and shows quantity limit message.'",
+      "priorityScale": "Test-case files themselves do not carry a numeric/lettered priority column (priority lives at the Feature Requirement level in requirements/FRs.md, using P1 (highest/critical) through P4 (lowest) — e.g., P1 for Login/Registration/core Dispense, P2 for Incident Form/Dashboard/Expiry management, P3 for Returned Products/Leave Management/Request New Pharmacy, P4 for Reports/Profile/Notifications). Bug reports use the same P1–P4 scale with descriptive labels: P1 - Critical, P2 - High, P3 - Medium, P4 - Low. Validity column on test cases is a binary classification (Positive/Negative), not a priority.",
+      "coverage": "Test cases within a feature file must be generated and ordered in a fixed sequence (do not reorder): (1) Navigation/Access — can open screen, navigate back, header/title visible; (2) Core Positive — main happy path with fully valid data, completing the whole workflow; (3) Variation Positive — different valid input combinations (different ID types, modes, multiple items); (4) Downstream Effects — state changes after success (stock updated, list reflects new item, status changes); (5) Positive Edge Cases — boundary valid values, optional fields omitted, large-but-valid quantities; (6) Device/UX Positive — device rotation, app background/foreground, clipboard paste, incoming-call interruption; (7) Mandatory Field Validation — one empty field per test case, rest filled correctly (one test per mandatory field); (8) Format/Range Validation — invalid formats, out-of-range values, special characters, whitespace-only; (9) Role Isolation — wrong role cannot access the module (cover at least Owner, Pharmacist, and one other wrong role); (10) Network Failure — offline scenario, retry after reconnect, no crash; (11) Concurrent/State — race conditions (e.g., approval while form open), duplicate-submission prevention; (12) Security/Injection — SQL injection strings, XSS strings, emoji in restricted fields, max-length overflow. A completed feature file's coverage checklist requires: screen renders (all major UI elements visible); navigation (open/back/deep links); every required (*) field has an empty-value validation test; every required field has an invalid-format/range test; every dropdown has a 'select available option' test; every upload has valid-accepted / invalid-format-rejected / oversized-rejected tests; every barcode-scan method is covered (QR camera scan, manual GTIN+serial entry, invalid barcode rejected); one full happy-path end-to-end transaction; state-change downstream verification (inventory/list/status badge); at least one role-isolation test; a network-failure test (offline -> error -> retry -> success); duplicate-submission prevention; and security tests (injection, emoji, whitespace-only, max-length). The overall QA process is: (1) create Functional Requirements, (2) break the module into features with a Feature ID/Priority/Status, (3) analyze screenshots/workflow, (4) generate test scenarios, (5) generate detailed test cases — every test case must be traceable to a Feature ID, Module, and Role.",
+      "testerName": "Ziad Yehia",
+      "browserOs": "Device: Samsung Note 10 plus (also referred to as Samsung Galaxy Note 10+ in bug reports), OS: Android v12 (Android 12) — Dawana is tested as a native Android app installed from a Test APK, not in a browser.",
+      "envLabel": "Device: Samsung Note 10 plus , OS: Android v12 , app: v{version} — app version increments by feature generation: early features (Login, Registration, Forget Password) use v4.9.8; mid features (Dispense, First-Time Entry, Request Change) use v5.0.3 or v5.0.5; newer features (New Stock Masar, Incident) use v5.1.0; when uncertain, default to the latest known version v5.1.0 (bug reports observed against later builds up to v5.2.9 / v5.3.1)."
+    },
+    "bugs": {
+      "formatSections": "Bug markdown files use YAML frontmatter followed by a structured body. Frontmatter fields: status (e.g., draft), jira_key (null until filed), reported_at (null until reported), feature (module/feature slug, e.g., incident), priority (P1-P4), bug_type (Functional | Functional / Integration | Functional (Backend/API) | Functional — Intermittent / Flaky | UI/UX), title (a single descriptive sentence summarizing the defect). Body sections in order, separated by '---' horizontal rules: (1) an unlabeled Summary of 1-3 paragraphs describing what is broken, the context, and why it matters — including serialization/integration context (SGTIN/SSCC/Masar) when relevant; (2) optional 'Precondition:' section when specific pre-existing state is required (e.g., two incidents already created sharing an SGTIN); (3) 'Steps to Reproduce:' as a numbered list (Log in as [Role] -> Open [Module/Screen] -> [Action] -> [Action] -> Observe [what to look at]), which may reference concrete test data such as specific SGTIN URNs or account emails; (4) 'Expected Result:' one clear sentence describing what should happen; (5) 'Actual Result:' one clear sentence describing what actually happens; (6) 'Environment:' a bullet list with Device, OS, App Version, and Account/Role (and URL if web — not applicable for this mobile app); (7) 'Priority:' repeating the P1-P4 value with descriptive label; (8) 'Bug Type:' repeating the bug_type value.",
+      "severityConventions": "Priority scale (used both in frontmatter and body): P1 - Critical (e.g., cross-system Dawana/Masar desync causing silent data corruption, duplicate processing risk, broken traceability), P2 - High (e.g., invalid UI state persisting after a failed validation, breaking the product list), P3 - Medium, P4 - Low. Bug Type values: Functional (standard UI/logic defects), Functional / Integration (defects spanning Dawana <-> Masar synchronization), Functional (Backend/API) (API-level defects such as auth/validation errors), Functional — Intermittent / Flaky (non-deterministic reproduction), UI/UX (cosmetic/interaction issues not affecting data integrity). The most severe class of bug in this domain is silent data corruption / desynchronization between Dawana and Masar (e.g., a success message shown while the downstream trace transaction is missing, or an operation that appears to fail in Dawana but silently succeeds in Masar) — these are treated as Critical/P1 regardless of how minor the visible UI symptom looks, because they represent regulatory/traceability risk for a pharmaceutical supply chain.",
+      "browserOs": "Device: Samsung Galaxy Note 10+, OS: Android 12 — native Android app, no browser.",
+      "envLabel": "Device: Samsung Galaxy Note 10+ ; OS: Android 12 ; App Version: v{X.X.X} (observed values include 5.2.9 and 5.3.1 in bug reports) ; Account/Role used to reproduce (e.g., test2@test.Dawana — Pharmacy Manager)."
+    }
+  }
+}

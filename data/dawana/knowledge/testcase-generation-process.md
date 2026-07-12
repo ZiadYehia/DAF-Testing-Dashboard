@@ -1,25 +1,6 @@
-# Test Case Generation Process
+<!-- generated-from-intake -->
+# Test-Case Generation Process
 
-The QA workflow is:
+## Coverage expectations
 
-1. Create Functional Requirements (FRs)
-2. Break module into features
-3. Assign:
-   - Feature ID
-   - Priority
-   - Status
-4. Analyze screenshots and workflow
-5. Generate test scenarios
-6. Generate detailed test cases
-
-The AI MUST follow this workflow.
-
-Each test case must be linked to:
-- Feature ID
-- Module
-- Role
-
-Example:
-MGR_FR_29 -> Incident Form (Manager)
-
-All generated test cases must maintain requirement traceability.
+Test cases within a feature file must be generated and ordered in a fixed sequence (do not reorder): (1) Navigation/Access — can open screen, navigate back, header/title visible; (2) Core Positive — main happy path with fully valid data, completing the whole workflow; (3) Variation Positive — different valid input combinations (different ID types, modes, multiple items); (4) Downstream Effects — state changes after success (stock updated, list reflects new item, status changes); (5) Positive Edge Cases — boundary valid values, optional fields omitted, large-but-valid quantities; (6) Device/UX Positive — device rotation, app background/foreground, clipboard paste, incoming-call interruption; (7) Mandatory Field Validation — one empty field per test case, rest filled correctly (one test per mandatory field); (8) Format/Range Validation — invalid formats, out-of-range values, special characters, whitespace-only; (9) Role Isolation — wrong role cannot access the module (cover at least Owner, Pharmacist, and one other wrong role); (10) Network Failure — offline scenario, retry after reconnect, no crash; (11) Concurrent/State — race conditions (e.g., approval while form open), duplicate-submission prevention; (12) Security/Injection — SQL injection strings, XSS strings, emoji in restricted fields, max-length overflow. A completed feature file's coverage checklist requires: screen renders (all major UI elements visible); navigation (open/back/deep links); every required (*) field has an empty-value validation test; every required field has an invalid-format/range test; every dropdown has a 'select available option' test; every upload has valid-accepted / invalid-format-rejected / oversized-rejected tests; every barcode-scan method is covered (QR camera scan, manual GTIN+serial entry, invalid barcode rejected); one full happy-path end-to-end transaction; state-change downstream verification (inventory/list/status badge); at least one role-isolation test; a network-failure test (offline -> error -> retry -> success); duplicate-submission prevention; and security tests (injection, emoji, whitespace-only, max-length). The overall QA process is: (1) create Functional Requirements, (2) break the module into features with a Feature ID/Priority/Status, (3) analyze screenshots/workflow, (4) generate test scenarios, (5) generate detailed test cases — every test case must be traceable to a Feature ID, Module, and Role.
