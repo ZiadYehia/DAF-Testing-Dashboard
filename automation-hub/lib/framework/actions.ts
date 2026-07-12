@@ -5,9 +5,9 @@
  * (see fluent-page.ts). Plain exported functions, not a class — page methods call
  * these directly rather than re-deriving the underlying Playwright calls.
  *
- * Every helper here encodes a portal quirk mined and live-verified across the 84
- * acm-crt-* / 47 acm-ovr-* GRC Asset Manager specs, ported from the Python
- * reference implementation at python/pages/grc/asset_create_page.py (see that
+ * Every helper here encodes a portal quirk mined and live-verified across a
+ * large body of generated specs, ported from the framework's original Python
+ * reference page objects (see that
  * file's module docstring + `_click_wizard` / `_resolve_textbox` /
  * `_wait_for_fresh_listbox` / `pick_date` / `select_dropdown`). Keep this file's
  * behavior in sync with that reference if a portal quirk is ever re-verified —

@@ -176,7 +176,7 @@ Framework conventions (this hub's own TypeScript fluent Playwright page-object f
   import { test } from '@playwright/test'
   import { stateFor } from '../../lib/apps'
   import { uniqueSuffix } from '../../lib/framework/data'
-  import { AssetCreatePage } from '../../pages/grc/asset-create.page'
+  import { AssetCreatePage } from '../../pages/myapp/asset-create.page'
 
   test.use({ storageState: stateFor('${slug}') })
 

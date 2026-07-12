@@ -6,9 +6,9 @@
  * actions.ts and data.ts stay assertion-free so a page object's "does this
  * click/fill" and "does this verify" halves are easy to tell apart at a glance.
  *
- * Ported from the assertion patterns in python/pages/grc/asset_create_page.py
- * (assert_element_visible / assert_inline_error / assert_duplicate_rejected and
- * siblings) — keep behavior in sync with that reference.
+ * Ported from the assertion patterns in the framework's original Python
+ * reference page objects (assert_element_visible / assert_inline_error /
+ * assert_duplicate_rejected and siblings) — keep behavior in sync.
  */
 import { expect, type Locator, type Page } from '@playwright/test'
 

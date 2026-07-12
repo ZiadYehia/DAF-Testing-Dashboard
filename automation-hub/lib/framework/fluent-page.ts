@@ -18,7 +18,7 @@
  * Example (see pages/<app>/*.page.ts for real usage):
  *
  *   static open(page: Page): AssetCreatePage {
- *     return new AssetCreatePage(page).step(() => ensureLoggedIn(page, 'grc', '/grc/assets/create'))
+ *     return new AssetCreatePage(page).step(() => ensureLoggedIn(page, 'myapp', '/myapp/items/create'))
  *   }
  *
  * An un-awaited chain still fails loudly: a rejected step becomes an unhandled

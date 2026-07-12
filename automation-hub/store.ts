@@ -391,7 +391,7 @@ export async function applyPyArtifacts(
 //
 // Shared, app-level page objects that generated/revised fluent tests call into —
 // the TS analog of the Python page-file functions just above. `relPath` below is
-// always relative to HUB_ROOT (not python/), e.g. "pages/grc/asset-create.page.ts".
+// always relative to HUB_ROOT (not python/), e.g. "pages/myapp/asset-create.page.ts".
 // The framework files under lib/framework/ are structurally unwritable through
 // this path family: TS_PAGE_FILE_RE only ever admits paths under "pages/".
 

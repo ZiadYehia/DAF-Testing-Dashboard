@@ -152,7 +152,7 @@ export interface ProjectDetail extends ProjectMeta {
 
 /** One page-file edit produced alongside a generated/revised TS test. */
 export interface TsPageAppend {
-  /** Path relative to automation-hub/, e.g. "pages/grc/asset-create.page.ts". */
+  /** Path relative to automation-hub/, e.g. "pages/myapp/asset-create.page.ts". */
   path: string
   /** 'append' = methods-only block for an existing file; 'new' = complete file source. */
   mode: 'append' | 'new'

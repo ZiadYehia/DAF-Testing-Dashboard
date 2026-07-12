@@ -558,7 +558,7 @@ export function listPageFileContents(app: string): Array<{ path: string; content
 
 /**
  * Every pages/<app>/*.page.ts file's full content (path relative to automation-hub/,
- * e.g. "pages/grc/asset-create.page.ts"), for callers (reviseSpec) that need complete
+ * e.g. "pages/myapp/asset-create.page.ts"), for callers (reviseSpec) that need complete
  * page-object source rather than the compact signature index. Sync, [] on any error.
  */
 export function listTsPageFileContents(app: string): Array<{ path: string; content: string }> {

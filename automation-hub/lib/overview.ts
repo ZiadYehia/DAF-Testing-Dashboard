@@ -1,5 +1,5 @@
 /**
- * Automation Hub — Asset Detail Overview tab helpers (GRC app).
+ * Automation Hub — Asset Detail Overview tab helpers.
  *
  * The Overview tab renders every label/value pair (Asset Metadata, Type-Specific
  * Details, and the right-rail linked-count tiles) as a fixed DOM shape:
