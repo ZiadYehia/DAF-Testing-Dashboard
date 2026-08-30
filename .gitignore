@@ -60,3 +60,4 @@ test-results/
 # Generated artifacts
 __pycache__/
 scripts/.assembled-prompt-*.txt
+backups/
