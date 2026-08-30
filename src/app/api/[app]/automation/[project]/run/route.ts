@@ -3,7 +3,8 @@ import { guardApp } from '@/lib/auth'
 import { getProject } from '@automation-hub/store'
 import { runProject as runPlaywright, isRunning as isRunningPlaywright } from '@automation-hub/engine/runner'
 import { runProject as runAppium, isRunning as isRunningAppium } from '@automation-hub/engine/appium-runner'
-import { setExecutionStatus } from '@/lib/execution'
+import { setExecutionStatus, appendExecutionNoteLine } from '@/lib/execution'
+import { buildAutomationFailureNote, AUTOMATION_NOTE_PREFIX } from '@/lib/automation-run-note'
 
 export const runtime = 'nodejs'
 // 300s: shared by both engines on this route. A browser run can take up to the
@@ -34,11 +35,22 @@ export async function POST(
 
     // If this automation is linked to a dashboard test case, mirror pass/fail
     // onto its execution status so automations become the regression source.
+    // A run where every test was skipped (result.executed === false, e.g. a
+    // test.fixme'd spec) reports `pass` for lack of any failure — that is not
+    // a verified behaviour, so it must not touch status or notes at all.
     let synced: { testcaseId: string; status: string } | null = null
     const link = detail.linkedTestcase
-    if (link && (result.status === 'pass' || result.status === 'fail')) {
+    if (link && result.executed && (result.status === 'pass' || result.status === 'fail')) {
       const res = await setExecutionStatus(link.app, link.feature, link.testcaseId, result.status)
       if (res.ok) synced = { testcaseId: link.testcaseId, status: result.status }
+      // A human observation must survive a green run — only failures write a
+      // note — and even then it is merged in, never allowed to overwrite the
+      // tester's own text.
+      if (result.status === 'fail') {
+        await appendExecutionNoteLine(link.app, link.feature, link.testcaseId, buildAutomationFailureNote(result), {
+          replacePrefix: AUTOMATION_NOTE_PREFIX,
+        })
+      }
     }
 
     return NextResponse.json({ ...result, synced })

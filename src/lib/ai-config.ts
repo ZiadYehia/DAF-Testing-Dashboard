@@ -7,7 +7,7 @@
 import { getSetting, setSetting } from './settings'
 import type { AIModelDef } from './ai'
 
-export type BuiltinProvider = 'google' | 'anthropic' | 'groq'
+export type BuiltinProvider = 'google' | 'anthropic' | 'groq' | 'moonshot'
 /** Built-in provider slug or a user-defined custom provider id. */
 export type AIProvider = string
 
@@ -16,6 +16,28 @@ export const PROVIDER_ENV_KEY: Record<BuiltinProvider, string> = {
   google: 'GEMINI_API_KEY',
   anthropic: 'ANTHROPIC_API_KEY',
   groq: 'GROQ_API_KEY',
+  moonshot: 'MOONSHOT_API_KEY',
+}
+
+/**
+ * Built-in providers that speak the OpenAI chat-completions protocol — dispatched
+ * through the same code path as user-added custom providers, but shipped with the
+ * dashboard so they work with just an API key.
+ */
+export const BUILTIN_OPENAI_COMPAT: Record<string, { id: string; label: string; baseUrl: string }> = {
+  moonshot: { id: 'moonshot', label: 'Moonshot (Kimi)', baseUrl: 'https://api.moonshot.ai/v1' },
+  openrouter: { id: 'openrouter', label: 'OpenRouter', baseUrl: 'https://openrouter.ai/api/v1' },
+  cerebras: { id: 'cerebras', label: 'Cerebras', baseUrl: 'https://api.cerebras.ai/v1' },
+}
+
+/** Where a user goes to mint an API key for each built-in provider. */
+export const PROVIDER_CREATE_KEY_URL: Record<string, string> = {
+  google: 'https://aistudio.google.com/app/apikey',
+  anthropic: 'https://console.anthropic.com/settings/keys',
+  groq: 'https://console.groq.com/keys',
+  moonshot: 'https://platform.moonshot.ai/console/api-keys',
+  openrouter: 'https://openrouter.ai/keys',
+  cerebras: 'https://cloud.cerebras.ai',
 }
 
 // ─── Custom providers (user-added, OpenAI-compatible) ─────────────────────────
@@ -103,6 +125,7 @@ export const AI_FEATURES = [
   { key: 'testCaseWriter', label: 'Test Case Writer', detail: 'AI test-case generation' },
   { key: 'bugGenerator', label: 'Bug Report Generator', detail: 'AI bug-report drafting' },
   { key: 'acceptanceCriteria', label: 'Acceptance Criteria', detail: 'AI extraction & coverage analysis' },
+  { key: 'changeRequest', label: 'Change Request', detail: 'AI change-request drafting' },
 ] as const
 
 export type AiFeatureKey = typeof AI_FEATURES[number]['key']

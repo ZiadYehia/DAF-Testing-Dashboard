@@ -2,17 +2,43 @@ import 'reflect-metadata'
 import * as path from 'path'
 import * as dotenv from 'dotenv'
 
-// No-op in Railway (vars already injected); useful for local docker-compose testing
+// No-op when env vars are already injected (e.g. docker compose); useful for local dev
 dotenv.config({ path: path.resolve(__dirname, '../../.env.local') })
 
 import { hash } from '@node-rs/bcrypt'
+import { DataSource, DataSourceOptions } from 'typeorm'
 import { AppDataSource } from './data-source'
 import { User } from './entities/User'
 
-async function connectWithRetry(maxAttempts = 24, delayMs = 5000): Promise<void> {
+// A fresh MSSQL volume contains only the system databases; the target
+// database must be created before AppDataSource can connect to it.
+async function ensureDatabaseExists(): Promise<void> {
+  const dbName = process.env.DB_NAME ?? 'TestingDashboard'
+  const master = new DataSource({
+    ...AppDataSource.options,
+    database: 'master',
+    entities: [],
+    migrations: [],
+  } as DataSourceOptions)
+  await master.initialize()
+  try {
+    const escaped = dbName.replace(/]/g, ']]')
+    const rows: { id: number | null }[] = await master.query('SELECT DB_ID(@0) AS id', [dbName])
+    if (rows[0]?.id == null) {
+      await master.query(`CREATE DATABASE [${escaped}]`)
+      console.log(`[startup] Created database ${dbName}.`)
+    }
+  } finally {
+    await master.destroy()
+  }
+}
+
+// Generous window: MSSQL's first boot on a fresh volume can take minutes.
+async function connectWithRetry(maxAttempts = 120, delayMs = 5000): Promise<void> {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       console.log(`[startup] Connecting to database (attempt ${attempt}/${maxAttempts})...`)
+      await ensureDatabaseExists()
       await AppDataSource.initialize()
       console.log('[startup] Connected.')
       return

@@ -10,6 +10,8 @@ services:
       - "1433:1433"
     volumes:
       - sqldata:/var/opt/mssql
+      - ./backups:/var/opt/mssql/backups
+    restart: unless-stopped
     healthcheck:
       test:
         - CMD-SHELL
@@ -19,14 +21,38 @@ services:
       retries: 10
       start_period: 30s
 
+  proxy:
+    image: caddy:2-alpine
+    container_name: testing-dashboard-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      # e.g. <your-ip-dashes>.sslip.io — Caddy auto-provisions Let's Encrypt TLS.
+      # Unset = plain HTTP on :80.
+      DOMAIN: "${DOMAIN:-:80}"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddydata:/data
+    depends_on:
+      - app
+
   app:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: testing-dashboard-app
     ports:
-      - "3000:3000"
+      # Loopback only — external traffic goes through the proxy (80/443).
+      - "127.0.0.1:3000:3000"
     environment:
+      # Auth
+      SESSION_SECRET: "${SESSION_SECRET}"
+      APP_ENCRYPTION_KEY: "${APP_ENCRYPTION_KEY}"
+      SEED_ADMIN_EMAIL: "${SEED_ADMIN_EMAIL}"
+      SEED_ADMIN_NAME: "${SEED_ADMIN_NAME}"
+      SEED_ADMIN_PASSWORD: "${SEED_ADMIN_PASSWORD}"
       # Database
       DB_HOST: db
       DB_PORT: "1433"
@@ -35,6 +61,7 @@ services:
       DB_NAME: "${DB_NAME:-TestingDashboard}"
       DB_SYNC: "false"
       DB_ENCRYPT: "false"
+      DB_TRUST_CERT: "${DB_TRUST_CERT:-true}"
       # Jira
       JIRA_BASE_URL: "${JIRA_BASE_URL}"
       JIRA_EMAIL: "${JIRA_EMAIL}"
@@ -48,6 +75,9 @@ services:
       GROQ_API_KEY: "${GROQ_API_KEY}"
     volumes:
       - ./data:/app/data
+      # Automation Hub projects, specs, run artifacts, and its gitignored .env
+      # (target-app base URLs + credentials) — replay reads/writes here.
+      - ./automation-hub:/app/automation-hub
     depends_on:
       db:
         condition: service_healthy
@@ -55,3 +85,4 @@ services:
 
 volumes:
   sqldata:
+  caddydata:

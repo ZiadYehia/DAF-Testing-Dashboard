@@ -14,7 +14,7 @@ export async function GET(
   if (!guard.ok) return guard.response
 
   try {
-    const statuses = await getProjectStatuses()
+    const statuses = await getProjectStatuses(guard.access.user.id)
     return NextResponse.json({ statuses })
   } catch (err: any) {
     return NextResponse.json({ error: err?.message ?? 'Jira request failed' }, { status: 502 })

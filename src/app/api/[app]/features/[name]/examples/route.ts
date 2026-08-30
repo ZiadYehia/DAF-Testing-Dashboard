@@ -8,5 +8,5 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const { app } = await params
   const guard = await guardApp(app, 'features.view')
   if (!guard.ok) return guard.response
-  return NextResponse.json(listExamples(app))
+  return NextResponse.json(await listExamples(app))
 }

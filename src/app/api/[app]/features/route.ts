@@ -11,10 +11,10 @@ export async function GET(
   if (!guard.ok) return guard.response
   const moduleParam = req.nextUrl.searchParams.get('module')
   // undefined = all features, string = features in that module
-  const module = moduleParam === null ? undefined : moduleParam
+  const moduleVal = moduleParam === null ? undefined : moduleParam
   const includeArchivedParam = req.nextUrl.searchParams.get('includeArchived')
   const includeArchived = includeArchivedParam === '1' || includeArchivedParam === 'true'
-  const features = await listFeatures(app, module, { includeArchived })
+  const features = await listFeatures(app, moduleVal, { includeArchived })
   return NextResponse.json(features)
 }
 

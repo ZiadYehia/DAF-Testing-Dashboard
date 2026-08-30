@@ -21,6 +21,8 @@ import { Lightbox, type LightboxItem } from '@/components/shared/Lightbox'
 import { useBugFormat } from '@/hooks/useBugFormat'
 import { LabelMultiSelect } from '@/components/shared/LabelMultiSelect'
 import { BUG_TYPE_OPTIONS, LAYER_OPTIONS, getVariantConfig, jiraSummaryForBug, type BugLayer } from '@/lib/bug-format'
+import { usePermissions } from '@/lib/use-permissions'
+import { ConfirmDeleteDialog } from '@/components/confirm-delete-dialog'
 
 const MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024
 const ATTACHMENT_ACCEPT = 'image/png,image/jpeg,image/gif,image/webp,video/mp4,video/webm,video/quicktime'
@@ -62,6 +64,7 @@ export default function BugDetailPage() {
   const slug = params?.slug as string
 
   const { config } = useBugFormat(app)
+  const { can } = usePermissions(app)
 
   const [bug, setBug] = useState<BugDetail & { jira_url?: string | null } | null>(null)
   const [body, setBody] = useState('')
@@ -97,6 +100,10 @@ export default function BugDetailPage() {
   const [confirmDeleteAttach, setConfirmDeleteAttach] = useState<string | null>(null)
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Delete bug state
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   const loadAttachments = useCallback(async () => {
     try {
@@ -195,7 +202,9 @@ export default function BugDetailPage() {
 
   // Paste-to-upload: capture images from the clipboard (Snipping Tool, etc.)
   const uploadRef = useRef(uploadAttachments)
-  uploadRef.current = uploadAttachments
+  useEffect(() => {
+    uploadRef.current = uploadAttachments
+  })
   useEffect(() => {
     const onPaste = (e: ClipboardEvent) => {
       const target = e.target as HTMLElement | null
@@ -286,6 +295,20 @@ export default function BugDetailPage() {
       toast.error(err instanceof Error ? err.message : 'Sync failed')
     }
     setSyncing(false)
+  }
+
+  const deleteBugHandler = async () => {
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/${app}/bugs/${feature}/${slug}`, { method: 'DELETE' })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error ?? 'Delete failed')
+      toast.success('Bug deleted')
+      router.push(bugsBase)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Delete failed')
+      setDeleting(false)
+    }
   }
 
   if (!bug) {
@@ -491,6 +514,17 @@ export default function BugDetailPage() {
                   <Send className="h-3.5 w-3.5 mr-1" /> Report to Jira
                 </Button>
               )}
+              {can('bugs.delete') && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-destructive hover:text-destructive"
+                  onClick={() => setDeleteOpen(true)}
+                  disabled={saving || syncing}
+                >
+                  <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>
@@ -603,7 +637,7 @@ export default function BugDetailPage() {
                       className="relative block w-full aspect-video bg-black/5 dark:bg-white/5 cursor-pointer"
                       title="Click to view"
                     >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      { }
                       <video
                         src={src}
                         muted
@@ -663,6 +697,21 @@ export default function BugDetailPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete bug confirm */}
+      <ConfirmDeleteDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete bug?"
+        description={
+          <>
+            This removes the bug from dashboard lists and the retest board (soft delete).
+            {bug.jira_key && ` The Jira issue ${bug.jira_key} will not be deleted.`}
+          </>
+        }
+        loading={deleting}
+        onConfirm={deleteBugHandler}
+      />
 
       {/* Attachment lightbox */}
       <Lightbox

@@ -12,6 +12,7 @@
  * the run starts so overlapping ticks can't double-fire.
  */
 import { getSetting, setSetting } from './settings'
+import { writeAllAutomationCaches } from './automation-cache'
 
 const TICK_MS = 60_000
 
@@ -54,6 +55,15 @@ async function tick(): Promise<void> {
 
   const tag = (await getSetting('global', 'AUTOMATION_SCHEDULE_TAG'))?.trim() || undefined
   console.log(`[automation-scheduler] starting scheduled regression${tag ? ` (tag: ${tag})` : ''}`)
+
+  // Refresh automation.json from automation_configs before the regression's
+  // child processes spawn — non-fatal (runRegression does this too, but the
+  // scheduler is the actual entry point for scheduled runs).
+  try {
+    await writeAllAutomationCaches()
+  } catch (err) {
+    console.warn('[automation-scheduler] writeAllAutomationCaches failed:', err)
+  }
 
   // Imported lazily so server startup doesn't pull in the whole hub engine.
   const { runRegression, isRegressionRunning } = await import('./automation-regression')

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDataSource } from '@/lib/db'
 import { SettingEntity, ISetting } from '@/lib/entities'
-import { requireAuth } from '@/lib/auth'
+import { requireAdmin, guardApp } from '@/lib/auth'
 
 const LOGO_SCOPE = 'logo'
 const KEY_RE = /^dashboard$|^app_[a-z0-9][a-z0-9-]*$|^module_[a-z0-9][a-z0-9-]*_[a-z0-9][a-z0-9-]*$/
@@ -24,13 +24,6 @@ export async function GET() {
 
 export async function PUT(req: NextRequest) {
   try {
-    await requireAuth()
-  } catch (err: unknown) {
-    const status = (err as { status?: number }).status ?? 401
-    return NextResponse.json({ error: 'Unauthorized' }, { status })
-  }
-
-  try {
     const body = (await req.json()) as { key: string; value?: string }
     const { key, value = '' } = body
 
@@ -42,6 +35,19 @@ export async function PUT(req: NextRequest) {
     }
     if (value.length > MAX_LEN) {
       return NextResponse.json({ error: 'Logo must be under 2 MB' }, { status: 400 })
+    }
+
+    if (key === 'dashboard') {
+      try {
+        await requireAdmin()
+      } catch (err: unknown) {
+        const status = (err as { status?: number }).status ?? 403
+        return NextResponse.json({ error: 'Forbidden' }, { status })
+      }
+    } else {
+      const slug = key.startsWith('app_') ? key.slice(4) : key.split('_')[1]
+      const guard = await guardApp(slug, 'settings.tab.branding')
+      if (!guard.ok) return guard.response
     }
 
     const ds = await getDataSource()

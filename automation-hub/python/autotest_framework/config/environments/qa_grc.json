@@ -1,0 +1,10 @@
+{
+    "base_url": "https://portal-grc.allendevaux.net",
+    "base_url_env": "GRC_BASE_URL",
+    "username_env": "GRC_LOGIN_USER",
+    "password_env": "GRC_LOGIN_PASSWORD",
+    "timeout": 30000,
+    "slow_mo": 0,
+    "fullscreen": false,
+    "viewport": { "width": 1920, "height": 1080 }
+}

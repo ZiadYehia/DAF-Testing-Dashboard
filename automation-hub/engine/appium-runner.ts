@@ -162,13 +162,15 @@ export async function runProject(name: string, now: string): Promise<RunResult> 
 
     await fs.writeFile(
       path.join(dir, 'result.json'),
-      JSON.stringify({ status, durationMs, error, hasVideo, hasTrace, log }, null, 2),
+      // No per-test skip concept in the Appium harness protocol — a reported
+      // result always means the script actually ran. See RunResult.executed.
+      JSON.stringify({ status, durationMs, error, hasVideo, hasTrace, log, executed: true }, null, 2),
       'utf8',
     )
 
     await recordRun(name, { ts, status, durationMs, hasVideo, hasTrace, error })
 
-    return { status, durationMs, ts, error, hasVideo, hasTrace, log }
+    return { status, durationMs, ts, error, hasVideo, hasTrace, log, executed: true }
   } finally {
     running.delete(name)
   }

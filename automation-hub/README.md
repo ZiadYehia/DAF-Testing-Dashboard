@@ -1,7 +1,7 @@
 # Automation Hub
 
 Self-contained module for authoring, replaying, and editing Playwright automations
-from inside the Testing Dashboard. Kept in this top-level folder (not under `src/`) so
+from inside zTestGround. Kept in this top-level folder (not under `src/`) so
 it can be developed independently — the Next.js app touches it only through thin
 route/page shims that import from here.
 
@@ -117,5 +117,5 @@ the bug without a link.
 
 ## Deployment note
 
-Local-only for now. To run replays in Docker/Railway, add Playwright browser install
+Local-only for now. To run replays in Docker, add Playwright browser install
 (`npx playwright install --with-deps chromium`) to the Dockerfile.

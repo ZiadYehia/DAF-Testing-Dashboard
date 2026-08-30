@@ -19,7 +19,7 @@ function buildScope(app: string, kind: ScopeKind, slug: string | null): IntakeSc
   return { app, feature: slug }
 }
 
-function readinessFor(app: string, kind: ScopeKind, slug: string | null) {
+async function readinessFor(app: string, kind: ScopeKind, slug: string | null) {
   if (kind === 'module' && slug) return moduleReadiness(app, slug)
   if (kind === 'feature' && slug) return featureReadiness(app, slug)
   return appReadiness(app)
@@ -43,12 +43,12 @@ export async function GET(req: NextRequest, { params }: Params) {
   const scope = buildScope(app, scopeParam, slug)
   if (!scope) return NextResponse.json({ error: 'slug is required for module/feature scope' }, { status: 400 })
 
-  const intake = readIntake(scope)
+  const intake = await readIntake(scope)
   return NextResponse.json({
     groups: groupsForScope(scope),
     answers: intake.answers,
-    hasIntake: intakeFileExists(scope),
-    readiness: readinessFor(app, scopeParam, slug),
+    hasIntake: await intakeFileExists(scope),
+    readiness: await readinessFor(app, scopeParam, slug),
   })
 }
 
@@ -84,5 +84,5 @@ export async function PUT(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: message }, { status })
   }
 
-  return NextResponse.json({ ok: true, readiness: readinessFor(app, body.scope, body.slug ?? null) })
+  return NextResponse.json({ ok: true, readiness: await readinessFor(app, body.scope, body.slug ?? null) })
 }

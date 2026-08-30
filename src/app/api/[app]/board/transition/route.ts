@@ -30,12 +30,12 @@ export async function POST(
   }
 
   try {
-    const transitions = await getIssueTransitions(bug.jira_key)
+    const transitions = await getIssueTransitions(bug.jira_key, guard.access.user.id)
     const target = transitions.find((t) => t.id === transitionId)
     if (!target) {
       return NextResponse.json({ error: 'transitionId is not available for this issue' }, { status: 400 })
     }
-    await transitionIssue(bug.jira_key, transitionId)
+    await transitionIssue(bug.jira_key, transitionId, guard.access.user.id)
     await saveBug(app, feature, slug, bug.body, { jira_status: target.toStatus })
     const updated = await getBug(app, feature, slug)
     const { body: _omit, ...summary } = updated ?? { ...bug, jira_status: target.toStatus }

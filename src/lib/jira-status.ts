@@ -1,7 +1,6 @@
 import { getDataSource } from './db'
 import { BugEntity } from './entities'
 import { fetchIssueStatuses } from './jira'
-import { writeBugMarkdown } from './bugs'
 
 /**
  * Refresh the cached Jira status for every bug in an app that has a jiraKey
@@ -10,18 +9,19 @@ import { writeBugMarkdown } from './bugs'
  * bad write can't fail the whole sync; an unreachable Jira propagates so the
  * caller can surface a 502.
  */
-export async function syncJiraStatuses(appSlug: string): Promise<void> {
+export async function syncJiraStatuses(appSlug: string, userId: number): Promise<void> {
   const ds = await getDataSource()
   const repo = ds.getRepository(BugEntity)
   const bugs = await repo
     .createQueryBuilder('b')
     .where('b.appSlug = :appSlug', { appSlug })
     .andWhere('b.jiraKey IS NOT NULL')
+    .andWhere('b.deletedAt IS NULL')
     .getMany()
   if (bugs.length === 0) return
 
   const keys = bugs.map((b) => b.jiraKey as string)
-  const infoMap = await fetchIssueStatuses(keys)
+  const infoMap = await fetchIssueStatuses(keys, userId)
   const now = new Date()
 
   for (const bug of bugs) {
@@ -37,7 +37,6 @@ export async function syncJiraStatuses(appSlug: string): Promise<void> {
     if (newStatus === bug.jiraStatus && newReporter === (bug.jiraReporter ?? null) && newParentKey === bug.parentKey) continue
     try {
       await repo.update(bug.id, { jiraStatus: newStatus, jiraStatusSyncedAt: now, jiraReporter: newReporter, parentKey: newParentKey })
-      writeBugMarkdown(appSlug, { ...bug, jiraStatus: newStatus, jiraStatusSyncedAt: now, jiraReporter: newReporter, parentKey: newParentKey })
     } catch {
       // Non-fatal: a single row failure must not fail the whole sync
     }

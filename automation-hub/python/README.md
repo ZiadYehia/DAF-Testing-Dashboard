@@ -26,7 +26,7 @@ python -m venv .venv
 pip install -r requirements.txt
 playwright install chromium
 pytest --collect-only
-pytest tests/myapp -m regression
+pytest tests/grc -m regression
 ```
 
 (On macOS/Linux: `source .venv/bin/activate` instead of the `Activate.ps1` step.)
@@ -34,11 +34,11 @@ pytest tests/myapp -m regression
 ## Environment selection
 
 Set `ENVIRONMENT` to the name of a JSON file in
-`autotest_framework/config/environments/` (e.g. `qa_app` →
-`environments/qa_app.json`). Defaults to `qa_app` if unset.
+`autotest_framework/config/environments/` (e.g. `qa_grc` →
+`environments/qa_grc.json`). Defaults to `qa_app` if unset.
 
 ```powershell
-$env:ENVIRONMENT = "qa_app"
+$env:ENVIRONMENT = "qa_grc"
 pytest
 ```
 
@@ -51,8 +51,8 @@ how per-app secrets stay out of the framework and out of source control.
 Config is loaded in this order (first value found wins):
 
 1. `automation-hub/python/.env` (this directory — framework-local overrides)
-2. `automation-hub/.env` (the hub's own env — `MYAPP_LOGIN_USER`,
-   `MYAPP_LOGIN_PASSWORD`, `MYAPP_BASE_URL`, etc.)
+2. `automation-hub/.env` (the hub's own env — `GRC_LOGIN_USER`,
+   `GRC_LOGIN_PASSWORD`, `GRC_BASE_URL`, etc.)
 
 Copy `.env.example` to `.env` in this directory only if you need to override
 something locally; otherwise credentials and URLs are inherited from
@@ -65,7 +65,7 @@ Each app under `tests/<app>/` needs its own `conftest.py` that overrides the
 `NotImplementedError` by design — it has no app-specific login flow):
 
 ```python
-# tests/myapp/conftest.py
+# tests/grc/conftest.py
 import pytest
 from autotest_framework.config import config
 

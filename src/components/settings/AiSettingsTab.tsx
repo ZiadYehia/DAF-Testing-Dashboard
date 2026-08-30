@@ -9,7 +9,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
 import {
-  Eye, EyeOff, CheckCircle2, XCircle, Loader2, Plus, Trash2, Bot, Beaker,
+  CheckCircle2, Plus, Trash2, Bot, Beaker, GitPullRequestArrow,
 } from 'lucide-react'
 import { cn, slugify } from '@/lib/utils'
 
@@ -21,12 +21,6 @@ interface Registry { disabled: string[]; custom: AIModel[] }
 interface FeatureCfg { enabled: boolean; defaultModel: string | null; allowedModels: string[] }
 interface CatalogItem { key: string; label: string; detail: string }
 interface CustomProvider { id: string; label: string; baseUrl: string; keyName: string }
-
-const BUILTIN_PROVIDERS = [
-  { provider: 'anthropic', label: 'Anthropic (Claude)', key: 'ANTHROPIC_API_KEY' },
-  { provider: 'google', label: 'Google (Gemini)', key: 'GEMINI_API_KEY' },
-  { provider: 'groq', label: 'Groq', key: 'GROQ_API_KEY' },
-]
 
 /** Small on/off pill toggle (no Switch component in the design system). */
 function Toggle({ on, onClick, disabled }: { on: boolean; onClick: () => void; disabled?: boolean }) {
@@ -47,11 +41,6 @@ function Toggle({ on, onClick, disabled }: { on: boolean; onClick: () => void; d
 }
 
 export function AiSettingsTab({ app }: { app: string }) {
-  // Keys
-  const [keys, setKeys] = useState<Record<string, string>>({})
-  const [revealed, setRevealed] = useState<Record<string, boolean>>({})
-  const [savingKey, setSavingKey] = useState<string | null>(null)
-  const [tests, setTests] = useState<Record<string, { testing?: boolean; valid?: boolean; error?: string }>>({})
   // Providers
   const [customProviders, setCustomProviders] = useState<CustomProvider[]>([])
   const [newProvider, setNewProvider] = useState({ label: '', baseUrl: '' })
@@ -64,9 +53,6 @@ export function AiSettingsTab({ app }: { app: string }) {
   const [features, setFeatures] = useState<Record<string, FeatureCfg>>({})
   const [catalog, setCatalog] = useState<CatalogItem[]>([])
 
-  const loadKeys = useCallback(async () => {
-    const r = await fetch('/api/settings'); if (r.ok) setKeys(await r.json())
-  }, [])
   const loadProviders = useCallback(async () => {
     const r = await fetch('/api/settings/providers')
     if (r.ok) { const d = await r.json(); setCustomProviders(d.providers) }
@@ -80,37 +66,8 @@ export function AiSettingsTab({ app }: { app: string }) {
     if (r.ok) { const d = await r.json(); setFeatures(d.features); setCatalog(d.catalog) }
   }, [app])
 
-  useEffect(() => { loadKeys(); loadProviders(); loadModels(); loadFeatures() }, [loadKeys, loadProviders, loadModels, loadFeatures])
+  useEffect(() => { loadProviders(); loadModels(); loadFeatures() }, [loadProviders, loadModels, loadFeatures])
 
-  async function saveKey(provider: string, key: string) {
-    // Field still holds the masked value from GET (untouched) — nothing to save.
-    if ((keys[key] ?? '').startsWith('••••')) return
-    setSavingKey(key)
-    try {
-      const r = await fetch('/api/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key, value: keys[key] ?? '' }) })
-      if (!r.ok) {
-        const d = await r.json().catch(() => ({}))
-        setTests((t) => ({ ...t, [provider]: { valid: false, error: d.error ?? `Save failed (HTTP ${r.status})` } }))
-        return
-      }
-      await loadModels()
-      // Immediately validate the freshly saved key so a bad paste is visible.
-      if ((keys[key] ?? '') !== '') await testKey(provider)
-      else setTests((t) => { const { [provider]: _gone, ...rest } = t; return rest })
-    } catch {
-      setTests((t) => ({ ...t, [provider]: { valid: false, error: 'Save failed — network error' } }))
-    } finally { setSavingKey(null) }
-  }
-  async function testKey(provider: string) {
-    setTests((t) => ({ ...t, [provider]: { testing: true } }))
-    try {
-      const r = await fetch('/api/settings/test-key', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ provider }) })
-      const d = await r.json()
-      setTests((t) => ({ ...t, [provider]: { valid: d.valid, error: d.error } }))
-    } catch {
-      setTests((t) => ({ ...t, [provider]: { valid: false, error: 'Request failed' } }))
-    }
-  }
   async function saveProviders(next: Omit<CustomProvider, 'keyName'>[]) {
     setProviderError(null)
     const r = await fetch('/api/settings/providers', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ providers: next }) })
@@ -162,59 +119,29 @@ export function AiSettingsTab({ app }: { app: string }) {
 
   return (
     <div className="space-y-6">
-      {/* ── Providers & API keys ─────────────────────────────────────────── */}
+      {/* ── Providers ─────────────────────────────────────────────────────── */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Providers & API keys</CardTitle>
+          <CardTitle className="text-base">Providers</CardTitle>
           <CardDescription>
-            Shared across all apps. Saving a key here overrides any value in <code>.env.local</code> — the key is
-            tested automatically after saving. Add any OpenAI-compatible provider (OpenAI, OpenRouter, Mistral,
-            Together, xAI, DeepSeek, Ollama…) with its base URL.
+            Register any OpenAI-compatible provider (OpenAI, OpenRouter, Mistral, Together, xAI, DeepSeek,
+            Ollama…) with its base URL. API keys are personal — set yours in the &quot;My AI Keys&quot; card in the
+            Credentials tab.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {[
-            ...BUILTIN_PROVIDERS.map((p) => ({ ...p, baseUrl: null as string | null, custom: false })),
-            ...customProviders.map((p) => ({ provider: p.id, label: p.label, key: p.keyName, baseUrl: p.baseUrl, custom: true })),
-          ].map((p) => {
-            const t = tests[p.provider] ?? {}
-            return (
-              <div key={p.key} className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <label className="text-sm font-medium">{p.label}</label>
-                    {p.custom && <Badge variant="outline" className="text-[10px]">custom</Badge>}
-                    {p.baseUrl && <span className="hidden truncate font-mono text-[11px] text-muted-foreground sm:inline">{p.baseUrl}</span>}
-                  </div>
-                  {t.valid === true && <Badge variant="outline" className="gap-1 border-emerald-200 bg-emerald-50 text-emerald-600 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400"><CheckCircle2 className="h-3 w-3" /> Valid</Badge>}
-                  {t.valid === false && <Badge variant="outline" className="gap-1 border-red-200 bg-red-50 text-red-600 dark:border-red-900 dark:bg-red-950/30 dark:text-red-400"><XCircle className="h-3 w-3" /> {t.error ?? 'Invalid'}</Badge>}
-                </div>
-                <div className="flex gap-2">
-                  <Input
-                    type={revealed[p.key] ? 'text' : 'password'}
-                    value={keys[p.key] ?? ''}
-                    onChange={(e) => setKeys((k) => ({ ...k, [p.key]: e.target.value }))}
-                    placeholder="••••••••••••••••"
-                    className="h-9 font-mono text-sm"
-                  />
-                  <Button variant="outline" size="icon" className="h-9 w-9 shrink-0" onClick={() => setRevealed((r) => ({ ...r, [p.key]: !r[p.key] }))}>
-                    {revealed[p.key] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
-                  <Button variant="outline" size="sm" className="h-9 shrink-0" onClick={() => saveKey(p.provider, p.key)} disabled={savingKey === p.key}>
-                    {savingKey === p.key ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}
-                  </Button>
-                  <Button size="sm" className="h-9 shrink-0 gap-1.5" onClick={() => testKey(p.provider)} disabled={t.testing}>
-                    {t.testing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Beaker className="h-4 w-4" />} Test
-                  </Button>
-                  {p.custom && (
-                    <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive" onClick={() => removeProvider(p.provider)} title="Remove provider (and its models)">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
+          {customProviders.map((p) => (
+            <div key={p.id} className="flex items-center justify-between gap-2 rounded-md border border-border/60 p-2.5">
+              <div className="flex min-w-0 items-center gap-2">
+                <label className="text-sm font-medium">{p.label}</label>
+                <Badge variant="outline" className="text-[10px]">custom</Badge>
+                <span className="truncate font-mono text-[11px] text-muted-foreground">{p.baseUrl}</span>
               </div>
-            )
-          })}
+              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive" onClick={() => removeProvider(p.id)} title="Remove provider (and its models)">
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
 
           {/* Add custom provider */}
           <div className="space-y-1.5 rounded-md border border-dashed p-2.5">
@@ -226,7 +153,7 @@ export function AiSettingsTab({ app }: { app: string }) {
               </Button>
             </div>
             {providerError && <p className="text-xs text-destructive">{providerError}</p>}
-            <p className="text-[11px] text-muted-foreground">Must speak the OpenAI chat-completions API. After adding, paste its API key above and add its models below.</p>
+            <p className="text-[11px] text-muted-foreground">Must speak the OpenAI chat-completions API. After adding, set its API key in your personal AI keys and add its models below.</p>
           </div>
         </CardContent>
       </Card>
@@ -273,6 +200,7 @@ export function AiSettingsTab({ app }: { app: string }) {
                 <SelectItem value="anthropic">Anthropic</SelectItem>
                 <SelectItem value="google">Google</SelectItem>
                 <SelectItem value="groq">Groq</SelectItem>
+                <SelectItem value="moonshot">Moonshot (Kimi)</SelectItem>
                 {customProviders.map((p) => <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>)}
               </SelectContent>
             </Select>
@@ -300,7 +228,7 @@ export function AiSettingsTab({ app }: { app: string }) {
                 <Toggle on={cfg.enabled} onClick={() => saveFeatures({ ...features, [f.key]: { ...cfg, enabled: !cfg.enabled } })} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    {f.key === 'automationHub' ? <Bot className="h-3.5 w-3.5 text-primary" /> : <Beaker className="h-3.5 w-3.5 text-muted-foreground" />}
+                    {f.key === 'automationHub' ? <Bot className="h-3.5 w-3.5 text-primary" /> : f.key === 'changeRequest' ? <GitPullRequestArrow className="h-3.5 w-3.5 text-primary" /> : <Beaker className="h-3.5 w-3.5 text-muted-foreground" />}
                     <span className="text-sm font-medium">{f.label}</span>
                   </div>
                   <p className="text-xs text-muted-foreground">{f.detail}</p>

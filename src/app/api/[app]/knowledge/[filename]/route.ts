@@ -12,7 +12,7 @@ export async function GET(
 
   try {
     const moduleParam = _req.nextUrl.searchParams.get('module')
-    const content = readKnowledgeFile(app, filename, moduleParam ?? null)
+    const content = await readKnowledgeFile(app, filename, moduleParam ?? null)
     return NextResponse.json({ filename, content })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Not found'
@@ -35,7 +35,7 @@ export async function PUT(
 
   try {
     const moduleParam = req.nextUrl.searchParams.get('module')
-    writeKnowledgeFile(app, filename, body.content, { module: moduleParam ?? null })
+    await writeKnowledgeFile(app, filename, body.content, { module: moduleParam ?? null })
     return NextResponse.json({ ok: true })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Write failed'

@@ -17,6 +17,11 @@ import {
   UserEntity,
   SessionEntity,
   AppMembershipEntity,
+  AppEntity,
+  ModuleEntity,
+  IntakeDocumentEntity,
+  AutomationConfigEntity,
+  ChangeRequestEntity,
 } from './entities'
 
 function createDataSource(): DataSource {
@@ -52,10 +57,17 @@ function createDataSource(): DataSource {
       UserEntity,
       SessionEntity,
       AppMembershipEntity,
+      AppEntity,
+      ModuleEntity,
+      IntakeDocumentEntity,
+      AutomationConfigEntity,
+      ChangeRequestEntity,
     ],
     options: {
       encrypt: process.env.DB_ENCRYPT === 'true',
-      trustServerCertificate: true,
+      // Default true for backward compatibility; set DB_TRUST_CERT=false in
+      // production with DB_ENCRYPT=true and a CA-signed certificate.
+      trustServerCertificate: process.env.DB_TRUST_CERT !== 'false',
     },
   })
 }
@@ -67,15 +79,15 @@ let _lastPingAt: number | undefined
 
 declare global {
   // Persist across Next.js hot-reloads in development
-  // eslint-disable-next-line no-var
+   
   var __typeorm_ds: DataSource | undefined
   // The in-flight initialize() promise, so concurrent requests on a cold/dropped
   // connection share one initialization instead of racing (TypeORM throws if
   // initialize() is called twice in parallel, which would surface as a 404).
-  // eslint-disable-next-line no-var
+   
   var __typeorm_init: Promise<DataSource> | undefined
   // Timestamp of the last successful liveness ping (see getDataSource).
-  // eslint-disable-next-line no-var
+   
   var __typeorm_ping: number | undefined
 }
 
@@ -92,6 +104,50 @@ if (process.env.NODE_ENV !== 'production' && globalThis.__typeorm_ds?.isInitiali
 // inside this window skip the liveness ping; the first request after an idle
 // gap pays one cheap `SELECT 1` round trip.
 const PING_INTERVAL_MS = 30_000
+
+/** Invalidate the ping-trust window so the next getDataSource() re-verifies the pool. */
+function distrustPool(): void {
+  globalThis.__typeorm_ping = 0
+  _lastPingAt = 0
+}
+
+// The pool can die underneath TypeORM without any request noticing (SQL Server
+// restart, idle kill, machine sleep). Listening for the mssql pool's 'error'
+// event collapses the trust window the moment the pool reports trouble, instead
+// of serving dead connections for up to PING_INTERVAL_MS.
+function watchPool(ds: DataSource): void {
+  const master = (ds.driver as { master?: { on?: (ev: string, fn: (e: unknown) => void) => void } }).master
+  master?.on?.('error', () => distrustPool())
+}
+
+const CONNECTION_ERROR_CODES = new Set(['ENOTOPEN', 'ECONNCLOSED', 'ESOCKET', 'ECONNRESET', 'ETIMEOUT'])
+const CONNECTION_ERROR_RE = /connection (is closed|is closing|not yet open|lost)/i
+
+/** True when the error is a dead/dying-pool connection failure (not a SQL error). */
+export function isDbConnectionError(err: unknown): boolean {
+  if (!err || typeof err !== 'object') return false
+  const e = err as { code?: string; message?: string; driverError?: { code?: string; message?: string } }
+  const code = e.driverError?.code ?? e.code
+  if (code && CONNECTION_ERROR_CODES.has(code)) return true
+  return CONNECTION_ERROR_RE.test(e.driverError?.message ?? e.message ?? '')
+}
+
+/**
+ * Run a DB-touching function, retrying exactly once when it fails with a
+ * connection-level error. The retry invalidates the pool-trust window first, so
+ * the function's own getDataSource() call re-pings and rebuilds the pool before
+ * queries run again. Do not use around multi-step writes that must not repeat
+ * their already-committed steps.
+ */
+export async function withDbRetry<T>(fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn()
+  } catch (err) {
+    if (!isDbConnectionError(err)) throw err
+    distrustPool()
+    return await fn()
+  }
+}
 
 export async function getDataSource(): Promise<DataSource> {
   const dev = process.env.NODE_ENV !== 'production'
@@ -143,6 +199,7 @@ export async function getDataSource(): Promise<DataSource> {
         // ping-trust window now instead of pinging again on the next request.
         if (dev) globalThis.__typeorm_ping = Date.now()
         else _lastPingAt = Date.now()
+        watchPool(initialized)
         return initialized
       })
       .catch((err) => {

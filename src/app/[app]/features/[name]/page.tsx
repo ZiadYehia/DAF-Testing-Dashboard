@@ -8,7 +8,6 @@ import { useApp } from "@/lib/use-apps";
 import { usePermissions } from "@/lib/use-permissions";
 import type { PermissionKey } from "@/lib/permissions";
 import { ModelSelector } from "@/components/shared/ModelSelector";
-import { Lightbox, type LightboxItem } from "@/components/shared/Lightbox";
 import { ReadinessBadge } from "@/components/shared/ReadinessBadge";
 import { ContextWarningBanner } from "@/components/shared/ContextWarningBanner";
 import { IntakeGroupForm } from "@/components/shared/IntakeGroupForm";
@@ -32,15 +31,12 @@ import {
   Save,
   Eye,
   Pencil,
-  Upload,
-  X,
   ChevronDown,
   Code,
   CheckCircle2,
   AlertCircle,
   Sparkles,
   Loader2,
-  Download,
   FileText,
   Sheet,
   Plus,
@@ -48,7 +44,6 @@ import {
   Link2,
   BookOpen,
   FlaskConical,
-  Bug,
   Undo2,
   Archive,
   RotateCcw,
@@ -70,20 +65,18 @@ import {
 } from "@/components/ui/select";
 import { AppSelect } from "@/components/shared/AppSelect";
 import { exportAsMarkdown } from "@/lib/export-testcases";
-import { EXECUTION_STATUSES, type ExecutionStatus } from "@/lib/execution-types";
+import type { ExecutionStatus } from "@/lib/execution-types";
 import { useStreamingGenerate } from "@/hooks/useStreamingGenerate";
 import { useModels } from "@/hooks/useModels";
 import { AIProgressBar } from "@/components/shared/AIProgressBar";
 import { AddCasesDialog } from "./AddCasesDialog";
 import { ReportBugDialog, type LinkedBug } from "./ReportBugDialog";
+import { useAcceptanceCriteria } from "./useAcceptanceCriteria";
+import { CoverageTab } from "./CoverageTab";
+import { ScreenshotsTab } from "./ScreenshotsTab";
+import { ExecutionTab, type ExecutionRow, type TestcaseVersion } from "./ExecutionTab";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-
-interface TestcaseVersion {
-  label: string;
-  filename: string;
-  content: string;
-}
 
 type TestingPhase = "testcase_design" | "testcase_execution" | "retesting";
 
@@ -109,32 +102,6 @@ interface Feature {
   lastAddition?: { count: number; version: number; at: string } | null;
   archived?: boolean;
 }
-
-interface AcceptanceCriterion {
-  id: string;
-  text: string;
-  parentId: string | null;
-  manualCoverage: "covered" | "not_covered" | null;
-  aiCoveredBy: string[];
-  aiAnalyzedAt: string | null;
-}
-
-interface ExecutionRow {
-  id: string;
-  objective: string;
-  steps?: string;
-  status: ExecutionStatus;
-  bug?: LinkedBug | null;
-}
-
-const EXECUTION_STATUS_META: Record<ExecutionStatus, { label: string; className: string }> = {
-  new_added:     { label: "New Added",       className: "bg-red-900 text-white" },
-  ready:         { label: "Ready for Test",  className: "bg-cyan-100 text-cyan-700 border border-cyan-300" },
-  pass:          { label: "Pass",            className: "bg-green-600 text-white" },
-  fail:          { label: "Fail",            className: "bg-red-100 text-red-800 border border-red-300" },
-  blocked:       { label: "Blocked/Skipped", className: "bg-gray-500 text-white" },
-  under_testing: { label: "Under Testing",   className: "bg-purple-100 text-purple-700 border border-purple-300" },
-};
 
 export default function FeatureDetailPage() {
   const params = useParams();
@@ -171,24 +138,13 @@ export default function FeatureDetailPage() {
   const [approving, setApproving] = useState(false);
   const [workflowPreview, setWorkflowPreview] = useState(false);
   const [testcasesPreview, setTestcasesPreview] = useState(true);
-  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState(false);
   const [activeTab, setActiveTab] = useState("workflow");
   const { generate, generating, phase, warning, dismissWarning } = useStreamingGenerate<{ testcases: string; version: number }>();
   const [confirmGenerate, setConfirmGenerate] = useState(false);
   const [addCasesOpen, setAddCasesOpen] = useState(false);
   const [undoing, setUndoing] = useState(false);
   const { models, selectedModel, setSelectedModel } = useModels();
-  const [acs, setAcs] = useState<AcceptanceCriterion[]>([]);
-  const [analyzing, setAnalyzing] = useState(false);
-  const [clearingAi, setClearingAi] = useState(false);
-  const [deepMode, setDeepMode] = useState(false);
-  const [newAcText, setNewAcText] = useState("");
-  const [editingAcId, setEditingAcId] = useState<string | null>(null);
-  const [editingAcText, setEditingAcText] = useState("");
-  const [addingChildFor, setAddingChildFor] = useState<string | null>(null);
-  const [newChildText, setNewChildText] = useState("");
+  const cov = useAcceptanceCriteria({ app, name, selectedModel });
   const [executions, setExecutions] = useState<ExecutionRow[]>([]);
   const [executionsLoading, setExecutionsLoading] = useState(false);
   // Which test-case version the execution tab is showing (filename, "" = latest).
@@ -301,13 +257,6 @@ export default function FeatureDetailPage() {
       .catch(() => {});
   }, [app]);
 
-  const loadAcs = useCallback(async () => {
-    const res = await fetch(`/api/${app}/features/${name}/coverage`);
-    if (res.ok) setAcs(await res.json());
-  }, [app, name]);
-
-  useEffect(() => { loadAcs(); }, [loadAcs]);
-
   const loadExecutions = useCallback(async () => {
     setExecutionsLoading(true);
     try {
@@ -342,6 +291,22 @@ export default function FeatureDetailPage() {
     }
   };
 
+  const updateExecutionNotes = async (testcaseId: string, notes: string) => {
+    const prev = executions;
+    setExecutions((rows) => rows.map((r) => (r.id === testcaseId ? { ...r, notes } : r)));
+    try {
+      const res = await fetch(`/api/${app}/features/${name}/execution`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ testcaseId, notes, version: execVersionNum }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      setExecutions(prev);
+      toast.error("Failed to update notes");
+    }
+  };
+
   const handleBugLinked = (testcaseId: string, bug: LinkedBug) => {
     setExecutions((rows) => rows.map((r) => (r.id === testcaseId ? { ...r, bug } : r)));
   };
@@ -367,110 +332,6 @@ export default function FeatureDetailPage() {
     } finally {
       setExecutionExporting(false);
     }
-  };
-
-  const saveAcs = async (updated: AcceptanceCriterion[]) => {
-    setAcs(updated);
-    try {
-      await fetch(`/api/${app}/features/${name}/coverage`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ acs: updated }),
-      });
-    } catch {
-      toast.error("Failed to save acceptance criteria");
-    }
-  };
-
-  const addAc = () => {
-    if (!newAcText.trim()) return;
-    const topLevel = acs.filter(a => !a.parentId);
-    const nums = topLevel.map(a => parseInt(a.id.replace("AC-", ""), 10)).filter(n => !isNaN(n));
-    const nextNum = nums.length > 0 ? Math.max(...nums) + 1 : 1;
-    const id = `AC-${String(nextNum).padStart(2, "0")}`;
-    const newAc: AcceptanceCriterion = { id, text: newAcText.trim(), parentId: null, manualCoverage: null, aiCoveredBy: [], aiAnalyzedAt: null };
-    saveAcs([...acs, newAc]);
-    setNewAcText("");
-  };
-
-  const addChildAc = (parentId: string) => {
-    if (!newChildText.trim()) return;
-    const siblings = acs.filter(a => a.parentId === parentId);
-    const id = `${parentId}.${siblings.length + 1}`;
-    const newAc: AcceptanceCriterion = { id, text: newChildText.trim(), parentId, manualCoverage: null, aiCoveredBy: [], aiAnalyzedAt: null };
-    saveAcs([...acs, newAc]);
-    setNewChildText("");
-    setAddingChildFor(null);
-  };
-
-  const deleteAc = (id: string) => {
-    saveAcs(acs.filter((ac) => ac.id !== id && ac.parentId !== id));
-  };
-
-  const toggleManualCoverage = (id: string, status: "covered" | "not_covered" | null) => {
-    saveAcs(acs.map((ac) => (ac.id === id ? { ...ac, manualCoverage: status } : ac)));
-  };
-
-  const analyzeAcs = async () => {
-    setAnalyzing(true);
-    try {
-      const res = await fetch(`/api/${app}/features/${name}/coverage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ modelId: selectedModel, ...(deepMode ? { mode: "deep" } : {}) }),
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        toast.error(err.error ?? "Coverage analysis failed");
-      } else {
-        const { acs: updated } = await res.json();
-        setAcs(updated);
-        toast.success(deepMode ? "Deep coverage analysis complete" : "Coverage analysis complete");
-      }
-    } catch {
-      toast.error("Coverage analysis failed");
-    }
-    setAnalyzing(false);
-  };
-
-  const clearAiMappings = async () => {
-    if (!window.confirm("Clear all AI coverage mappings? This cannot be undone.")) return;
-    setClearingAi(true);
-    try {
-      const res = await fetch(`/api/${app}/features/${name}/coverage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ modelId: "", mode: "reset" }),
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        toast.error(err.error ?? "Failed to clear AI mappings");
-      } else {
-        const { acs: updated } = await res.json();
-        setAcs(updated);
-        toast.success("AI coverage mappings cleared");
-      }
-    } catch {
-      toast.error("Failed to clear AI mappings");
-    }
-    setClearingAi(false);
-  };
-
-  const getEffectiveCoverage = (ac: AcceptanceCriterion): "covered" | "not_covered" | "unknown" => {
-    const children = acs.filter(a => a.parentId === ac.id);
-    if (children.length > 0) {
-      const statuses = children.map(c => {
-        if (c.manualCoverage) return c.manualCoverage;
-        if (c.aiAnalyzedAt !== null) return c.aiCoveredBy.length > 0 ? "covered" : "not_covered";
-        return "unknown";
-      });
-      if (statuses.every(s => s === "covered")) return "covered";
-      if (statuses.some(s => s === "not_covered")) return "not_covered";
-      return "unknown";
-    }
-    if (ac.manualCoverage) return ac.manualCoverage;
-    if (ac.aiAnalyzedAt !== null) return ac.aiCoveredBy.length > 0 ? "covered" : "not_covered";
-    return "unknown";
   };
 
   const saveJiraKey = async () => {
@@ -576,39 +437,6 @@ export default function FeatureDetailPage() {
     setApproving(false);
   };
 
-  const uploadScreenshots = async (files: FileList) => {
-    const formData = new FormData();
-    for (let i = 0; i < files.length; i++)
-      formData.append("screenshots", files[i]);
-    await fetch(`/api/${app}/features/${name}/screenshots`, {
-      method: "POST",
-      body: formData,
-    });
-    await loadFeature();
-    toast.success(`${files.length} screenshot(s) uploaded!`);
-  };
-
-  const deleteScreenshot = async () => {
-    if (!confirmDelete) return;
-    setDeleting(true);
-    await fetch(`/api/${app}/features/${name}/screenshots`, {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ fileName: confirmDelete }),
-    });
-    await loadFeature();
-    setDeleting(false);
-    setConfirmDelete(null);
-    toast.success("Screenshot deleted");
-  };
-
-  const screenshots = feature?.screenshots ?? [];
-  const screenshotItems: LightboxItem[] = screenshots.map((f) => ({
-    src: `/api/${app}/features/${name}/screenshots/${f}`,
-    name: f,
-    isVideo: false,
-  }));
-
   const runGenerate = async () => {
     setConfirmGenerate(false);
     try {
@@ -662,16 +490,6 @@ export default function FeatureDetailPage() {
       </div>
     );
   }
-
-  const acIds = new Set(acs.map(a => a.id));
-  const acParentIds = new Set(acs.filter(a => a.parentId && acIds.has(a.parentId)).map(a => a.parentId as string));
-  const topLevelAcs = acs.filter(a => !a.parentId || !acIds.has(a.parentId));
-  const leafAcs = acs.filter(a => !acParentIds.has(a.id));
-  const acCoveredCount = leafAcs.filter((ac) => getEffectiveCoverage(ac) === "covered").length;
-  const acLastAnalyzed = acs.reduce((latest: string | null, ac) => {
-    if (!ac.aiAnalyzedAt) return latest;
-    return !latest || ac.aiAnalyzedAt > latest ? ac.aiAnalyzedAt : latest;
-  }, null);
 
   const latestVersionNum =
     testcaseVersions.length > 0
@@ -900,12 +718,12 @@ export default function FeatureDetailPage() {
           </TabsTrigger>
           <TabsTrigger value="coverage">
             Coverage
-            {leafAcs.length > 0 && (
+            {cov.leafAcs.length > 0 && (
               <Badge
-                variant={leafAcs.length > acCoveredCount ? "destructive" : "secondary"}
+                variant={cov.leafAcs.length > cov.acCoveredCount ? "destructive" : "secondary"}
                 className="text-[10px] px-1 py-0 leading-tight h-4 ml-1"
               >
-                {acCoveredCount}/{leafAcs.length}
+                {cov.acCoveredCount}/{cov.leafAcs.length}
               </Badge>
             )}
           </TabsTrigger>
@@ -995,58 +813,7 @@ export default function FeatureDetailPage() {
 
         {/* SCREENSHOTS TAB */}
         <TabsContent value="screenshots">
-          <Card>
-            <CardHeader className="flex-row flex-wrap items-center justify-between gap-y-2 pb-3">
-              <CardTitle className="text-base">Screenshots</CardTitle>
-              <label className="cursor-pointer inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
-                <Upload className="h-3.5 w-3.5" /> Upload
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) =>
-                    e.target.files && uploadScreenshots(e.target.files)
-                  }
-                />
-              </label>
-            </CardHeader>
-            <CardContent>
-              {feature.screenshots.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-2">
-                  <span className="text-3xl">📷</span>
-                  <p className="text-sm">No screenshots uploaded yet</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {feature.screenshots.map((file, i) => (
-                    <div
-                      key={file}
-                      className="relative group rounded-lg overflow-hidden border bg-muted aspect-[9/16]"
-                    >
-                      <img
-                        src={`/api/${app}/features/${name}/screenshots/${file}`}
-                        alt={file}
-                        className="w-full h-full object-cover cursor-pointer"
-                        onClick={() => setLightboxIndex(i)}
-                      />
-                      <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setConfirmDelete(file); }}
-                        className="absolute top-1.5 right-1.5 p-1.5 rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 hover:bg-red-500/80 transition-opacity"
-                        aria-label="Delete screenshot"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                      <p className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[10px] px-2 py-1 truncate">
-                        {file}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <ScreenshotsTab app={app} name={name} screenshots={feature.screenshots} onChanged={loadFeature} />
         </TabsContent>
 
         {/* KNOWLEDGE TAB */}
@@ -1131,373 +898,7 @@ export default function FeatureDetailPage() {
 
         {/* COVERAGE TAB */}
         <TabsContent value="coverage">
-          <Card>
-            <CardHeader className="flex-row flex-nowrap items-center justify-between gap-x-3 pb-3">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <CardTitle className="text-base shrink-0">Acceptance Criteria Coverage</CardTitle>
-                {leafAcs.length > 0 && (() => {
-                  const pct = leafAcs.length ? Math.round((acCoveredCount / leafAcs.length) * 100) : 0;
-                  const tone =
-                    pct >= 80
-                      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ring-emerald-500/20"
-                      : pct >= 40
-                        ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 ring-amber-500/20"
-                        : "bg-rose-500/10 text-rose-600 dark:text-rose-400 ring-rose-500/20";
-                  const bar =
-                    pct >= 80 ? "bg-emerald-500" : pct >= 40 ? "bg-amber-500" : "bg-rose-500";
-                  return (
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span
-                        className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset shrink-0 ${tone}`}
-                        title={`${acCoveredCount} of ${leafAcs.length} acceptance criteria covered`}
-                      >
-                        {acCoveredCount}/{leafAcs.length}
-                        <span className="opacity-70">covered</span>
-                      </span>
-                      <div
-                        className="hidden sm:block h-1.5 w-16 rounded-full bg-muted overflow-hidden shrink-0"
-                        aria-hidden
-                      >
-                        <div
-                          className={`h-full rounded-full transition-all duration-500 ${bar}`}
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-                      {acLastAnalyzed && (
-                        <span className="hidden md:inline text-xs text-muted-foreground truncate">
-                          analyzed {new Date(acLastAnalyzed).toLocaleDateString()}
-                        </span>
-                      )}
-                    </div>
-                  );
-                })()}
-              </div>
-              {acs.length > 0 && (
-                <div className="flex items-center gap-1.5 shrink-0">
-                  {/* Mode toggle: Standard / Deep segmented control */}
-                  <div className="inline-flex items-center rounded-md border border-input bg-muted/40 p-0.5">
-                    <button
-                      type="button"
-                      onClick={() => setDeepMode(false)}
-                      disabled={analyzing}
-                      aria-pressed={!deepMode}
-                      title="Single pass over all acceptance criteria (faster)"
-                      className={`rounded px-2 py-1 text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                        !deepMode
-                          ? "bg-background text-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      Standard
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDeepMode(true)}
-                      disabled={analyzing}
-                      aria-pressed={deepMode}
-                      title="Analyze each AC individually (slower, more thorough)"
-                      className={`flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                        deepMode
-                          ? "bg-background text-primary shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      <FlaskConical className="h-3 w-3" />
-                      Deep
-                    </button>
-                  </div>
-                  <Button
-                    size="sm"
-                    onClick={analyzeAcs}
-                    disabled={analyzing || !testcases.trim()}
-                    className="gap-1.5"
-                    title={
-                      !testcases.trim()
-                        ? "Generate test cases first"
-                        : deepMode
-                          ? "Analyze each AC individually (slower, more thorough)"
-                          : "Analyze coverage in a single pass"
-                    }
-                  >
-                    {analyzing ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                    {analyzing
-                      ? "Analyzing…"
-                      : deepMode
-                        ? "Deep Analyze"
-                        : "Analyze Coverage"}
-                  </Button>
-                  {acLastAnalyzed && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger
-                        disabled={clearingAi || analyzing}
-                        title="More actions"
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
-                      >
-                        {clearingAi ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4" />
-                        )}
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={clearAiMappings}
-                          disabled={clearingAi || analyzing}
-                          className="gap-2 text-destructive focus:text-destructive"
-                        >
-                          <X className="h-4 w-4" />
-                          Clear AI mappings
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
-                </div>
-              )}
-            </CardHeader>
-            {analyzing && (
-              <div
-                className="h-0.5 w-full overflow-hidden bg-primary/15"
-                role="progressbar"
-                aria-label={deepMode ? "Deep analysis in progress" : "Analysis in progress"}
-              >
-                <div className="coverage-shimmer h-full w-1/4 rounded-full bg-primary/70" />
-              </div>
-            )}
-            <CardContent>
-              {acs.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-2 text-center">
-                  <CheckCircle2 className="h-8 w-8 text-muted-foreground/40" />
-                  <p className="font-medium text-sm">No acceptance criteria defined</p>
-                  <p className="text-xs text-muted-foreground max-w-xs">
-                    Add criteria manually below, or synthesize from{" "}
-                    <button
-                      onClick={() => router.push(`/${app}/knowledge/stories`)}
-                      className="text-primary underline underline-offset-2"
-                    >
-                      Module Knowledge
-                    </button>{" "}
-                    to auto-extract them.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {topLevelAcs.map((ac) => {
-                    const acChildren = acs.filter((c) => c.parentId === ac.id);
-                    const hasChildren = acChildren.length > 0;
-                    const isAddingChild = addingChildFor === ac.id;
-                    const status = getEffectiveCoverage(ac);
-
-                    const statusIcon = (s: "covered" | "not_covered" | "unknown") =>
-                      s === "covered" ? (
-                        <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 shrink-0" />
-                      ) : s === "not_covered" ? (
-                        <AlertCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
-                      ) : (
-                        <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30 mt-0.5 shrink-0" />
-                      );
-
-                    const coverageButtons = (acItem: AcceptanceCriterion) =>
-                      acItem.manualCoverage ? (
-                        <button
-                          onClick={() => toggleManualCoverage(acItem.id, null)}
-                          className="text-[10px] text-muted-foreground hover:text-foreground transition-colors border rounded px-1.5 py-0.5 whitespace-nowrap"
-                        >
-                          Clear override
-                        </button>
-                      ) : (
-                        <div className="flex gap-1">
-                          <button
-                            onClick={() => toggleManualCoverage(acItem.id, "covered")}
-                            className="text-[10px] text-muted-foreground hover:text-green-600 transition-colors border rounded px-1.5 py-0.5"
-                          >
-                            ✓ Covered
-                          </button>
-                          <button
-                            onClick={() => toggleManualCoverage(acItem.id, "not_covered")}
-                            className="text-[10px] text-muted-foreground hover:text-destructive transition-colors border rounded px-1.5 py-0.5"
-                          >
-                            ✗ Not covered
-                          </button>
-                        </div>
-                      );
-
-                    const editableText = (acItem: AcceptanceCriterion) =>
-                      editingAcId === acItem.id ? (
-                        <div className="flex gap-2 mt-1">
-                          <input
-                            type="text"
-                            value={editingAcText}
-                            onChange={(e) => setEditingAcText(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                saveAcs(acs.map((a) => a.id === acItem.id ? { ...a, text: editingAcText.trim() } : a));
-                                setEditingAcId(null);
-                              }
-                              if (e.key === "Escape") setEditingAcId(null);
-                            }}
-                            className="flex-1 text-sm rounded border border-input bg-background px-2 py-1 focus:outline-none focus:ring-2 focus:ring-ring/50"
-                            autoFocus
-                          />
-                          <Button size="sm" variant="ghost" className="h-7 px-2 text-xs"
-                            onClick={() => { saveAcs(acs.map((a) => a.id === acItem.id ? { ...a, text: editingAcText.trim() } : a)); setEditingAcId(null); }}>
-                            Save
-                          </Button>
-                          <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setEditingAcId(null)}>
-                            Cancel
-                          </Button>
-                        </div>
-                      ) : (
-                        <p
-                          className="text-sm cursor-pointer hover:text-primary transition-colors"
-                          title="Click to edit"
-                          onClick={() => { setEditingAcId(acItem.id); setEditingAcText(acItem.text); }}
-                        >
-                          {acItem.text}
-                        </p>
-                      );
-
-                    return (
-                      <div key={ac.id} className="rounded-lg border bg-card">
-                        {/* Parent row */}
-                        <div className="flex items-start gap-3 p-3 hover:bg-muted/30 transition-colors rounded-t-lg">
-                          {statusIcon(status)}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-[11px] font-mono font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                {ac.id}
-                              </span>
-                              {!hasChildren && ac.manualCoverage && (
-                                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
-                                  manual
-                                </Badge>
-                              )}
-                              {hasChildren && (
-                                <span className="text-[10px] text-muted-foreground">
-                                  {acChildren.filter(c => getEffectiveCoverage(c) === "covered").length}/{acChildren.length} children covered
-                                </span>
-                              )}
-                            </div>
-                            {editableText(ac)}
-                            {!hasChildren && ac.aiCoveredBy.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-1.5">
-                                {ac.aiCoveredBy.map((tcId) => (
-                                  <span key={tcId} className="text-[10px] font-mono bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400 border border-green-200 dark:border-green-800 px-1.5 py-0.5 rounded">
-                                    {tcId}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1 shrink-0 mt-0.5">
-                            {!hasChildren && coverageButtons(ac)}
-                            <button
-                              onClick={() => { setAddingChildFor(isAddingChild ? null : ac.id); setNewChildText(""); }}
-                              className="text-[10px] text-muted-foreground hover:text-primary transition-colors border rounded px-1.5 py-0.5 whitespace-nowrap"
-                              title="Add a child criterion"
-                            >
-                              + Child
-                            </button>
-                            <button
-                              onClick={() => deleteAc(ac.id)}
-                              className="p-1 rounded hover:bg-destructive/10 hover:text-destructive transition-colors text-muted-foreground"
-                            >
-                              <X className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Children + add-child form */}
-                        {(hasChildren || isAddingChild) && (
-                          <div className="border-t ml-4 pl-3 pr-3 py-2 space-y-1.5">
-                            {acChildren.map((child) => {
-                              const childStatus = getEffectiveCoverage(child);
-                              return (
-                                <div key={child.id} className="flex items-start gap-3 p-2 rounded-md bg-muted/20 hover:bg-muted/40 transition-colors">
-                                  {statusIcon(childStatus)}
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <span className="text-[11px] font-mono font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                        {child.id}
-                                      </span>
-                                      {child.manualCoverage && (
-                                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
-                                          manual
-                                        </Badge>
-                                      )}
-                                    </div>
-                                    {editableText(child)}
-                                    {child.aiCoveredBy.length > 0 && (
-                                      <div className="flex flex-wrap gap-1 mt-1.5">
-                                        {child.aiCoveredBy.map((tcId) => (
-                                          <span key={tcId} className="text-[10px] font-mono bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400 border border-green-200 dark:border-green-800 px-1.5 py-0.5 rounded">
-                                            {tcId}
-                                          </span>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div className="flex items-center gap-1 shrink-0 mt-0.5">
-                                    {coverageButtons(child)}
-                                    <button
-                                      onClick={() => deleteAc(child.id)}
-                                      className="p-1 rounded hover:bg-destructive/10 hover:text-destructive transition-colors text-muted-foreground"
-                                    >
-                                      <X className="h-3.5 w-3.5" />
-                                    </button>
-                                  </div>
-                                </div>
-                              );
-                            })}
-
-                            {isAddingChild && (
-                              <div className="flex gap-2 pt-1">
-                                <input
-                                  type="text"
-                                  value={newChildText}
-                                  onChange={(e) => setNewChildText(e.target.value)}
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter") addChildAc(ac.id);
-                                    if (e.key === "Escape") { setAddingChildFor(null); setNewChildText(""); }
-                                  }}
-                                  placeholder="Add a child criterion…"
-                                  className="flex-1 text-sm rounded-md border border-input bg-background px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-ring/50"
-                                  autoFocus
-                                />
-                                <Button size="sm" onClick={() => addChildAc(ac.id)} disabled={!newChildText.trim()} className="gap-1.5">
-                                  <Plus className="h-3.5 w-3.5" /> Add
-                                </Button>
-                                <Button size="sm" variant="ghost" onClick={() => { setAddingChildFor(null); setNewChildText(""); }}>
-                                  Cancel
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              <div className="flex gap-2 mt-4">
-                <input
-                  type="text"
-                  value={newAcText}
-                  onChange={(e) => setNewAcText(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && addAc()}
-                  placeholder="Add an acceptance criterion…"
-                  className="flex-1 text-sm rounded-md border border-input bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring/50"
-                />
-                <Button size="sm" onClick={addAc} disabled={!newAcText.trim()} className="gap-1.5">
-                  <Plus className="h-3.5 w-3.5" /> Add
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <CoverageTab coverage={cov} testcases={testcases} />
         </TabsContent>
 
         {/* TEST CASES TAB */}
@@ -1708,152 +1109,21 @@ export default function FeatureDetailPage() {
 
         {/* TEST EXECUTION TAB */}
         <TabsContent value="execution">
-          <Card>
-            <CardHeader className="flex-row flex-wrap items-center justify-between gap-y-2 pb-3">
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                <CardTitle className="text-base">Test Execution</CardTitle>
-                {testcaseVersions.length > 1 && (
-                  <AppSelect
-                    aria-label="Select execution version"
-                    size="sm"
-                    value={execVersion || testcaseVersions[testcaseVersions.length - 1].filename}
-                    onChange={(v) => setExecVersion(v ?? "")}
-                    options={[...testcaseVersions].reverse().map((v) => ({
-                      value: v.filename,
-                      label: v.label,
-                    }))}
-                  />
-                )}
-                {executions.length > 0 && (
-                  <span className="text-xs text-muted-foreground">
-                    {executions.filter((e) => e.status === "pass").length} passed ·{" "}
-                    {executions.filter((e) => e.status === "fail").length} failed ·{" "}
-                    {executions.filter((e) => e.status === "blocked").length} blocked ·{" "}
-                    {executions.length} total
-                  </span>
-                )}
-              </div>
-              {executions.length > 0 && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger
-                    disabled={executionExporting}
-                    className="inline-flex items-center gap-1.5 rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium shadow-sm hover:bg-accent hover:text-accent-foreground focus:outline-none disabled:opacity-50"
-                  >
-                    <Download className="h-3.5 w-3.5" /> Export
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => handleExecutionExport("md")} className="gap-2">
-                      <FileText className="h-4 w-4" /> Markdown (.md)
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleExecutionExport("xlsx")} className="gap-2">
-                      <Sheet className="h-4 w-4" /> Excel (.xlsx)
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
-            </CardHeader>
-            <CardContent>
-              {executionsLoading ? (
-                <Skeleton className="h-40 w-full" />
-              ) : executions.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-2 text-center">
-                  <Code className="h-8 w-8 text-muted-foreground/40" />
-                  <p className="font-medium text-sm">No test cases yet</p>
-                  <p className="text-xs text-muted-foreground max-w-xs">
-                    Go to the{" "}
-                    <button
-                      onClick={() => setActiveTab("generate")}
-                      className="text-primary underline underline-offset-2"
-                    >
-                      Generate tab
-                    </button>{" "}
-                    to create test cases first.
-                  </p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b text-left">
-                        <th className="py-2 pr-4 font-medium whitespace-nowrap">Test Case</th>
-                        <th className="py-2 pr-4 font-medium">Objective</th>
-                        <th className="py-2 pr-4 font-medium w-48">Status</th>
-                        <th className="py-2 font-medium w-44">Bug</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {executions.map((row) => (
-                        <tr key={row.id} className="border-b last:border-0 align-middle">
-                          <td className="py-2 pr-4 font-mono text-xs whitespace-nowrap">{row.id}</td>
-                          <td className="py-2 pr-4 text-muted-foreground">{row.objective}</td>
-                          <td className="py-2">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger
-                                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium outline-none transition-opacity hover:opacity-85 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${EXECUTION_STATUS_META[row.status].className}`}
-                              >
-                                {EXECUTION_STATUS_META[row.status].label}
-                                <ChevronDown className="h-3 w-3 opacity-70" />
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="start" className="min-w-44 p-1.5">
-                                {EXECUTION_STATUSES.map((s) => (
-                                  <DropdownMenuItem
-                                    key={s}
-                                    onClick={() => updateExecutionStatus(row.id, s)}
-                                    className="p-1"
-                                  >
-                                    <span className={`inline-flex w-full items-center rounded-full px-3 py-1 text-xs font-medium ${EXECUTION_STATUS_META[s].className}`}>
-                                      {EXECUTION_STATUS_META[s].label}
-                                    </span>
-                                  </DropdownMenuItem>
-                                ))}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </td>
-                          <td className="py-2">
-                            {row.bug ? (
-                              row.bug.jiraUrl ? (
-                                <a
-                                  href={row.bug.jiraUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-                                >
-                                  {row.bug.jiraKey}
-                                  <ExternalLink className="h-3 w-3" />
-                                </a>
-                              ) : (
-                                <a
-                                  href={`/${app}/bugs/${name}/${row.bug.slug}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:underline"
-                                >
-                                  <Bug className="h-3 w-3" />
-                                  Draft
-                                </a>
-                              )
-                            ) : row.status === "fail" ? (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-7 gap-1.5 text-xs text-red-600 border-red-200 hover:bg-red-50"
-                                onClick={() => setBugDialogTc(row)}
-                              >
-                                <Bug className="h-3 w-3" />
-                                Report bug
-                              </Button>
-                            ) : (
-                              <span className="text-xs text-muted-foreground/40">—</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <ExecutionTab
+            app={app}
+            name={name}
+            executions={executions}
+            executionsLoading={executionsLoading}
+            testcaseVersions={testcaseVersions}
+            execVersion={execVersion}
+            onExecVersionChange={setExecVersion}
+            exporting={executionExporting}
+            onExport={handleExecutionExport}
+            onStatusChange={updateExecutionStatus}
+            onNotesChange={updateExecutionNotes}
+            onReportBug={setBugDialogTc}
+            onGoGenerate={() => setActiveTab("generate")}
+          />
         </TabsContent>
 
         {/* GENERATE TAB */}
@@ -2046,28 +1316,6 @@ export default function FeatureDetailPage() {
         onLinked={handleBugLinked}
       />
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={!!confirmDelete} onOpenChange={(open) => !open && setConfirmDelete(null)}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Delete Screenshot</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete{" "}
-              <span className="font-medium text-foreground">{confirmDelete}</span>?{" "}
-              This cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setConfirmDelete(null)} disabled={deleting}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={deleteScreenshot} disabled={deleting}>
-              {deleting ? "Deleting…" : "Delete"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       {/* User Story Link Dialog */}
       <Dialog open={storyEditOpen} onOpenChange={(open) => !open && setStoryEditOpen(false)}>
         <DialogContent className="sm:max-w-sm">
@@ -2247,14 +1495,6 @@ export default function FeatureDetailPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Screenshot lightbox (shared component) */}
-      <Lightbox
-        items={screenshotItems}
-        index={lightboxIndex}
-        onClose={() => setLightboxIndex(null)}
-        onIndexChange={setLightboxIndex}
-      />
 
       {/* Edit Feature Details Dialog — same intake form the creation wizard uses,
           pre-filled from intake.json; saving recompiles workflow.md server-side. */}

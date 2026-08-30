@@ -17,6 +17,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   const { app, feature, slug } = await params
   const guard = await guardApp(app, 'bugs.report')
   if (!guard.ok) return guard.response
+  const userId = guard.access.user.id
 
   const reportKey = `${app}/${feature}/${slug}`
   if (reporting.has(reportKey)) {
@@ -59,7 +60,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       const extraLabels = Array.isArray(body.labels)
         ? body.labels
         : getVariantConfig(await getBugFormat(app), bug.parent_key).jiraLabels
-      const jiraKey = await createJiraIssue(app, bug, imageNames, videoNames, extraLabels)
+      const jiraKey = await createJiraIssue(app, bug, imageNames, videoNames, extraLabels, userId)
       await saveBug(app, feature, slug, bug.body, {
         status: 'reported',
         jira_key: jiraKey,
@@ -70,7 +71,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       // so an attachment failure is non-fatal — surface it as a warning instead of 500.
       let attachmentWarning: string | undefined
       try {
-        await uploadJiraAttachments(jiraKey, files)
+        await uploadJiraAttachments(jiraKey, files, { userId })
       } catch (err) {
         attachmentWarning = err instanceof Error ? err.message : 'Attachment upload failed'
         console.error('[report] Jira attachment upload failed:', err)

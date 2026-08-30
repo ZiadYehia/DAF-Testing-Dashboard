@@ -1,6 +1,8 @@
 import fs from 'fs'
 import path from 'path'
 import { getDataRoot } from './paths'
+import { getDataSource } from './db'
+import { ModuleEntity, IModule } from './entities'
 
 export interface ModuleManifest {
   slug: string
@@ -15,16 +17,13 @@ function modulesDir(appSlug: string): string {
   return path.join(getDataRoot(), appSlug, 'modules')
 }
 
-// Route wrappers live in the source tree, not DATA_ROOT
-function routesRoot(): string {
-  return path.join(process.cwd(), 'src', 'app', '[app]')
-}
-
 export function slugIsValid(slug: string): boolean {
   return /^[a-z0-9-]+$/.test(slug)
 }
 
-export function listModules(appSlug: string): ModuleManifest[] {
+// ─── FS fallback (also the write-through target — see writeModule/deleteModule) ─
+
+function listModulesFs(appSlug: string): ModuleManifest[] {
   const dir = modulesDir(appSlug)
   if (!fs.existsSync(dir)) return []
 
@@ -45,7 +44,7 @@ export function listModules(appSlug: string): ModuleManifest[] {
   return modules.sort((a, b) => a.order - b.order)
 }
 
-export function getModule(appSlug: string, slug: string): ModuleManifest | null {
+function getModuleFs(appSlug: string, slug: string): ModuleManifest | null {
   const manifestPath = path.join(modulesDir(appSlug), slug, 'module.json')
   if (!fs.existsSync(manifestPath)) return null
   try {
@@ -57,56 +56,98 @@ export function getModule(appSlug: string, slug: string): ModuleManifest | null 
   }
 }
 
-export function writeModule(appSlug: string, manifest: ModuleManifest): void {
+function rowToManifest(row: IModule): ModuleManifest {
+  return {
+    slug: row.slug,
+    name: row.name,
+    icon: row.icon,
+    order: row.sortOrder,
+    pathPrefix: row.pathPrefix,
+    description: row.description ?? undefined,
+  }
+}
+
+/**
+ * List a app's modules. DB-first: reads the `modules` table (ordered by
+ * sortOrder). Falls back to scanning module.json files — same behavior as
+ * before the DB migration — when the DB throws or returns zero rows (not yet
+ * seeded for this app).
+ */
+export async function listModules(appSlug: string): Promise<ModuleManifest[]> {
+  try {
+    const ds = await getDataSource()
+    const rows = await ds
+      .getRepository<IModule>(ModuleEntity)
+      .find({ where: { appSlug }, order: { sortOrder: 'ASC' } })
+    if (rows.length > 0) return rows.map(rowToManifest)
+  } catch (err) {
+    console.warn(`[modules] DB read failed for listModules("${appSlug}") — falling back to module.json scan (${err})`)
+  }
+  return listModulesFs(appSlug)
+}
+
+/**
+ * Find one module by slug. DB-first, same pattern as listModules: reads the
+ * `modules` row and falls back to scanning module.json when the DB throws or
+ * has no matching row (not yet seeded for this app). Async — callers (ai.ts,
+ * the admin modules API routes) now await it.
+ */
+export async function getModule(appSlug: string, slug: string): Promise<ModuleManifest | null> {
+  try {
+    const ds = await getDataSource()
+    const row = await ds.getRepository<IModule>(ModuleEntity).findOne({ where: { appSlug, slug } })
+    if (row) return rowToManifest(row)
+  } catch (err) {
+    console.warn(`[modules] DB read failed for getModule("${appSlug}/${slug}") — falling back to module.json (${err})`)
+  }
+  return getModuleFs(appSlug, slug)
+}
+
+/** Create/update a module. Write-through: module.json is written first (the
+ *  source of truth for the sync getModule() read path), then the `modules`
+ *  row is upserted non-fatally — a DB write failure never fails the request,
+ *  since the FS write already succeeded. */
+export async function writeModule(appSlug: string, manifest: ModuleManifest): Promise<void> {
   const dir = path.join(modulesDir(appSlug), manifest.slug)
   fs.mkdirSync(dir, { recursive: true })
   fs.writeFileSync(path.join(dir, 'module.json'), JSON.stringify(manifest, null, 2), 'utf-8')
-}
 
-export function deleteModule(appSlug: string, slug: string): void {
-  fs.rmSync(path.join(modulesDir(appSlug), slug), { recursive: true, force: true })
-}
-
-// Removes the 8 Next.js route wrapper files for a module.
-// Guards against empty pathPrefix to never touch app-level routes.
-export function removeModuleRoutes(pathPrefix: string): void {
-  if (!pathPrefix) return
-  fs.rmSync(path.join(routesRoot(), pathPrefix), { recursive: true, force: true })
-}
-
-// Generates the 8 Next.js route wrappers for a module under src/app/[app]/{pathPrefix}/.
-// Skips files that already exist so re-running (e.g. defensive heal on PUT) is safe.
-export function scaffoldModuleRoutes(
-  _appSlug: string,
-  slug: string,
-  pathPrefix: string,
-  moduleName: string
-): void {
-  const base = path.join(routesRoot(), pathPrefix)
-
-  function writeIfMissing(file: string, content: string): void {
-    fs.mkdirSync(path.dirname(file), { recursive: true })
-    if (!fs.existsSync(file)) {
-      fs.writeFileSync(file, content, 'utf-8')
+  try {
+    const ds = await getDataSource()
+    const repo = ds.getRepository<IModule>(ModuleEntity)
+    const existing = await repo.findOne({ where: { appSlug, slug: manifest.slug } })
+    const row: Partial<IModule> = {
+      appSlug,
+      slug: manifest.slug,
+      name: manifest.name,
+      icon: manifest.icon,
+      sortOrder: manifest.order,
+      pathPrefix: manifest.pathPrefix,
+      description: manifest.description ?? null,
     }
+    if (existing) await repo.update(existing.id, row)
+    else await repo.insert(row)
+  } catch (err) {
+    console.warn(
+      `[modules] DB write failed for writeModule("${appSlug}/${manifest.slug}") — module.json fallback still updated (${err})`
+    )
   }
-
-  const pascalName = slug.split('-').map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join('')
-
-  // 1. features/page.tsx — real component (the only non-re-export)
-  writeIfMissing(path.join(base, 'features', 'page.tsx'), buildFeaturesPage(slug, moduleName, pascalName))
-
-  // 2–8. One-liner re-exports — bracket dirs are literal directory names
-  writeIfMissing(path.join(base, 'features', 'new', 'page.tsx'),                    "export { default } from '@/app/[app]/features/new/page'\n")
-  writeIfMissing(path.join(base, 'features', '[name]', 'page.tsx'),                 "export { default } from '@/app/[app]/features/[name]/page'\n")
-  writeIfMissing(path.join(base, 'bugs', 'page.tsx'),                               "export { default } from '@/app/[app]/bugs/page'\n")
-  writeIfMissing(path.join(base, 'bugs', 'new', 'page.tsx'),                        "export { default } from '@/app/[app]/bugs/new/page'\n")
-  writeIfMissing(path.join(base, 'bugs', '[feature]', '[slug]', 'page.tsx'),        "export { default } from '@/app/[app]/bugs/[feature]/[slug]/page'\n")
-  writeIfMissing(path.join(base, 'board', 'page.tsx'),                              "export { default } from '@/app/[app]/board/page'\n")
-  writeIfMissing(path.join(base, 'requirements', 'page.tsx'),                       "export { default } from '@/app/[app]/requirements/page'\n")
-  writeIfMissing(path.join(base, 'knowledge', 'page.tsx'),                          "export { default } from '@/app/[app]/knowledge/page'\n")
 }
 
-function buildFeaturesPage(_slug: string, _name: string, _pascalName: string): string {
-  return "export { default } from '@/app/[app]/features/page'\n"
+/** Delete a module. Write-through: removes the module.json directory and the
+ *  `modules` row; the DB delete is non-fatal (FS removal already succeeded). */
+export async function deleteModule(appSlug: string, slug: string): Promise<void> {
+  fs.rmSync(path.join(modulesDir(appSlug), slug), { recursive: true, force: true })
+
+  try {
+    const ds = await getDataSource()
+    await ds.getRepository<IModule>(ModuleEntity).delete({ appSlug, slug })
+  } catch (err) {
+    console.warn(`[modules] DB delete failed for deleteModule("${appSlug}/${slug}") — module.json fallback still removed (${err})`)
+  }
 }
+
+// Module routes are served by the permanent dynamic wrappers under
+// src/app/[app]/[prefix]/ — module create/delete are pure data operations.
+// (Physical route scaffolding was removed: writing/deleting files under
+// src/app while the dev server runs triggered an infinite reload loop.)

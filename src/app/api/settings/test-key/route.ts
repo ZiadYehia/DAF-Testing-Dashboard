@@ -5,9 +5,10 @@ import { requireAuth } from '@/lib/auth'
 import { getSetting } from '@/lib/settings'
 import {
   PROVIDER_ENV_KEY,
+  BUILTIN_OPENAI_COMPAT,
   getCustomProviders,
   customProviderKeyName,
-  type BuiltinProvider,
+  providerKeyName,
 } from '@/lib/ai-config'
 
 export const runtime = 'nodejs'
@@ -17,29 +18,35 @@ export const runtime = 'nodejs'
  * call (no generation where avoidable). Body: { provider }. Returns { valid, error? }.
  */
 export async function POST(req: NextRequest) {
+  let userId: number
   try {
-    await requireAuth()
+    userId = (await requireAuth()).id
   } catch (err: any) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: err.status ?? 401 })
   }
 
   const body = await req.json().catch(() => ({}))
   const provider = String(body?.provider ?? '')
-  const custom = provider in PROVIDER_ENV_KEY
+  // Built-in OpenAI-compatible providers (moonshot, openrouter, cerebras, …) are
+  // validated the same way as user-added custom providers — a plain /models call
+  // against their baseUrl.
+  const builtinCompat = provider in PROVIDER_ENV_KEY ? undefined : BUILTIN_OPENAI_COMPAT[provider]
+  const custom = provider in PROVIDER_ENV_KEY || builtinCompat
     ? undefined
     : (await getCustomProviders()).find((p) => p.id === provider)
-  if (!provider || (!(provider in PROVIDER_ENV_KEY) && !custom)) {
+  if (!provider || (!(provider in PROVIDER_ENV_KEY) && !builtinCompat && !custom)) {
     return NextResponse.json({ error: 'Unknown provider' }, { status: 400 })
   }
 
-  const keyName = custom ? customProviderKeyName(custom.id) : PROVIDER_ENV_KEY[provider as BuiltinProvider]
-  const apiKey = await getSetting('global', keyName)
+  const keyName = custom ? customProviderKeyName(custom.id) : providerKeyName(provider)
+  const apiKey = await getSetting(`user:${userId}`, keyName)
   if (!apiKey) return NextResponse.json({ valid: false, error: 'No key configured' })
 
   try {
-    if (custom) {
+    if (custom || builtinCompat) {
       // OpenAI-compatible: GET /models validates the key without generating.
-      const r = await fetch(`${custom.baseUrl.replace(/\/+$/, '')}/models`, {
+      const baseUrl = (custom ?? builtinCompat)!.baseUrl
+      const r = await fetch(`${baseUrl.replace(/\/+$/, '')}/models`, {
         headers: { Authorization: `Bearer ${apiKey}` },
       })
       if (!r.ok) throw new Error(`HTTP ${r.status}`)

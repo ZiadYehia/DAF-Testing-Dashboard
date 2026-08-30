@@ -11,10 +11,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ app:
   const featureParam = req.nextUrl.searchParams.get('feature')
 
   const readiness = featureParam
-    ? featureReadiness(app, featureParam)
+    ? await featureReadiness(app, featureParam)
     : moduleParam
-    ? moduleReadiness(app, moduleParam)
-    : appReadiness(app)
+    ? await moduleReadiness(app, moduleParam)
+    : await appReadiness(app)
 
   return NextResponse.json(readiness)
 }

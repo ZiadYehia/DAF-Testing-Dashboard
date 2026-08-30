@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Testing Dashboard",
+  title: "zTestGround",
   description: "Unified QA testing dashboard — test cases, bugs, and requirements",
 };
 

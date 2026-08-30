@@ -26,7 +26,7 @@ export async function POST(
     // Prefer the locally cached copy; fall back to fetching the story live from Jira.
     const story =
       (await loadLocalStories(app, { keys: [storyKey] }))[0] ??
-      (await fetchStoryByKey(storyKey))
+      (await fetchStoryByKey(storyKey, guard.access.user.id))
     if (!story) {
       return NextResponse.json(
         { error: `Story ${storyKey} was not found locally or in Jira.` },
@@ -35,7 +35,7 @@ export async function POST(
     }
 
     const existingFRs = await getRequirements(app, body.module ?? null)
-    const proposals = await splitStoryIntoFRs(app, story, body.model, {
+    const proposals = await splitStoryIntoFRs(app, guard.access.user.id, story, body.model, {
       moduleSlug: body.module ?? null,
       existingFRs,
       guidance: body.guidance,

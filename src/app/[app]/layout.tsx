@@ -12,7 +12,7 @@ export default async function AppLayout({
   params: Promise<{ app: string }>
 }) {
   const { app } = await params
-  const appConfig = getApp(app)
+  const appConfig = await getApp(app)
   // Archived (disabled) apps 404 on direct access — they stay restorable from /admin/apps.
   if (!appConfig || !appConfig.enabled) notFound()
 
@@ -24,7 +24,7 @@ export default async function AppLayout({
     notFound()
   }
 
-  const initialModules = listModules(app)
+  const initialModules = await listModules(app)
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">

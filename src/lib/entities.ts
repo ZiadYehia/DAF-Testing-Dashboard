@@ -21,6 +21,7 @@ export interface IFeature {
   module?: string | null
   screenshots?: IScreenshot[]
   archivedAt?: Date | null
+  lastAddition?: string | null
 }
 
 export interface IScreenshot {
@@ -28,7 +29,8 @@ export interface IScreenshot {
   feature?: IFeature
   fileName: string
   mimeType: string
-  data: Buffer
+  data: Buffer | null
+  byteSize?: number | null
   uploadedAt: Date
 }
 
@@ -51,6 +53,7 @@ export interface IBug {
   jiraStatus?: string | null
   jiraStatusSyncedAt?: Date | null
   jiraReporter?: string | null
+  deletedAt?: Date | null
   attachments?: IAttachment[]
 }
 
@@ -59,7 +62,8 @@ export interface IAttachment {
   bug?: IBug
   fileName: string
   mimeType: string
-  data: Buffer
+  data: Buffer | null
+  byteSize?: number | null
   uploadedAt: Date
 }
 
@@ -69,6 +73,9 @@ export interface IKnowledgeFile {
   filename: string
   content: string
   module?: string | null
+  docType?: string
+  generatedFromIntake?: boolean
+  updatedAt?: Date | null
 }
 
 export interface IRequirement {
@@ -76,6 +83,50 @@ export interface IRequirement {
   appSlug: string
   content: string
   module?: string | null
+}
+
+export interface IApp {
+  id: number
+  slug: string
+  name: string
+  description: string
+  icon: string
+  enabled: boolean
+  type: string
+  platform: string
+  capabilities: string
+  createdAt: Date | null
+  updatedAt: Date | null
+}
+
+export interface IModule {
+  id: number
+  appSlug: string
+  slug: string
+  name: string
+  icon: string
+  sortOrder: number
+  pathPrefix: string
+  description?: string | null
+}
+
+export interface IIntakeDocument {
+  id: number
+  appSlug: string
+  scopeKind: string
+  scopeSlug: string
+  answers: string
+  updatedAt: Date | null
+}
+
+export interface IAutomationConfig {
+  id: number
+  appSlug: string
+  baseUrlEnv: string
+  credentialEnvs: string
+  login: string
+  generatedFromIntake: boolean
+  updatedAt: Date | null
 }
 
 // ─── EntitySchemas ────────────────────────────────────────────────────────────
@@ -97,6 +148,7 @@ export const FeatureEntity = new EntitySchema<IFeature>({
     testingSubtasks: { type: 'nvarchar', length: 'max' as unknown as number, nullable: true },
     module: { type: 'varchar', length: 50, nullable: true },
     archivedAt: { type: 'datetime2', nullable: true },
+    lastAddition: { type: 'nvarchar', length: 'max' as unknown as number, nullable: true },
   },
   relations: {
     screenshots: {
@@ -117,7 +169,8 @@ export const ScreenshotEntity = new EntitySchema<IScreenshot>({
     id: { type: Number, primary: true, generated: true },
     fileName: { type: 'varchar', length: 500 },
     mimeType: { type: 'varchar', length: 100 },
-    data: { type: 'varbinary', length: 'max' as unknown as number },
+    data: { type: 'varbinary', length: 'max' as unknown as number, nullable: true },
+    byteSize: { type: Number, nullable: true },
     uploadedAt: {
       type: 'datetime2',
       createDate: true,
@@ -157,6 +210,7 @@ export const BugEntity = new EntitySchema<IBug>({
     jiraStatus: { type: 'varchar', length: 100, nullable: true },
     jiraStatusSyncedAt: { type: 'datetime2', nullable: true },
     jiraReporter: { type: 'varchar', length: 255, nullable: true },
+    deletedAt: { type: 'datetime2', nullable: true },
   },
   relations: {
     attachments: {
@@ -177,7 +231,8 @@ export const AttachmentEntity = new EntitySchema<IAttachment>({
     id: { type: Number, primary: true, generated: true },
     fileName: { type: 'varchar', length: 500 },
     mimeType: { type: 'varchar', length: 100 },
-    data: { type: 'varbinary', length: 'max' as unknown as number },
+    data: { type: 'varbinary', length: 'max' as unknown as number, nullable: true },
+    byteSize: { type: Number, nullable: true },
     uploadedAt: {
       type: 'datetime2',
       createDate: true,
@@ -204,8 +259,11 @@ export const KnowledgeFileEntity = new EntitySchema<IKnowledgeFile>({
     filename: { type: 'varchar', length: 500 },
     content: { type: 'nvarchar', length: 'max' as unknown as number, default: '' },
     module: { type: 'varchar', length: 50, nullable: true },
+    docType: { type: 'varchar', length: 20, default: 'knowledge' },
+    generatedFromIntake: { type: Boolean, default: false },
+    updatedAt: { type: 'datetime2', nullable: true },
   },
-  uniques: [{ name: 'UQ_knowledge_app_filename', columns: ['appSlug', 'filename'] }],
+  uniques: [{ name: 'UQ_knowledge_scope', columns: ['appSlug', 'module', 'filename'] }],
 })
 
 export const RequirementEntity = new EntitySchema<IRequirement>({
@@ -218,6 +276,70 @@ export const RequirementEntity = new EntitySchema<IRequirement>({
     module: { type: 'varchar', length: 50, nullable: true },
   },
   uniques: [{ name: 'UQ_requirements_app_module', columns: ['appSlug', 'module'] }],
+})
+
+export const AppEntity = new EntitySchema<IApp>({
+  name: 'App',
+  tableName: 'apps',
+  columns: {
+    id: { type: Number, primary: true, generated: true },
+    slug: { type: 'varchar', length: 50 },
+    name: { type: 'nvarchar', length: 200 },
+    description: { type: 'nvarchar', length: 'max' as unknown as number, default: '' },
+    icon: { type: 'nvarchar', length: 50, default: '' },
+    enabled: { type: Boolean, default: true },
+    type: { type: 'varchar', length: 10, default: 'web' },
+    platform: { type: 'nvarchar', length: 200, default: '' },
+    capabilities: { type: 'nvarchar', length: 'max' as unknown as number, default: '{}' },
+    createdAt: { type: 'datetime2', createDate: true, nullable: true },
+    updatedAt: { type: 'datetime2', nullable: true },
+  },
+  uniques: [{ name: 'UQ_apps_slug', columns: ['slug'] }],
+})
+
+export const ModuleEntity = new EntitySchema<IModule>({
+  name: 'Module',
+  tableName: 'modules',
+  columns: {
+    id: { type: Number, primary: true, generated: true },
+    appSlug: { type: 'varchar', length: 50 },
+    slug: { type: 'varchar', length: 50 },
+    name: { type: 'nvarchar', length: 200 },
+    icon: { type: 'nvarchar', length: 50, default: '' },
+    sortOrder: { type: Number, default: 0 },
+    pathPrefix: { type: 'varchar', length: 100, default: '' },
+    description: { type: 'nvarchar', length: 'max' as unknown as number, nullable: true },
+  },
+  uniques: [{ name: 'UQ_modules_app_slug', columns: ['appSlug', 'slug'] }],
+})
+
+export const IntakeDocumentEntity = new EntitySchema<IIntakeDocument>({
+  name: 'IntakeDocument',
+  tableName: 'intake_documents',
+  columns: {
+    id: { type: Number, primary: true, generated: true },
+    appSlug: { type: 'varchar', length: 50 },
+    scopeKind: { type: 'varchar', length: 10 },
+    scopeSlug: { type: 'varchar', length: 200, default: '' },
+    answers: { type: 'nvarchar', length: 'max' as unknown as number, default: '{}' },
+    updatedAt: { type: 'datetime2', nullable: true },
+  },
+  uniques: [{ name: 'UQ_intake_app_scope', columns: ['appSlug', 'scopeKind', 'scopeSlug'] }],
+})
+
+export const AutomationConfigEntity = new EntitySchema<IAutomationConfig>({
+  name: 'AutomationConfig',
+  tableName: 'automation_configs',
+  columns: {
+    id: { type: Number, primary: true, generated: true },
+    appSlug: { type: 'varchar', length: 50 },
+    baseUrlEnv: { type: 'varchar', length: 200, default: '' },
+    credentialEnvs: { type: 'nvarchar', length: 'max' as unknown as number, default: '[]' },
+    login: { type: 'nvarchar', length: 'max' as unknown as number, default: '[]' },
+    generatedFromIntake: { type: Boolean, default: false },
+    updatedAt: { type: 'datetime2', nullable: true },
+  },
+  uniques: [{ name: 'UQ_automation_app', columns: ['appSlug'] }],
 })
 
 export interface ITestcaseVersion {
@@ -388,6 +510,9 @@ export interface ITestExecution {
   feature?: IFeature
   testcaseId: string
   status: string
+  version?: number | null
+  bugSlug?: string | null
+  notes?: string | null
   updatedAt: Date | null
 }
 
@@ -398,6 +523,9 @@ export const TestExecutionEntity = new EntitySchema<ITestExecution>({
     id:         { type: Number, primary: true, generated: true },
     testcaseId: { type: 'varchar', length: 50 },
     status:     { type: 'varchar', length: 20, default: 'new_added' },
+    version:    { type: Number, nullable: true },
+    bugSlug:    { type: 'varchar', length: 200, nullable: true },
+    notes:      { type: 'nvarchar', length: 'max' as unknown as number, nullable: true },
     updatedAt:  { type: 'datetime2', updateDate: true, nullable: true },
   },
   relations: {
@@ -409,7 +537,7 @@ export const TestExecutionEntity = new EntitySchema<ITestExecution>({
       nullable: false,
     },
   },
-  uniques: [{ name: 'UQ_te_feature_testcase', columns: ['feature', 'testcaseId'] }],
+  uniques: [{ name: 'UQ_te_feature_version_testcase', columns: ['feature', 'version', 'testcaseId'] }],
 })
 
 // ─── Auth Entities ────────────────────────────────────────────────────────────
@@ -422,6 +550,7 @@ export interface IUser {
   role: string
   createdAt: Date
   updatedAt: Date | null
+  deletedAt?: Date | null
 }
 
 export const UserEntity = new EntitySchema<IUser>({
@@ -435,6 +564,7 @@ export const UserEntity = new EntitySchema<IUser>({
     role:         { type: 'varchar', length: 10, default: 'member' },
     createdAt:    { type: 'datetime2', createDate: true },
     updatedAt:    { type: 'datetime2', updateDate: true, nullable: true },
+    deletedAt:    { type: 'datetime2', nullable: true },
   },
   uniques: [{ name: 'UQ_users_email', columns: ['email'] }],
 })
@@ -478,4 +608,50 @@ export const AppMembershipEntity = new EntitySchema<IAppMembership>({
     createdAt:   { type: 'datetime2', createDate: true },
   },
   uniques: [{ name: 'UQ_app_memberships_user_app', columns: ['userId', 'appSlug'] }],
+})
+
+// ─── Change Requests ───────────────────────────────────────────────────────────
+
+export interface IChangeRequest {
+  id: number
+  appSlug: string
+  parentKey: string
+  parentType: string
+  crKey: string | null
+  summary: string
+  description: string
+  changeType: string
+  priority: string
+  label: string
+  module?: string | null
+  jiraStatus: string | null
+  assignee: string | null
+  createdByUserId: number | null
+  createdAt: Date
+  updatedAt: Date | null
+  syncedAt: Date | null
+}
+
+export const ChangeRequestEntity = new EntitySchema<IChangeRequest>({
+  name: 'ChangeRequest',
+  tableName: 'change_requests',
+  columns: {
+    id:              { type: Number, primary: true, generated: true },
+    appSlug:         { type: 'varchar', length: 50 },
+    parentKey:       { type: 'varchar', length: 100 },
+    parentType:      { type: 'varchar', length: 10 },
+    crKey:           { type: 'varchar', length: 100, nullable: true },
+    summary:         { type: 'nvarchar', length: 500 },
+    description:     { type: 'nvarchar', length: 'max' as unknown as number, default: '' },
+    changeType:      { type: 'varchar', length: 100, default: '' },
+    priority:        { type: 'varchar', length: 50, default: '' },
+    label:           { type: 'varchar', length: 20, default: 'CR' },
+    module:          { type: 'varchar', length: 50, nullable: true },
+    jiraStatus:      { type: 'varchar', length: 100, nullable: true },
+    assignee:        { type: 'varchar', length: 255, nullable: true },
+    createdByUserId: { type: Number, nullable: true },
+    createdAt:       { type: 'datetime2', createDate: true },
+    updatedAt:       { type: 'datetime2', updateDate: true, nullable: true },
+    syncedAt:        { type: 'datetime2', nullable: true },
+  },
 })

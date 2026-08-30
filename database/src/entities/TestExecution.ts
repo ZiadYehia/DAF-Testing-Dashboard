@@ -3,7 +3,7 @@ import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Unique, 
 import { Feature } from './Feature'
 
 @Entity('test_executions')
-@Unique(['feature', 'testcaseId'])
+@Unique(['feature', 'version', 'testcaseId'])
 export class TestExecution {
   @PrimaryGeneratedColumn()
   id!: number
@@ -17,6 +17,15 @@ export class TestExecution {
 
   @Column({ type: 'varchar', length: 20, default: 'new_added' })
   status!: string
+
+  @Column({ type: 'int', nullable: true })
+  version!: number | null
+
+  @Column({ type: 'varchar', length: 200, nullable: true })
+  bugSlug!: string | null
+
+  @Column({ type: 'nvarchar', length: 'max', nullable: true })
+  notes!: string | null
 
   @UpdateDateColumn({ type: 'datetime2', nullable: true })
   updatedAt!: Date | null

@@ -32,7 +32,7 @@ async function saveAppLogo(slug: string, dataUrl: string): Promise<void> {
 export async function GET() {
   try {
     await requireAdmin()
-    return NextResponse.json({ apps: getAllApps() })
+    return NextResponse.json({ apps: await getAllApps() })
   } catch (e: unknown) {
     const err = e as { status?: number; message?: string }
     return NextResponse.json({ error: err.message ?? 'Error' }, { status: err.status ?? 500 })
@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
       },
     }
 
-    createApp(config) // throws 409 if slug taken
+    await createApp(config) // throws 409 if slug taken
 
     // Scaffold data folders — knowledge docs are compiled later from intake.
     scaffoldAppData(slug)

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { Plus, Pencil, Archive, RotateCcw, ExternalLink, Eye, EyeOff } from 'lucide-react'
+import { Plus, Pencil, Archive, RotateCcw, ExternalLink, Eye, EyeOff, Download } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -36,6 +36,13 @@ export default function AdminAppsPage() {
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState<string | null>(null)
   const [showArchived, setShowArchived] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const [exportSummary, setExportSummary] = useState<{
+    filesWritten: number
+    filesDeleted: number
+    countsByEntity: Record<string, number>
+    orphanedBinaries: string[]
+  } | null>(null)
 
   const load = useCallback(async () => {
     const res = await fetch('/api/admin/apps')
@@ -67,6 +74,24 @@ export default function AdminAppsPage() {
       load()
     } else {
       toast.error('Action failed')
+    }
+  }
+
+  async function exportToFiles() {
+    setExporting(true)
+    try {
+      const res = await fetch('/api/admin/export', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+      const data = await res.json().catch(() => null)
+      if (!res.ok || !data?.ok) {
+        toast.error(data?.error ?? 'Export failed')
+        return
+      }
+      setExportSummary(data.summary)
+      toast.success(`Exported ${data.summary.filesWritten} file(s) to data/`)
+    } catch {
+      toast.error('Export failed')
+    } finally {
+      setExporting(false)
     }
   }
 
@@ -140,11 +165,35 @@ export default function AdminAppsPage() {
             Add, edit and archive the apps shown in the dashboard.
           </p>
         </div>
-        <Button nativeButton={false} render={<Link href="/admin/apps/new" />}>
-          <Plus className="h-4 w-4" />
-          Add app
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" disabled={exporting} onClick={exportToFiles}>
+            <Download className="h-4 w-4" />
+            {exporting ? 'Exporting…' : 'Export to files'}
+          </Button>
+          <Button nativeButton={false} render={<Link href="/admin/apps/new" />}>
+            <Plus className="h-4 w-4" />
+            Add app
+          </Button>
+        </div>
       </div>
+
+      {exportSummary && (
+        <Card size="sm">
+          <CardContent className="pt-3 pb-3 text-xs text-muted-foreground space-y-1">
+            <p className="font-medium text-foreground">
+              Export complete — {exportSummary.filesWritten} file(s) written, {exportSummary.filesDeleted} pruned.
+            </p>
+            <p>
+              {Object.entries(exportSummary.countsByEntity).map(([k, v]) => `${k}: ${v}`).join(' · ')}
+            </p>
+            {exportSummary.orphanedBinaries.length > 0 && (
+              <p>
+                Orphaned binaries (left on disk, owning row deleted): {exportSummary.orphanedBinaries.join(', ')}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {loading ? (
         <p className="text-sm text-muted-foreground py-8 text-center">Loading…</p>

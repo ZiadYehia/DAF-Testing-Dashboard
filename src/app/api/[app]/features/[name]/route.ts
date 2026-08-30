@@ -21,6 +21,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
   const permission = body.type === 'testing-phase' ? 'features.lifecycle' : 'features.edit'
   const guard = await guardApp(app, permission)
   if (!guard.ok) return guard.response
+  const userId = guard.access.user.id
   if (body.type === 'workflow') {
     await saveWorkflow(app, name, body.content ?? '')
   } else if (body.type === 'testcases') {
@@ -35,7 +36,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
     await saveFeatureMetadata(app, name, meta)
     // Cache the linked Jira story locally so it appears in story dropdowns
     if (meta.jiraKey) {
-      fetchStoryByKey(meta.jiraKey)
+      fetchStoryByKey(meta.jiraKey, userId)
         .then((story) => { if (story) saveLocalStory(app, story) })
         .catch(() => {})
     }
@@ -55,8 +56,8 @@ export async function PUT(req: NextRequest, { params }: Params) {
       const { jiraKey, testingSubtasks } = await getFeatureTestingData(app, name)
       if (!testingSubtasks[phase] && jiraKey) {
         try {
-          const assignee = body.assignToMe ? await getMyJiraAssignee() : undefined
-          const subtaskKey = await createTestingSubtask(app, jiraKey, phase as TestingPhase, assignee ?? undefined)
+          const assignee = body.assignToMe ? await getMyJiraAssignee(userId) : undefined
+          const subtaskKey = await createTestingSubtask(app, jiraKey, phase as TestingPhase, assignee ?? undefined, userId)
           subtaskEntry = { phase, key: subtaskKey }
           subtaskCreated = true
         } catch (err) {
@@ -90,5 +91,5 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
 
 export async function GET_examples(_req: NextRequest, { params }: Params) {
   const { app } = await params
-  return NextResponse.json(listExamples(app))
+  return NextResponse.json(await listExamples(app))
 }

@@ -30,17 +30,34 @@ export default function KnowledgePage() {
   const pathname = usePathname()
   const app = params?.app as string
   // Detect module from pathname:
-  //   /[app]/framework/knowledge    → 'framework'
+  //   /[app]/knowledge              → app-level (null)
   //   /[app]/m/[module]/knowledge   → whatever [module] is
+  //   /[app]/[prefix]/knowledge     → module whose pathPrefix matches [prefix]
   const pathParts = pathname?.split('/') ?? []
-  const frameworkIdx = pathParts.indexOf('framework')
-  const mIdx = pathParts.indexOf('m')
-  let moduleParam: string | null = null
-  if (frameworkIdx !== -1) {
-    moduleParam = 'framework'
-  } else if (mIdx !== -1 && pathParts[mIdx + 1] && pathParts[mIdx + 1] !== 'knowledge') {
-    moduleParam = pathParts[mIdx + 1]
-  }
+  const appIdx = pathParts.indexOf(app)
+  const knowledgeIdx = pathParts.indexOf('knowledge', appIdx + 1)
+  const mid = knowledgeIdx > appIdx ? pathParts.slice(appIdx + 1, knowledgeIdx) : []
+  const directModule = mid[0] === 'm' ? (mid[1] ?? null) : null
+  const urlPrefix = mid[0] && mid[0] !== 'm' ? mid[0] : ''
+
+  // undefined = still resolving the URL prefix to a module slug; null = app-level
+  const [moduleParam, setModuleParam] = useState<string | null | undefined>(undefined)
+  useEffect(() => {
+    if (directModule) { setModuleParam(directModule); return }
+    if (!urlPrefix) { setModuleParam(null); return }
+    let cancelled = false
+    fetch(`/api/${app}/modules`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then((modules: { slug: string; pathPrefix: string }[]) => {
+        if (cancelled) return
+        const matched = Array.isArray(modules) ? modules.find((m) => m.pathPrefix === urlPrefix) : undefined
+        // Fall back to the segment itself — covers the legacy /[app]/framework route
+        setModuleParam(matched?.slug ?? urlPrefix)
+      })
+      .catch(() => { if (!cancelled) setModuleParam(urlPrefix) })
+    return () => { cancelled = true }
+  }, [app, directModule, urlPrefix])
+
   const moduleQuery = moduleParam ? `?module=${moduleParam}` : ''
 
   // Display path for user-facing messages
@@ -62,14 +79,15 @@ export default function KnowledgePage() {
   const [helpOpen, setHelpOpen] = useState(false)
 
   useEffect(() => {
+    if (moduleParam === undefined) return // wait for prefix → module resolution
     fetch(`/api/${app}/knowledge${moduleQuery}`)
       .then((r) => r.json())
       .then((data: KnowledgeFile[]) => { setFiles(data); setLoadingList(false) })
-  }, [app, moduleQuery])
+  }, [app, moduleQuery, moduleParam])
 
   // Aggregated open questions across the app's knowledge (app-level view only).
   useEffect(() => {
-    if (moduleParam) return
+    if (moduleParam !== null) return
     fetch(`/api/${app}/knowledge/gaps`)
       .then((r) => r.json())
       .then((d) => setGaps(Array.isArray(d.gaps) ? d.gaps : []))

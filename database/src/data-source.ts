@@ -19,6 +19,11 @@ import {
   User,
   Session,
   AppMembership,
+  App,
+  Module,
+  IntakeDocument,
+  AutomationConfig,
+  ChangeRequest,
 } from './entities'
 
 // Load .env.local from the project root (one level above the database/ folder)
@@ -39,10 +44,12 @@ export const AppDataSource = new DataSource({
   database: process.env.DB_NAME ?? 'TestingDashboard',
   synchronize: false,
   logging: false,
-  entities: [Feature, Screenshot, Bug, Attachment, KnowledgeFile, Requirement, Setting, AcceptanceCriterion, TestcaseVersion, ApprovedExample, StoryLink, UserStory, TestExecution, User, Session, AppMembership],
+  entities: [Feature, Screenshot, Bug, Attachment, KnowledgeFile, Requirement, Setting, AcceptanceCriterion, TestcaseVersion, ApprovedExample, StoryLink, UserStory, TestExecution, User, Session, AppMembership, App, Module, IntakeDocument, AutomationConfig, ChangeRequest],
   migrations: [path.join(__dirname, 'migrations', process.env.NODE_ENV === 'production' ? '*.js' : '*.ts')],
   options: {
     encrypt: process.env.DB_ENCRYPT === 'true',
-    trustServerCertificate: true,
+    // Default true for backward compatibility; set DB_TRUST_CERT=false in
+    // production with DB_ENCRYPT=true and a CA-signed certificate.
+    trustServerCertificate: process.env.DB_TRUST_CERT !== 'false',
   },
 })

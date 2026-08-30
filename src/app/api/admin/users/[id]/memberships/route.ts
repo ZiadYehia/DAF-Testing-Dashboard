@@ -2,9 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth'
 import { getDataSource } from '@/lib/db'
 import type { IAppMembership } from '@/lib/entities'
-import { APP_ROLES, filterPermissionKeys } from '@/lib/permissions'
-
-const VALID_ROLES = new Set<string>(APP_ROLES)
+import { filterPermissionKeys } from '@/lib/permissions'
+import { getRoleDefinitions } from '@/lib/role-permissions-server'
 
 export async function GET(
   _req: NextRequest,
@@ -36,8 +35,13 @@ export async function PUT(
 
     const body = await req.json().catch(() => null)
     const incoming: { appSlug: string; role: string; permissions?: string[] }[] = body?.memberships ?? []
+    // Validate against the live role registry (built-ins + persisted custom
+    // roles like "scrum") plus the special "custom" role — NOT a static list,
+    // or a custom role would be silently dropped and its membership wiped.
+    const roleDefs = await getRoleDefinitions()
+    const validRoles = new Set<string>([...roleDefs.map(r => r.name), 'custom'])
     const valid = incoming.filter(
-      m => typeof m.appSlug === 'string' && m.appSlug.length > 0 && VALID_ROLES.has(m.role)
+      m => typeof m.appSlug === 'string' && m.appSlug.length > 0 && validRoles.has(m.role)
     )
 
     const ds = await getDataSource()

@@ -13,6 +13,6 @@ export default async function AutomationPage({
   params: Promise<{ app: string }>
 }) {
   const { app } = await params
-  if (!getApp(app)) notFound()
+  if (!(await getApp(app))) notFound()
   return <AutomationHub app={app} />
 }

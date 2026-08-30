@@ -50,10 +50,10 @@ function modFilterLegacy(m: ModuleManifest): string | null {
 
 export default async function AppDashboard({ params }: { params: Promise<{ app: string }> }) {
   const { app } = await params
-  const appConfig = getApp(app)
+  const appConfig = await getApp(app)
   if (!appConfig) notFound()
 
-  const modules = listModules(app)
+  const modules = await listModules(app)
   const hasModules = modules.length >= 2
 
   const [featureStats, bugStats, allFeatures, allBugs, reqContent, boardConfig] = await Promise.all([
@@ -87,6 +87,14 @@ export default async function AppDashboard({ params }: { params: Promise<{ app: 
   function countReqRows(content: string) {
     const lines = content.split('\n').filter((l) => l.trim().startsWith('|'))
     return Math.max(0, lines.length - 2)
+  }
+
+  // Feature detail links must carry the owning module's pathPrefix so the
+  // sidebar highlights the right module and back-nav stays in it.
+  const prefixByModule = new Map(modules.map((m) => [m.slug, m.pathPrefix]))
+  function featureHref(f: { name: string; module?: string | null }): string {
+    const prefix = f.module ? prefixByModule.get(f.module) ?? '' : ''
+    return `/${app}${prefix ? `/${prefix}` : ''}/features/${f.name}`
   }
 
   const recentFeatures = allFeatures
@@ -230,7 +238,7 @@ export default async function AppDashboard({ params }: { params: Promise<{ app: 
               recentFeatures.map((f) => (
                 <Link
                   key={f.name}
-                  href={`/${app}/features/${f.name}`}
+                  href={featureHref(f)}
                   className="flex items-center justify-between rounded-lg px-2.5 py-2 hover:bg-accent/60 transition-colors group"
                 >
                   <div className="flex items-center gap-2 min-w-0">

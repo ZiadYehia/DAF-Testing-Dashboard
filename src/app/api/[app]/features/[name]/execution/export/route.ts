@@ -37,7 +37,7 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   // ---- Excel ----
   const workbook = new ExcelJS.Workbook()
-  workbook.creator = 'Testing Dashboard'
+  workbook.creator = 'zTestGround'
 
   const sheet = workbook.addWorksheet(name.slice(0, 31))
 
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   // Detail table header
   const headers = [
     'Feature ID', 'TestCase ID', 'Validity', 'Objective',
-    'Test Data', 'Expected Results', 'Execution Status', 'Linked Bug',
+    'Test Data', 'Expected Results', 'Execution Status', 'Linked Bug', 'Notes',
   ]
   const headerRow = sheet.addRow(headers)
   const headerRowNum = headerRow.number
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     const r = sheet.addRow([
       row.featureId, row.testcaseId, row.validity, row.objective,
       row.testData, row.expectedResults,
-      EXECUTION_STATUS_LABELS[row.status], row.linkedBug,
+      EXECUTION_STATUS_LABELS[row.status], row.linkedBug, row.notes,
     ])
     r.eachCell({ includeEmpty: true }, (c) => {
       c.alignment = { vertical: 'top', wrapText: true }
@@ -120,7 +120,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     r.height = 50
   }
 
-  const colWidths = [20, 14, 10, 45, 40, 45, 18, 16]
+  const colWidths = [20, 14, 10, 45, 40, 45, 18, 16, 50]
   headers.forEach((_, i) => { sheet.getColumn(i + 1).width = colWidths[i] ?? 20 })
 
   sheet.views = [{ state: 'frozen', ySplit: headerRowNum }]

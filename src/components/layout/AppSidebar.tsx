@@ -27,6 +27,8 @@ import {
   Package,
   Scale,
   Bot,
+  GitPullRequestArrow,
+  UserCog,
 } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import {
@@ -86,6 +88,7 @@ function getModuleNavItems(appSlug: string, moduleSlug: string, pathPrefix: stri
   return [
     { label: 'Features & Test Cases', href: `${base}/features`,    icon: <FlaskConical className="h-4 w-4" />, permKey: 'features.view' },
     { label: 'Bug Reports',           href: `${base}/bugs`,         icon: <Bug className="h-4 w-4" />,          permKey: 'bugs.view' },
+    { label: 'Change Requests',       href: `${base}/change-requests`, icon: <GitPullRequestArrow className="h-4 w-4" />, permKey: 'changerequests.view' },
     { label: 'Board',                 href: `${base}/board`,        icon: <Columns3 className="h-4 w-4" />,     permKey: 'bugs.view' },
     { label: 'Requirements',          href: `${base}/requirements`, icon: <FileText className="h-4 w-4" />,     permKey: 'requirements.view' },
     { label: 'Knowledge Base',        href: knowledgeHref,          icon: <BookOpen className="h-4 w-4" />,     permKey: 'knowledge.view' },
@@ -249,7 +252,9 @@ export function AppSidebar({ initialModules }: AppSidebarProps = {}) {
     e.preventDefault()
   }
 
-  const hasMultipleModules = modules !== null && modules.length >= 2
+  // Grouped (collapsible per-module) nav whenever the app has any module —
+  // keeps the collapse/expand UI even with a single module.
+  const hasMultipleModules = modules !== null && modules.length >= 1
 
   function getActiveModuleSlug(): string | null {
     if (!modules || modules.length === 0) return null
@@ -306,6 +311,7 @@ export function AppSidebar({ initialModules }: AppSidebarProps = {}) {
     ? [
         { label: 'Manage Apps', href: '/admin/apps', icon: <Layers className="h-4 w-4" /> },
         { label: 'User Management', href: '/admin/users', icon: <Users className="h-4 w-4" /> },
+        { label: 'Roles & Permissions', href: '/admin/roles', icon: <Shield className="h-4 w-4" /> },
       ]
     : []
 
@@ -313,6 +319,7 @@ export function AppSidebar({ initialModules }: AppSidebarProps = {}) {
     { label: 'Dashboard',            href: `/${appSlug}`,                    icon: <LayoutDashboard className="h-4 w-4" />, permKey: 'dashboard.view' },
     { label: 'Features & Test Cases', href: `/${appSlug}/features`,           icon: <FlaskConical className="h-4 w-4" />,    permKey: 'features.view' },
     { label: 'Bug Reports',           href: `/${appSlug}/bugs`,               icon: <Bug className="h-4 w-4" />,             permKey: 'bugs.view' },
+    { label: 'Change Requests',       href: `/${appSlug}/change-requests`,    icon: <GitPullRequestArrow className="h-4 w-4" />, permKey: 'changerequests.view' },
     { label: 'Board',                 href: `/${appSlug}/board`,              icon: <Columns3 className="h-4 w-4" />,        permKey: 'bugs.view' },
     { label: 'Requirements',          href: `/${appSlug}/requirements`,       icon: <FileText className="h-4 w-4" />,        permKey: 'requirements.view' },
     { label: 'Knowledge Base',        href: `/${appSlug}/knowledge`,          icon: <BookOpen className="h-4 w-4" />,        permKey: 'knowledge.view' },
@@ -358,6 +365,14 @@ export function AppSidebar({ initialModules }: AppSidebarProps = {}) {
       </DropdownMenuGroup>
       <DropdownMenuSeparator />
       <DropdownMenuItem
+        onClick={() => { window.location.href = '/account' }}
+        className="cursor-pointer"
+      >
+        <UserCog className="h-4 w-4 mr-2" />
+        My Account
+      </DropdownMenuItem>
+      <DropdownMenuSeparator />
+      <DropdownMenuItem
         onClick={logout}
         className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer"
       >
@@ -376,7 +391,7 @@ export function AppSidebar({ initialModules }: AppSidebarProps = {}) {
           ? <img src={logos.dashboard} alt="" className="h-5 w-5 object-contain rounded shrink-0" />
           : <Beaker className="h-5 w-5 text-primary shrink-0" />
         }
-        <span className="font-semibold text-sm leading-tight">Testing Dashboard</span>
+        <span className="font-semibold text-sm leading-tight">zTestGround</span>
       </div>
 
       {/* App Switcher */}
@@ -703,7 +718,7 @@ export function AppSidebar({ initialModules }: AppSidebarProps = {}) {
             ? <img src={logos.dashboard} alt="" className="h-5 w-5 object-contain rounded shrink-0" />
             : <Beaker className="h-5 w-5 text-primary" />
           }
-          <span className="font-semibold text-sm">Testing Dashboard</span>
+          <span className="font-semibold text-sm">zTestGround</span>
         </div>
         <div className="ml-auto flex items-center gap-1">
           <ThemeToggle />

@@ -65,6 +65,9 @@ export class Bug {
   @Column({ type: 'varchar', length: 255, nullable: true })
   jiraReporter!: string | null
 
+  @Column({ type: 'datetime2', nullable: true })
+  deletedAt!: Date | null
+
   @OneToMany(() => Attachment, (a) => a.bug, { cascade: true })
   attachments!: Attachment[]
 }

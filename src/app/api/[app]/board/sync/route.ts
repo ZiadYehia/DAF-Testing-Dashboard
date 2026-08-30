@@ -16,14 +16,14 @@ export async function POST(
   if (!guard.ok) return guard.response
 
   try {
-    await syncJiraStatuses(app)
+    await syncJiraStatuses(app, guard.access.user.id)
   } catch (err: any) {
     return NextResponse.json({ error: err?.message ?? 'Jira sync failed' }, { status: 502 })
   }
 
   const moduleParam = req.nextUrl.searchParams.get('module')
-  const module = moduleParam ?? null
-  const bugs = await listBugs(app, module)
+  const moduleVal = moduleParam ?? null
+  const bugs = await listBugs(app, moduleVal)
   // Read the Jira base URL once instead of once per bug (was an N+1 DB lookup via
   // getJiraIssueUrl inside the loop). Same URL shape as jira.ts's getJiraIssueUrl.
   const jiraBaseUrl = ((await getSetting('global', 'JIRA_BASE_URL')) ?? '').replace(/\/$/, '')

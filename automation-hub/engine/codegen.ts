@@ -70,19 +70,19 @@ Framework conventions (the vendored automation-hub/python/ pytest framework):
     from autotest_framework.src.utils.data import unique_suffix
 
 
-    @allure.feature("Item Manager")
-    @allure.story("Item Create Manual")
+    @allure.feature("Asset Manager")
+    @allure.story("Asset Create Manual")
     class TestCRT172:
 
         @pytest.mark.regression
-        @allure.title("CRT_172: Sample Item created with required fields only")
-        def test_sample_item_minimal_create(self, item_create_page):
+        @allure.title("CRT_172: Evidence File asset created with required fields only")
+        def test_evidence_file_minimal_create(self, asset_create_page):
             uniq = unique_suffix()
-            name = f"QA Sample Item {uniq}"
-            (item_create_page
-                .select_family("Sample")
-                .select_type("Sample Item")
-                .fill_item_name(name)
+            name = f"QA Evidence File {uniq}"
+            (asset_create_page
+                .select_family("Evidence")
+                .select_type("Evidence File")
+                .fill_asset_name(name)
                 .fill_field("System File ID / File Hash", f"EF-HASH-{uniq}")
                 .next_step()
                 .create()
@@ -94,8 +94,8 @@ Framework conventions (the vendored automation-hub/python/ pytest framework):
 - Fixtures available${app ? ` for app "${slug}"` : ''} (declared in tests/${slug}/conftest.py — take
   ONE as the test method's argument, whichever already lands on the right screen):
   - \`logged_in_page\` — an authenticated Playwright \`Page\`, no navigation yet.
-  - \`items_page\` — logged in, already on the app's list page (e.g. the app’s list route).
-  - \`item_create_page\` — logged in, already on the create wizard's first step.
+  - \`assets_page\` — logged in, already on the app's list page (e.g. the app’s list route).
+  - \`asset_create_page\` — logged in, already on the create wizard's first step.
   Do not re-implement login or navigation in the test — pick the fixture that already
   starts where the flow needs to begin.
 - Page-object API: page objects live under \`pages/${slug}/*.py\`, extend \`BasePage\`
@@ -482,12 +482,13 @@ async function generateTsArtifactsWithRetryViaRunModel(
   modelId: string,
   system: string,
   userPrompt: string,
+  userId: number,
 ): Promise<TsArtifacts> {
   const { runModel } = await import('@/lib/ai')
   let lastText = ''
   const runOnce = async (retryInstr?: string): Promise<string> => {
     if (!retryInstr) {
-      lastText = await runModel(modelId, system, userPrompt, { maxTokens: 8192 })
+      lastText = await runModel(modelId, system, userPrompt, { maxTokens: 8192 }, userId)
       return lastText
     }
     const retryPrompt = `${userPrompt}
@@ -497,7 +498,7 @@ YOUR PREVIOUS RESPONSE (rejected):
 ${lastText}
 
 ${retryInstr}`
-    lastText = await runModel(modelId, system, retryPrompt, { maxTokens: 8192 })
+    lastText = await runModel(modelId, system, retryPrompt, { maxTokens: 8192 }, userId)
     return lastText
   }
   return generateArtifactsWithRetry(runOnce, parseTsArtifacts, lintFluentTestTs, tsRetryInstruction)
@@ -559,6 +560,9 @@ export async function generateSpecFromTestcase(input: {
   steps: string
   /** Dashboard app slug this automation targets (drives framework conventions). */
   app?: string
+  /** Calling user's id — only used for the non-Anthropic (runModel) path, which
+   *  resolves that provider's key from the user's own per-user settings. */
+  userId: number
 }): Promise<TsArtifacts> {
   const userPrompt = `Test title: ${input.title}\n\nObjective: ${input.objective}\n\nSteps:\n${input.steps}\n\nWrite the fluent Playwright artifacts.`
   const system = TS_FROM_TESTCASE_SYSTEM + (await tsConventions(input.app))
@@ -566,7 +570,7 @@ export async function generateSpecFromTestcase(input: {
     const client = new Anthropic({ apiKey: input.apiKey })
     return generateTsArtifactsWithRetry(client, input.modelId, system, [{ role: 'user', content: userPrompt }])
   }
-  return generateTsArtifactsWithRetryViaRunModel(input.modelId, system, userPrompt)
+  return generateTsArtifactsWithRetryViaRunModel(input.modelId, system, userPrompt, input.userId)
 }
 
 const REVISE_TS_SYSTEM = `You revise an existing framework-native Playwright fluent test (this hub's own TypeScript
@@ -586,6 +590,9 @@ export async function reviseSpec(input: {
   instruction: string
   /** Dashboard app slug this automation targets (drives framework conventions). */
   app?: string
+  /** Calling user's id — only used for the non-Anthropic (runModel) path, which
+   *  resolves that provider's key from the user's own per-user settings. */
+  userId: number
 }): Promise<TsArtifacts> {
   const pageFilesSection = input.pageFiles.length
     ? input.pageFiles.map((f) => `### ${f.path}\n${f.content}`).join('\n\n')
@@ -606,7 +613,7 @@ Re-emit the full output (test file, plus any page blocks needed) using the
     const client = new Anthropic({ apiKey: input.apiKey })
     return generateTsArtifactsWithRetry(client, input.modelId, system, [{ role: 'user', content: userPrompt }])
   }
-  return generateTsArtifactsWithRetryViaRunModel(input.modelId, system, userPrompt)
+  return generateTsArtifactsWithRetryViaRunModel(input.modelId, system, userPrompt, input.userId)
 }
 
 // ─── Silent MCP page mining (Phase D) — mines page-object methods only, never a test ──
@@ -853,12 +860,13 @@ async function generatePyArtifactsWithRetryViaRunModel(
   modelId: string,
   system: string,
   userPrompt: string,
+  userId: number,
 ): Promise<PyArtifacts> {
   const { runModel } = await import('@/lib/ai')
   let lastText = ''
   const runOnce = async (retryInstr?: string): Promise<string> => {
     if (!retryInstr) {
-      lastText = await runModel(modelId, system, userPrompt, { maxTokens: 8192 })
+      lastText = await runModel(modelId, system, userPrompt, { maxTokens: 8192 }, userId)
       return lastText
     }
     const retryPrompt = `${userPrompt}
@@ -868,7 +876,7 @@ YOUR PREVIOUS RESPONSE (rejected):
 ${lastText}
 
 ${retryInstr}`
-    lastText = await runModel(modelId, system, retryPrompt, { maxTokens: 8192 })
+    lastText = await runModel(modelId, system, retryPrompt, { maxTokens: 8192 }, userId)
     return lastText
   }
   return generateArtifactsWithRetry(runOnce, parsePyArtifacts, lintFluentTest, pyRetryInstruction)
@@ -929,6 +937,9 @@ export async function generateSpecPythonFromTestcase(input: {
   steps: string
   /** Dashboard app slug this automation targets (drives framework conventions). */
   app?: string
+  /** Calling user's id — only used for the non-Anthropic (runModel) path, which
+   *  resolves that provider's key from the user's own per-user settings. */
+  userId: number
 }): Promise<PyArtifacts> {
   const userPrompt = `Test title: ${input.title}\n\nObjective: ${input.objective}\n\nSteps:\n${input.steps}\n\nWrite the pytest artifacts.`
   const system = PYTHON_FROM_TESTCASE_SYSTEM + pythonConventions(input.app)
@@ -936,7 +947,7 @@ export async function generateSpecPythonFromTestcase(input: {
     const client = new Anthropic({ apiKey: input.apiKey })
     return generatePyArtifactsWithRetry(client, input.modelId, system, [{ role: 'user', content: userPrompt }])
   }
-  return generatePyArtifactsWithRetryViaRunModel(input.modelId, system, userPrompt)
+  return generatePyArtifactsWithRetryViaRunModel(input.modelId, system, userPrompt, input.userId)
 }
 
 const REVISE_PY_SYSTEM = `You revise an existing framework-native pytest test (vendored automation-hub/python/
@@ -956,6 +967,9 @@ export async function revisePySpec(input: {
   instruction: string
   /** Dashboard app slug this automation targets (drives framework conventions). */
   app?: string
+  /** Calling user's id — only used for the non-Anthropic (runModel) path, which
+   *  resolves that provider's key from the user's own per-user settings. */
+  userId: number
 }): Promise<PyArtifacts> {
   const pageFilesSection = input.pageFiles.length
     ? input.pageFiles.map((f) => `### ${f.path}\n${f.content}`).join('\n\n')
@@ -976,7 +990,7 @@ Re-emit the full output (test file, plus any page-append blocks needed) using th
     const client = new Anthropic({ apiKey: input.apiKey })
     return generatePyArtifactsWithRetry(client, input.modelId, system, [{ role: 'user', content: userPrompt }])
   }
-  return generatePyArtifactsWithRetryViaRunModel(input.modelId, system, userPrompt)
+  return generatePyArtifactsWithRetryViaRunModel(input.modelId, system, userPrompt, input.userId)
 }
 
 /**
@@ -986,14 +1000,14 @@ Re-emit the full output (test file, plus any page-append blocks needed) using th
  * Dynamically imports the main app's settings/model modules to keep the normal case
  * (explicit apiKey/modelId passed in) fully decoupled from the Next.js app.
  */
-async function resolveDefaultClaudeCreds(): Promise<{ apiKey: string; modelId: string }> {
+async function resolveDefaultClaudeCreds(userId: number): Promise<{ apiKey: string; modelId: string }> {
   const [{ getSetting }, { getModelsWithStatusAsync }] = await Promise.all([
     import('@/lib/settings'),
     import('@/lib/ai'),
   ])
   const [apiKey, models] = await Promise.all([
-    getSetting('global', 'ANTHROPIC_API_KEY'),
-    getModelsWithStatusAsync(),
+    getSetting(`user:${userId}`, 'ANTHROPIC_API_KEY'),
+    getModelsWithStatusAsync(userId),
   ])
   const enabledClaude = models.filter((m) => m.provider === 'anthropic' && m.enabled)
   const modelId = enabledClaude[0]?.id
@@ -1012,8 +1026,8 @@ page-object methods; any raw selector/assertion the TS spec used that has no exi
 method becomes a NEW method in a page-append block instead of being inlined into the test.`
 
 /** Translate a saved TypeScript @playwright/test spec into the framework-native pytest equivalent. */
-export async function translateSpecToPython(tsSpec: string, app: string): Promise<PyArtifacts> {
-  const { apiKey, modelId } = await resolveDefaultClaudeCreds()
+export async function translateSpecToPython(tsSpec: string, app: string, userId: number): Promise<PyArtifacts> {
+  const { apiKey, modelId } = await resolveDefaultClaudeCreds(userId)
   const client = new Anthropic({ apiKey })
   const userPrompt = `TypeScript spec to translate:\n\n${tsSpec}\n\nWrite the equivalent pytest artifacts.`
   return generatePyArtifactsWithRetry(

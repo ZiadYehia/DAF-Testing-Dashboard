@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth } from '@/lib/auth'
+import { requireAuth, requireAdmin } from '@/lib/auth'
 import { getModelsWithStatusAsync } from '@/lib/ai'
 import { getModelRegistry, saveModelRegistry, getCustomProviders, providerKeyName, PROVIDER_ENV_KEY } from '@/lib/ai-config'
 
@@ -7,21 +7,23 @@ export const runtime = 'nodejs'
 
 /** GET /api/settings/models — merged model list (with status) + the raw registry. */
 export async function GET(_req: NextRequest) {
+  let userId: number
   try {
-    await requireAuth()
+    userId = (await requireAuth()).id
   } catch (err: any) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: err.status ?? 401 })
   }
-  const [models, registry] = await Promise.all([getModelsWithStatusAsync(), getModelRegistry()])
+  const [models, registry] = await Promise.all([getModelsWithStatusAsync(userId), getModelRegistry()])
   return NextResponse.json({ models, registry })
 }
 
-/** PUT /api/settings/models — save the registry. Body: { disabled, custom }. */
+/** PUT /api/settings/models — save the registry. Body: { disabled, custom }.
+ *  Admin-only: the model registry is global configuration shared by every app. */
 export async function PUT(req: NextRequest) {
   try {
-    await requireAuth()
+    await requireAdmin()
   } catch (err: any) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: err.status ?? 401 })
+    return NextResponse.json({ error: 'Forbidden' }, { status: err.status ?? 401 })
   }
   const body = await req.json().catch(() => ({}))
   const disabled: string[] = Array.isArray(body?.disabled) ? body.disabled.map(String) : []

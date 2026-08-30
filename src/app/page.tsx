@@ -3,7 +3,7 @@ import { getEnabledApps } from '@/lib/apps'
 import { getSession } from '@/lib/auth'
 
 export default async function Home() {
-  const first = getEnabledApps()[0]
+  const first = (await getEnabledApps())[0]
   if (first) redirect(`/${first.slug}`)
 
   // No apps yet (fresh install) — send admins to create one; show a minimal

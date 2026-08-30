@@ -17,8 +17,8 @@ const resolveId = (id: string) => (id === 'claude-haiku-4-5' ? 'claude-haiku-4-5
  * first enabled Claude model (kept as the default since it's the best-tested path).
  * Null if nothing is configured.
  */
-async function pickModel(requested?: string): Promise<{ modelId: string; provider: string } | null> {
-  const models = await getModelsWithStatusAsync()
+async function pickModel(userId: number, requested?: string): Promise<{ modelId: string; provider: string } | null> {
+  const models = await getModelsWithStatusAsync(userId)
   const enabled = models.filter((x) => x.enabled)
   const match = requested ? enabled.find((m) => m.id === requested) : undefined
   const chosen = match ?? enabled.find((m) => m.provider === 'anthropic') ?? enabled[0]
@@ -54,8 +54,8 @@ export async function POST(
     return NextResponse.json({ error: 'No Python spec exists for this project yet' }, { status: 404 })
   }
 
-  const picked = await pickModel(typeof body?.model === 'string' ? body.model : undefined)
-  const apiKey = picked?.provider === 'anthropic' ? (await getSetting('global', 'ANTHROPIC_API_KEY')) ?? '' : ''
+  const picked = await pickModel(guard.access.user.id, typeof body?.model === 'string' ? body.model : undefined)
+  const apiKey = picked?.provider === 'anthropic' ? (await getSetting(`user:${guard.access.user.id}`, 'ANTHROPIC_API_KEY')) ?? '' : ''
   if (!picked) {
     return NextResponse.json({ error: 'No AI model available — add a provider API key in Settings → AI & Models' }, { status: 400 })
   }
@@ -66,6 +66,7 @@ export async function POST(
       const pageFiles = listPageFileContents(targetApp)
       const artifacts = await revisePySpec({
         apiKey, modelId: picked.modelId, provider: picked.provider, currentTest: detail.pySpec as string, pageFiles, instruction, app,
+        userId: guard.access.user.id,
       })
       const { touchedPages } = await applyPyArtifacts(project, artifacts)
       return NextResponse.json({
@@ -78,6 +79,7 @@ export async function POST(
     const pageFiles = listTsPageFileContents(targetApp)
     const artifacts = await reviseSpec({
       apiKey, modelId: picked.modelId, provider: picked.provider, currentSpec: detail.spec, pageFiles, instruction, app,
+      userId: guard.access.user.id,
     })
     const { touchedPages } = await applyTsArtifacts(project, artifacts)
     return NextResponse.json({

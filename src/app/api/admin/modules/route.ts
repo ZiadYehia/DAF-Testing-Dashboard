@@ -1,18 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth'
 import { getEnabledApps } from '@/lib/apps'
-import { listModules, writeModule, scaffoldModuleRoutes, slugIsValid } from '@/lib/modules'
+import { listModules, writeModule, slugIsValid } from '@/lib/modules'
 import type { ModuleManifest } from '@/lib/modules'
 
 export async function GET() {
   try {
     await requireAdmin()
-    const apps = getEnabledApps().map((a) => ({
-      appSlug: a.slug,
-      appName: a.name,
-      appIcon: a.icon,
-      modules: listModules(a.slug),
-    }))
+    const apps = await Promise.all(
+      (await getEnabledApps()).map(async (a) => ({
+        appSlug: a.slug,
+        appName: a.name,
+        appIcon: a.icon,
+        modules: await listModules(a.slug),
+      }))
+    )
     return NextResponse.json({ apps })
   } catch (e: unknown) {
     const err = e as { status?: number; message?: string }
@@ -36,7 +38,7 @@ export async function POST(req: NextRequest) {
     const pathPrefix = (body?.pathPrefix ?? slug).trim().toLowerCase()
     const description = body?.description?.trim() ?? ''
 
-    if (!appSlug || !getEnabledApps().some((a) => a.slug === appSlug)) {
+    if (!appSlug || !(await getEnabledApps()).some((a) => a.slug === appSlug)) {
       return NextResponse.json({ error: 'Invalid or disabled app' }, { status: 400 })
     }
     if (!slug || !slugIsValid(slug)) {
@@ -49,7 +51,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'name is required' }, { status: 400 })
     }
 
-    const existing = listModules(appSlug)
+    const existing = await listModules(appSlug)
     if (existing.some((m) => m.slug === slug)) {
       return NextResponse.json({ error: `Module "${slug}" already exists for ${appSlug}` }, { status: 409 })
     }
@@ -61,8 +63,7 @@ export async function POST(req: NextRequest) {
     }
 
     const manifest: ModuleManifest = { slug, name, icon, order, pathPrefix, description }
-    writeModule(appSlug, manifest)
-    if (pathPrefix) scaffoldModuleRoutes(appSlug, slug, pathPrefix, name)
+    await writeModule(appSlug, manifest)
 
     return NextResponse.json({ ok: true, module: manifest }, { status: 201 })
   } catch (e: unknown) {

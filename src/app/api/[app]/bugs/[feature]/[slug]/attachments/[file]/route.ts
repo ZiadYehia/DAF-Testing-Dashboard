@@ -14,7 +14,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   } catch (err: any) {
     return NextResponse.json({ error: 'Not found' }, { status: err.status ?? 404 })
   }
-  if (!getApp(app)) return new NextResponse('App not found', { status: 404 })
+  if (!(await getApp(app))) return new NextResponse('App not found', { status: 404 })
 
   // Sanitize to prevent path traversal
   const safeFile = path.basename(file)

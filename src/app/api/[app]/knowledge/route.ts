@@ -11,6 +11,6 @@ export async function GET(
   if (!guard.ok) return guard.response
 
   const moduleParam = req.nextUrl.searchParams.get('module')
-  const files = listKnowledgeFiles(app, moduleParam ?? null)
+  const files = await listKnowledgeFiles(app, moduleParam ?? null)
   return NextResponse.json(files)
 }

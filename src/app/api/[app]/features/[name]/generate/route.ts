@@ -41,13 +41,13 @@ export async function POST(req: NextRequest, { params }: Params) {
 
     // Warn (don't block) on missing test-case-gen context — the hard 400s above
     // (workflow/screenshots) still apply; this just surfaces knowledge gaps.
-    const missing = featureReadiness(app, name).capabilities.testcaseGen
+    const missing = (await featureReadiness(app, name)).capabilities.testcaseGen
     if (missing.length > 0) {
       emit('warning', { missing })
     }
 
     try {
-      const additions = await generateTestCases(app, name, body.model, (phase) => {
+      const additions = await generateTestCases(app, guard.access.user.id, name, body.model, (phase) => {
         lastStep = phase.step
         lastTotal = phase.total
         emit('phase', phase)
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         const version = await saveTestcaseAdditions(app, name, finalContent)
         const existingIds = new Set(parseTestcaseRows(existing).map((r) => r.id))
         const addedIds = parseTestcaseRows(finalContent).map((r) => r.id).filter((id) => !existingIds.has(id))
-        recordLastAddition(app, name, addedIds, version)
+        await recordLastAddition(app, name, addedIds, version)
         emit('complete', { data: { testcases: finalContent, version, added: addedIds.length } })
       } else {
         emit('phase', { label: 'Finalizing', detail: 'Saving test case version…', step: lastTotal, total: lastTotal })

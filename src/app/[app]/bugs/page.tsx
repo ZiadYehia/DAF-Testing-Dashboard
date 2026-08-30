@@ -1,14 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { PriorityBadge } from '@/components/shared/PriorityBadge'
 import { StatsCard } from '@/components/shared/StatsCard'
-import { formatDate, titleCase } from '@/lib/utils'
-import { Bug, CheckCircle2, Clock, ExternalLink, Plus, Search, ArrowUp, ArrowDown } from 'lucide-react'
+import { formatDate, titleCase, cn } from '@/lib/utils'
+import { Bug, CheckCircle2, Clock, ExternalLink, Plus, Search, ArrowUp, ArrowDown, RefreshCw, Loader2 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,7 +18,7 @@ import type { BugSummary } from '@/lib/bugs'
 
 interface BugStats { total: number; draft: number; reported: number }
 
-type SortColumn = 'title' | 'feature' | 'priority' | 'status' | 'reported' | 'jira'
+type SortColumn = 'title' | 'feature' | 'priority' | 'status' | 'reported' | 'jira' | 'jiraStatus'
 
 function priorityRank(priority: string): number {
   const m = priority.match(/P(\d)/)
@@ -35,8 +35,10 @@ export default function BugsPage() {
   const moduleSlug = bugsIdx > appIdx + 1 ? parts[appIdx + 1] : null
   const bugsBase = moduleSlug ? `/${app}/${moduleSlug}/bugs` : `/${app}/bugs`
 
-  const [bugs, setBugs] = useState<(BugSummary & { jira_url?: string | null })[]>([])
+  const [bugs, setBugs] = useState<(BugSummary & { jira_url?: string | null; jira_status?: string | null })[]>([])
   const [loading, setLoading] = useState(true)
+  const [syncing, setSyncing] = useState(false)
+  const [syncState, setSyncState] = useState<'idle' | 'synced' | 'cached'>('idle')
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [filterFeature, setFilterFeature] = useState<string>('all')
   const [filterPriority, setFilterPriority] = useState<string>('all')
@@ -49,11 +51,35 @@ export default function BugsPage() {
   const [availableFeatures, setAvailableFeatures] = useState<{ name: string; module: string | null }[]>([])
   const [changingFeature, setChangingFeature] = useState<string | null>(null)
 
+  const syncUrl = moduleSlug ? `/api/${app}/board/sync?module=${moduleSlug}` : `/api/${app}/board/sync`
+
+  const runSync = useCallback(async () => {
+    if (!app) return
+    setSyncing(true)
+    try {
+      const res = await fetch(syncUrl, { method: 'POST' })
+      if (!res.ok) throw new Error('sync failed')
+      const data: (BugSummary & { jira_url?: string | null; jira_status?: string | null })[] = await res.json()
+      if (!Array.isArray(data)) throw new Error('sync failed')
+      setBugs(data)
+      setSyncState('synced')
+    } catch {
+      toast.error('Jira sync failed — showing cached statuses')
+      setSyncState('cached')
+    } finally {
+      setSyncing(false)
+    }
+  }, [app, syncUrl])
+
   useEffect(() => {
     const url = moduleSlug ? `/api/${app}/bugs?module=${moduleSlug}` : `/api/${app}/bugs`
     fetch(url)
       .then((r) => r.json())
-      .then((data: (BugSummary & { jira_url?: string | null })[]) => { setBugs(Array.isArray(data) ? data : []); setLoading(false) })
+      .then((data: (BugSummary & { jira_url?: string | null; jira_status?: string | null })[]) => {
+        setBugs(Array.isArray(data) ? data : [])
+        setLoading(false)
+        runSync()
+      })
 
     // Always fetch all features so we can filter per-bug by module
     fetch(`/api/${app}/features`)
@@ -61,6 +87,7 @@ export default function BugsPage() {
       .then((data: { name: string; module?: string | null }[]) =>
         setAvailableFeatures(data.map((f) => ({ name: f.name, module: f.module ?? null })))
       )
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [app, moduleSlug])
 
   // Returns only the features in the same module as the given bug
@@ -137,6 +164,12 @@ export default function BugsPage() {
         else if (!b.jira_key) cmp = -1
         else cmp = a.jira_key.localeCompare(b.jira_key)
         break
+      case 'jiraStatus':
+        if (!a.jira_status && !b.jira_status) cmp = 0
+        else if (!a.jira_status) cmp = 1
+        else if (!b.jira_status) cmp = -1
+        else cmp = a.jira_status.localeCompare(b.jira_status)
+        break
     }
     return sortDir === 'asc' ? cmp : -cmp
   }) : filtered
@@ -176,15 +209,31 @@ export default function BugsPage() {
         <div>
           {moduleSlug && <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">{titleCase(moduleSlug)} Module</p>}
           <h1 className="text-2xl font-bold tracking-tight">Bug Reports</h1>
-          <p className="text-muted-foreground text-sm mt-1">{stats.total} total · {stats.draft} open · {stats.reported} reported to Jira</p>
+          <p className="text-muted-foreground text-sm mt-1 flex items-center gap-1.5">
+            {stats.total} total · {stats.draft} open · {stats.reported} reported to Jira
+            <span aria-hidden>·</span>
+            {syncing ? (
+              <span className="inline-flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> Syncing…</span>
+            ) : syncState === 'synced' ? (
+              'Synced just now'
+            ) : syncState === 'cached' ? (
+              'Showing cached statuses'
+            ) : null}
+          </p>
         </div>
-        <Link href={`${bugsBase}/new`} className="shrink-0">
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">New Bug</span>
-            <span className="sm:hidden">New</span>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button variant="outline" className="gap-2" onClick={runSync} disabled={syncing}>
+            <RefreshCw className={cn('h-4 w-4', syncing && 'animate-spin')} />
+            Refresh
           </Button>
-        </Link>
+          <Link href={`${bugsBase}/new`} className="shrink-0">
+            <Button className="gap-2">
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">New Bug</span>
+              <span className="sm:hidden">New</span>
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Stats */}
@@ -307,6 +356,9 @@ export default function BugsPage() {
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide hidden lg:table-cell cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('jira')}>
                       Jira{sortIcon('jira')}
                     </th>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide hidden lg:table-cell cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('jiraStatus')}>
+                      Jira Status{sortIcon('jiraStatus')}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -351,6 +403,9 @@ export default function BugsPage() {
                         ) : b.jira_key ? (
                           <span className="text-muted-foreground text-xs">{b.jira_key}</span>
                         ) : <span className="text-muted-foreground text-xs">—</span>}
+                      </td>
+                      <td className="px-4 py-3 hidden lg:table-cell">
+                        <span className="text-muted-foreground text-xs">{b.jira_status ?? '—'}</span>
                       </td>
                     </tr>
                   ))}

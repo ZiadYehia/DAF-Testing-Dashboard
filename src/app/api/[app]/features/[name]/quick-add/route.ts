@@ -30,7 +30,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     try {
       const existing = feature.testcases?.trim() ?? ''
       const additions = await generateTestCasesFromScenarios(
-        app, name, scenarios, body.model,
+        app, guard.access.user.id, name, scenarios, body.model,
         (phase) => { lastTotal = phase.total; emit('phase', phase) },
         existing ? feature.testcases : undefined
       )
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       const version = await saveTestcaseAdditions(app, name, finalContent)
       const existingIds = new Set(parseTestcaseRows(existing).map((r) => r.id))
       const addedIds = parseTestcaseRows(finalContent).map((r) => r.id).filter((id) => !existingIds.has(id))
-      recordLastAddition(app, name, addedIds, version)
+      await recordLastAddition(app, name, addedIds, version)
       emit('complete', { data: { testcases: finalContent, version, added: addedIds.length } })
     } catch (err) {
       emit('error', { message: err instanceof Error ? err.message : 'AI generation failed' })

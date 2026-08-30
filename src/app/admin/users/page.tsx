@@ -3,24 +3,30 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Plus, Trash2, ChevronDown, ChevronUp, Users, Shield } from 'lucide-react'
+import { Plus, ChevronDown, ChevronUp, Users, Shield, KeyRound, Archive, RotateCcw, Copy } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
 import { AppSelect } from '@/components/shared/AppSelect'
 import { useApps } from '@/lib/use-apps'
 import {
-  APP_ROLES,
   ROLE_LABELS,
   PERMISSION_GROUPS,
   GROUP_LABELS,
-  PRESETS,
   VIEW_ONLY_SET,
   permissionLabel,
   filterPermissionKeys,
-  type AppRole,
   type PermissionKey,
+  type RoleDefinition,
 } from '@/lib/permissions'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -31,13 +37,22 @@ interface User {
   email: string
   name: string
   role: string
+  deletedAt?: string | null
   memberships: Membership[]
 }
 
-const APP_ROLE_OPTIONS = [
-  { value: '', label: 'No access' },
-  ...APP_ROLES.map(r => ({ value: r, label: ROLE_LABELS[r].label, description: ROLE_LABELS[r].description })),
-] as const
+function buildAppRoleOptions(roleDefs: RoleDefinition[]) {
+  return [
+    { value: '', label: 'No access', description: undefined as string | undefined },
+    ...roleDefs.map(r => ({ value: r.name, label: r.label, description: r.description })),
+    { value: 'custom', label: 'Custom', description: 'Hand-picked permissions from the catalog below.' },
+  ]
+}
+
+function roleLabel(roleDefs: RoleDefinition[], name: string): string {
+  if (name === 'custom') return 'Custom'
+  return roleDefs.find(r => r.name === name)?.label ?? name
+}
 
 const GLOBAL_ROLE_OPTIONS = [
   { value: 'member', label: 'Member', description: 'App access via memberships' },
@@ -58,7 +73,7 @@ function RolePill({ role }: { role: string }) {
   )
 }
 
-function AppRolePill({ role }: { role: string }) {
+function AppRolePill({ role, roleDefs }: { role: string; roleDefs: RoleDefinition[] }) {
   const cls: Record<string, string> = {
     qa:        'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800',
     developer: 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800',
@@ -66,7 +81,7 @@ function AppRolePill({ role }: { role: string }) {
   }
   return (
     <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-xs font-medium ${cls[role] ?? 'bg-muted text-muted-foreground border-border'}`}>
-      {ROLE_LABELS[role as AppRole]?.label ?? role}
+      {roleLabel(roleDefs, role)}
     </span>
   )
 }
@@ -88,9 +103,11 @@ function parseMembershipPermissions(m: Membership): PermissionKey[] {
 function PermissionPicker({
   selected,
   onChange,
+  roleDefs,
 }: {
   selected: PermissionKey[]
   onChange: (keys: PermissionKey[]) => void
+  roleDefs: RoleDefinition[]
 }) {
   const set = new Set(selected)
 
@@ -104,14 +121,22 @@ function PermissionPicker({
   return (
     <div className="mt-2 rounded-lg border border-border/60 bg-muted/20 p-3 space-y-3">
       <div className="flex flex-wrap gap-1.5">
-        <Button type="button" variant="outline" size="xs" onClick={() => onChange([...PRESETS.qa])}>
-          QA preset
-        </Button>
-        <Button type="button" variant="outline" size="xs" onClick={() => onChange([...PRESETS.developer])}>
-          Developer preset
-        </Button>
+        {roleDefs.map(r => (
+          <Button
+            key={r.name}
+            type="button"
+            variant="outline"
+            size="xs"
+            onClick={() => onChange([...r.permissions])}
+          >
+            {r.label} preset
+          </Button>
+        ))}
         <Button type="button" variant="outline" size="xs" onClick={() => onChange([...VIEW_ONLY_SET])}>
           View only
+        </Button>
+        <Button type="button" variant="outline" size="xs" onClick={() => onChange([])}>
+          Clear
         </Button>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
@@ -140,8 +165,17 @@ function PermissionPicker({
   )
 }
 
-function MembershipEditor({ user, onSaved }: { user: User; onSaved: (u: User) => void }) {
+function MembershipEditor({
+  user,
+  onSaved,
+  roleDefs,
+}: {
+  user: User
+  onSaved: (u: User) => void
+  roleDefs: RoleDefinition[]
+}) {
   const { apps } = useApps()
+  const appRoleOptions = buildAppRoleOptions(roleDefs)
   const [roles, setRoles] = useState<Record<string, AppRoleState>>(() => {
     const map: Record<string, AppRoleState> = {}
     user.memberships.forEach(m => {
@@ -207,7 +241,7 @@ function MembershipEditor({ user, onSaved }: { user: User; onSaved: (u: User) =>
                 )}
               </div>
               <AppSelect
-                options={APP_ROLE_OPTIONS.map(o => ({ ...o }))}
+                options={appRoleOptions.map(o => ({ ...o }))}
                 value={state.role}
                 onChange={(v) => setRole(app.slug, v)}
                 size="sm"
@@ -219,6 +253,7 @@ function MembershipEditor({ user, onSaved }: { user: User; onSaved: (u: User) =>
               <PermissionPicker
                 selected={state.permissions}
                 onChange={(keys) => setPermissions(app.slug, keys)}
+                roleDefs={roleDefs}
               />
             )}
           </div>
@@ -227,6 +262,67 @@ function MembershipEditor({ user, onSaved }: { user: User; onSaved: (u: User) =>
       <Button size="sm" onClick={save} disabled={saving} className="w-full mt-1">
         {saving ? 'Saving…' : 'Save memberships'}
       </Button>
+    </div>
+  )
+}
+
+// ─── Edit user form ───────────────────────────────────────────────────────────
+
+function EditUserForm({ user, onSaved }: { user: User; onSaved: (u: User) => void }) {
+  const [name, setName] = useState(user.name)
+  const [email, setEmail] = useState(user.email)
+  const [role, setRole] = useState<'member' | 'admin'>(user.role === 'admin' ? 'admin' : 'member')
+  const [saving, setSaving] = useState(false)
+
+  const dirty = name !== user.name || email !== user.email || role !== user.role
+
+  async function save() {
+    setSaving(true)
+    const body: Record<string, string> = {}
+    if (name.trim() !== user.name) body.name = name.trim()
+    if (email.trim() !== user.email) body.email = email.trim()
+    if (role !== user.role) body.role = role
+    const res = await fetch(`/api/admin/users/${user.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    setSaving(false)
+    if (res.ok) {
+      onSaved({ ...user, ...body })
+      toast.success('User updated')
+    } else {
+      const data = await res.json().catch(() => ({}))
+      toast.error(data.error ?? 'Failed to update user')
+    }
+  }
+
+  return (
+    <div className="mb-4 pb-4 border-b border-border/60 space-y-3">
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-medium">Full name</label>
+          <Input value={name} onChange={(e) => setName(e.target.value)} />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-medium">Email</label>
+          <Input value={email} type="email" onChange={(e) => setEmail(e.target.value)} />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-medium">Global role</label>
+          <AppSelect
+            options={GLOBAL_ROLE_OPTIONS.map(o => ({ ...o }))}
+            value={role}
+            onChange={(v) => setRole(v as 'member' | 'admin')}
+            className="w-full"
+          />
+        </div>
+      </div>
+      <div className="flex justify-end">
+        <Button size="sm" onClick={save} disabled={saving || !dirty}>
+          {saving ? 'Saving…' : 'Save changes'}
+        </Button>
+      </div>
     </div>
   )
 }
@@ -243,6 +339,10 @@ export default function AdminUsersPage() {
   const [creating, setCreating] = useState(false)
   const [createError, setCreateError] = useState('')
   const [createRole, setCreateRole] = useState<'member' | 'admin'>('member')
+  const [resettingId, setResettingId] = useState<number | null>(null)
+  const [resetPasswordResult, setResetPasswordResult] = useState<{ name: string; password: string } | null>(null)
+  const [confirmReset, setConfirmReset] = useState<User | null>(null)
+  const [roleDefs, setRoleDefs] = useState<RoleDefinition[]>([])
 
   const load = useCallback(async () => {
     const res = await fetch('/api/admin/users')
@@ -253,7 +353,14 @@ export default function AdminUsersPage() {
     setLoading(false)
   }, [router])
 
-  useEffect(() => { load() }, [load])
+  const loadRoles = useCallback(async () => {
+    const res = await fetch('/api/admin/roles')
+    if (!res.ok) return
+    const data = await res.json()
+    setRoleDefs(data.roles ?? [])
+  }, [])
+
+  useEffect(() => { load(); loadRoles() }, [load, loadRoles])
 
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -284,16 +391,43 @@ export default function AdminUsersPage() {
     }
   }
 
-  async function handleDelete(user: User) {
-    if (!confirm(`Delete ${user.name} (${user.email})?\nThis cannot be undone.`)) return
+  async function handleResetPassword(user: User) {
+    setConfirmReset(null)
+    setResettingId(user.id)
+    const res = await fetch(`/api/admin/users/${user.id}/reset-password`, { method: 'POST' })
+    const data = await res.json().catch(() => ({}))
+    setResettingId(null)
+    if (res.ok) {
+      setResetPasswordResult({ name: user.name, password: data.password })
+    } else {
+      toast.error(data.error ?? 'Failed to reset password')
+    }
+  }
+
+  async function handleRetire(user: User) {
+    if (!confirm(`Retire ${user.name}? They will be blocked from logging in. You can restore them later.`)) return
     const res = await fetch(`/api/admin/users/${user.id}`, { method: 'DELETE' })
     if (res.ok) {
-      setUsers(u => u.filter(x => x.id !== user.id))
-      if (expandedId === user.id) setExpandedId(null)
-      toast.success('User deleted')
+      toast.success('User retired')
+      load()
     } else {
       const data = await res.json().catch(() => ({}))
-      toast.error(data.error ?? 'Failed to delete user')
+      toast.error(data.error ?? 'Failed to retire user')
+    }
+  }
+
+  async function handleRestore(user: User) {
+    const res = await fetch(`/api/admin/users/${user.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ restore: true }),
+    })
+    if (res.ok) {
+      setUsers(us => us.map(u => u.id === user.id ? { ...u, deletedAt: null } : u))
+      toast.success('User restored')
+    } else {
+      const data = await res.json().catch(() => ({}))
+      toast.error(data.error ?? 'Failed to restore user')
     }
   }
 
@@ -326,18 +460,18 @@ export default function AdminUsersPage() {
             <CardDescription>They can log in immediately with these credentials.</CardDescription>
           </CardHeader>
           <CardContent className="pt-4">
-            <form onSubmit={handleCreate} className="grid gap-3 sm:grid-cols-2">
+            <form onSubmit={handleCreate} className="grid gap-3 sm:grid-cols-2" autoComplete="off">
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-medium">Full name</label>
-                <Input name="name" placeholder="Alice Smith" required />
+                <Input name="name" placeholder="Alice Smith" autoComplete="off" required />
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-medium">Email</label>
-                <Input name="email" type="email" placeholder="alice@example.com" required />
+                <Input name="email" type="email" placeholder="alice@example.com" autoComplete="off" required />
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-medium">Password</label>
-                <Input name="password" type="password" placeholder="Min. 8 characters" minLength={8} required />
+                <Input name="password" type="password" placeholder="Min. 8 characters" minLength={8} autoComplete="new-password" required />
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-medium">Global role</label>
@@ -372,7 +506,7 @@ export default function AdminUsersPage() {
       ) : (
         <div className="space-y-2">
           {users.map(user => (
-            <Card key={user.id} size="sm">
+            <Card key={user.id} size="sm" className={user.deletedAt ? 'opacity-60' : undefined}>
               <CardContent className="pt-3 pb-3">
                 {/* User row */}
                 <div className="flex items-center gap-3">
@@ -383,17 +517,20 @@ export default function AdminUsersPage() {
                       {user.role === 'admin' && (
                         <Shield className="h-3.5 w-3.5 text-amber-500 shrink-0" />
                       )}
+                      {user.deletedAt && (
+                        <Badge variant="destructive" className="text-xs">Retired</Badge>
+                      )}
                     </div>
                     <p className="text-xs text-muted-foreground truncate mt-0.5">{user.email}</p>
                     {user.memberships.length > 0 && (
                       <div className="flex flex-wrap gap-2 mt-1.5">
                         {user.memberships.map(m => {
                           const app = apps.find(a => a.slug === m.appSlug)
-                          const roleLabel = ROLE_LABELS[m.role as AppRole]?.label ?? m.role
+                          const membershipRoleLabel = roleLabel(roleDefs, m.role)
                           const label =
                             m.role === 'custom'
-                              ? `${roleLabel} (${parseMembershipPermissions(m).length})`
-                              : roleLabel
+                              ? `${membershipRoleLabel} (${parseMembershipPermissions(m).length})`
+                              : membershipRoleLabel
                           return (
                             <span key={m.appSlug} className="flex items-center gap-1 text-xs text-muted-foreground">
                               {app?.icon} <span className="font-medium">{label}</span>
@@ -416,31 +553,56 @@ export default function AdminUsersPage() {
                       Apps
                     </Button>
                     <Button
-                      variant="destructive"
+                      variant="outline"
                       size="icon-xs"
-                      onClick={() => handleDelete(user)}
-                      aria-label={`Delete ${user.name}`}
+                      onClick={() => setConfirmReset(user)}
+                      disabled={resettingId === user.id}
+                      aria-label={`Reset password for ${user.name}`}
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
+                      <KeyRound className="h-3.5 w-3.5" />
                     </Button>
+                    {user.deletedAt ? (
+                      <Button
+                        variant="outline"
+                        size="icon-xs"
+                        onClick={() => handleRestore(user)}
+                        aria-label={`Restore ${user.name}`}
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="destructive"
+                        size="icon-xs"
+                        onClick={() => handleRetire(user)}
+                        aria-label={`Retire ${user.name}`}
+                      >
+                        <Archive className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
                   </div>
                 </div>
 
                 {/* Membership editor */}
                 {expandedId === user.id && (
                   <div className="mt-3 pt-3 border-t border-border/60">
+                    <EditUserForm
+                      user={user}
+                      onSaved={updated => setUsers(us => us.map(u => u.id === updated.id ? updated : u))}
+                    />
                     <p className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wide">
                       App Access
                     </p>
                     <MembershipEditor
                       user={user}
                       onSaved={updated => setUsers(us => us.map(u => u.id === updated.id ? updated : u))}
+                      roleDefs={roleDefs}
                     />
                     <div className="mt-3 pt-3 border-t border-border/40 space-y-1.5">
-                      {APP_ROLES.map(r => (
-                        <div key={r} className="flex items-start gap-2 text-xs text-muted-foreground">
-                          <AppRolePill role={r} />
-                          <span>{ROLE_LABELS[r].description}</span>
+                      {[...roleDefs, { name: 'custom', label: 'Custom', description: ROLE_LABELS.custom.description }].map(r => (
+                        <div key={r.name} className="flex items-start gap-2 text-xs text-muted-foreground">
+                          <AppRolePill role={r.name} roleDefs={roleDefs} />
+                          <span>{r.description}</span>
                         </div>
                       ))}
                     </div>
@@ -451,6 +613,72 @@ export default function AdminUsersPage() {
           ))}
         </div>
       )}
+
+      {/* Reset password confirm */}
+      <Dialog
+        open={!!confirmReset}
+        onOpenChange={(open) => { if (!open) setConfirmReset(null) }}
+      >
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Reset password</DialogTitle>
+            <DialogDescription>
+              Reset password for <strong>{confirmReset?.name}</strong>? Their current password
+              stops working immediately and a new one is generated.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmReset(null)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => { if (confirmReset) handleResetPassword(confirmReset) }}
+              disabled={!!confirmReset && resettingId === confirmReset.id}
+            >
+              Reset password
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reset password result modal */}
+      <Dialog
+        open={!!resetPasswordResult}
+        onOpenChange={(open) => { if (!open) setResetPasswordResult(null) }}
+      >
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Password reset</DialogTitle>
+            <DialogDescription>
+              New password for <strong>{resetPasswordResult?.name}</strong>. This is shown only
+              once — copy it now, it cannot be retrieved again.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center gap-2">
+            <code className="flex-1 truncate rounded-md border border-border bg-muted/40 px-3 py-2 font-mono text-sm">
+              {resetPasswordResult?.password}
+            </code>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon-sm"
+              onClick={() => {
+                if (!resetPasswordResult) return
+                navigator.clipboard.writeText(resetPasswordResult.password)
+                toast.success('Password copied')
+              }}
+              aria-label="Copy password"
+            >
+              <Copy className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setResetPasswordResult(null)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

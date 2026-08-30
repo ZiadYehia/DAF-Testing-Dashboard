@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getFeature, parseTestcaseRows } from '@/lib/features'
-import { getExecutions, getExecutionBugs, setExecutionStatus, DEFAULT_EXECUTION_STATUS } from '@/lib/execution'
+import {
+  getExecutions,
+  getExecutionBugs,
+  getExecutionNotes,
+  setExecutionStatus,
+  setExecutionNote,
+  DEFAULT_EXECUTION_STATUS,
+} from '@/lib/execution'
 import { getBug } from '@/lib/bugs'
 import { getJiraIssueUrl } from '@/lib/jira'
 import { guardApp } from '@/lib/auth'
@@ -34,6 +41,7 @@ export async function GET(req: NextRequest, { params }: Params) {
   const rows = parseTestcaseRows(content)
   const statuses = await getExecutions(app, name, effectiveVersion)
   const bugLinks = await getExecutionBugs(app, name, effectiveVersion)
+  const notes = await getExecutionNotes(app, name, effectiveVersion)
 
   // Resolve each linked bug slug once (only the few that have links).
   const linkedSlugs = [...new Set(Object.values(bugLinks))]
@@ -57,6 +65,7 @@ export async function GET(req: NextRequest, { params }: Params) {
     steps: r.steps,
     status: statuses[r.id] ?? DEFAULT_EXECUTION_STATUS,
     bug: bugLinks[r.id] ? bugBySlug.get(bugLinks[r.id]) ?? null : null,
+    notes: notes[r.id] ?? null,
   }))
   return NextResponse.json({ testcases })
 }
@@ -65,11 +74,23 @@ export async function PUT(req: NextRequest, { params }: Params) {
   const { app, name } = await params
   const guard = await guardApp(app, 'testcases.execute')
   if (!guard.ok) return guard.response
-  const { testcaseId, status, version } = (await req.json()) as { testcaseId: string; status: string; version?: string }
-  if (!testcaseId || !status) {
-    return NextResponse.json({ error: 'testcaseId and status required' }, { status: 400 })
+  const { testcaseId, status, notes, version } = (await req.json()) as {
+    testcaseId: string
+    status?: string
+    notes?: string
+    version?: string
   }
-  const result = await setExecutionStatus(app, name, testcaseId, status, version)
-  if (!result.ok) return NextResponse.json({ error: result.error ?? 'Failed to update status' }, { status: 400 })
+  if (!testcaseId || (status === undefined && notes === undefined)) {
+    return NextResponse.json({ error: 'testcaseId and at least one of status/notes required' }, { status: 400 })
+  }
+
+  if (status !== undefined) {
+    const result = await setExecutionStatus(app, name, testcaseId, status, version)
+    if (!result.ok) return NextResponse.json({ error: result.error ?? 'Failed to update status' }, { status: 400 })
+  }
+  if (notes !== undefined) {
+    const result = await setExecutionNote(app, name, testcaseId, notes, version)
+    if (!result.ok) return NextResponse.json({ error: result.error ?? 'Failed to update notes' }, { status: 400 })
+  }
   return NextResponse.json({ success: true })
 }

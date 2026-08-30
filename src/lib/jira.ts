@@ -1,7 +1,10 @@
 import type { BugDetail } from './bugs'
 import { getSetting } from './settings'
 import { getBugFormat } from './bug-format-server'
-import { getVariantConfig, jiraSummaryForBug, JIRA_SYNC_FIELDS } from './bug-format'
+import { getVariantConfig, jiraSummaryForBug, JIRA_SYNC_FIELDS, type JiraSyncFieldKey } from './bug-format'
+import { getJiraSourceConfig } from './jira-source-server'
+import { getCrFormat } from './cr-format-server'
+import { getCrVariantConfig, type CrParentType, type CrVariant } from './cr-format'
 
 interface JiraConfig {
   baseUrl: string
@@ -12,16 +15,37 @@ interface JiraConfig {
 }
 
 /**
- * Build Jira config + auth header.
- * - Jira Server / Data Center: set JIRA_PAT (Personal Access Token) → Bearer auth.
- * - Jira Cloud: set JIRA_EMAIL + JIRA_API_TOKEN → Basic auth.
+ * Resolve the Authorization header value for a Jira request.
+ * Every user must have their own Jira credentials — settings scope
+ * `user:<id>`, keys JIRA_EMAIL + JIRA_API_TOKEN — and both must be set,
+ * so a partial per-user config (e.g. email saved but no token yet) is
+ * rejected rather than half-applied. There is no shared/global identity
+ * to fall back to: reporting or syncing bugs to Jira as "whoever set up
+ * the global credentials" is exactly the identity bug this removes.
  */
-export async function getConfig(): Promise<JiraConfig> {
-  const [baseUrl, email, apiToken, pat, projectKey, boardId] = await Promise.all([
+export async function getJiraAuth(userId: number): Promise<string> {
+  const [userEmail, userApiToken] = await Promise.all([
+    getSetting(`user:${userId}`, 'JIRA_EMAIL'),
+    getSetting(`user:${userId}`, 'JIRA_API_TOKEN'),
+  ])
+  if (userEmail && userApiToken) {
+    return `Basic ${Buffer.from(`${userEmail}:${userApiToken}`).toString('base64')}`
+  }
+  throw new Error(
+    'Jira account not configured. Add your Jira email + API token in Settings → Credentials → My Jira Account.'
+  )
+}
+
+/**
+ * Build Jira config + auth header.
+ * - `baseUrl`/`projectKey`/`boardId` are shared instance config (which Jira
+ *   project bugs get filed to), read from the global Settings scope.
+ * - `authHeader` is resolved from `userId`'s own Jira credentials (see
+ *   getJiraAuth) — every caller must supply a real authenticated user id.
+ */
+export async function getConfig(userId: number): Promise<JiraConfig> {
+  const [baseUrl, projectKey, boardId] = await Promise.all([
     getSetting('global', 'JIRA_BASE_URL'),
-    getSetting('global', 'JIRA_EMAIL'),
-    getSetting('global', 'JIRA_API_TOKEN'),
-    getSetting('global', 'JIRA_PAT'),
     getSetting('global', 'JIRA_PROJECT_KEY'),
     getSetting('global', 'JIRA_BOARD_ID'),
   ])
@@ -32,16 +56,7 @@ export async function getConfig(): Promise<JiraConfig> {
     )
   }
 
-  let authHeader: string
-  if (pat) {
-    authHeader = `Bearer ${pat}`
-  } else if (email && apiToken) {
-    authHeader = `Basic ${Buffer.from(`${email}:${apiToken}`).toString('base64')}`
-  } else {
-    throw new Error(
-      'Jira auth is not configured. Add JIRA_PAT (Server/DC) or JIRA_EMAIL + JIRA_API_TOKEN (Cloud) in Settings or .env.local'
-    )
-  }
+  const authHeader = await getJiraAuth(userId)
 
   return {
     baseUrl: baseUrl.replace(/\/$/, ''),
@@ -151,13 +166,33 @@ async function getCreateFieldAllowedValues(
 export async function getJiraFieldOptions(
   app: string,
   variant: 'epic' | 'story',
-  fieldId: string
+  fieldId: string,
+  userId: number
 ): Promise<JiraSelectOption[]> {
-  const config = await getConfig()
+  const config = await getConfig(userId)
   const issueType =
     variant === 'story'
       ? (await getSetting(app, 'jiraStoryBugIssueType')) ?? 'Dev Bug'
       : (await getSetting(app, 'jiraEpicBugIssueType')) ?? 'Bug'
+  return getCreateFieldAllowedValues(config, config.projectKey, issueType, fieldId)
+}
+
+/**
+ * Same idea as `getJiraFieldOptions`, but for a Change Request's own issue types
+ * (sub-task under a story, story under an epic) instead of the bug issue types —
+ * a CR filed under a story is a different Jira issue type than a bug filed under
+ * a story, so the two can't share one lookup.
+ */
+export async function getCrJiraFieldOptions(
+  app: string,
+  parentType: CrParentType,
+  fieldId: string,
+  userId: number
+): Promise<JiraSelectOption[]> {
+  const config = await getConfig(userId)
+  const crFormat = await getCrFormat(app)
+  const vc = getCrVariantConfig(crFormat, parentType)
+  const issueType = await crIssueTypeFor(app, parentType, vc)
   return getCreateFieldAllowedValues(config, config.projectKey, issueType, fieldId)
 }
 
@@ -226,9 +261,26 @@ function markdownToJiraWiki(markdown: string): string {
     .replace(/^### (.+)$/gm, 'h3. $1')
     .replace(/^## (.+)$/gm, 'h2. $1')
     .replace(/^# (.+)$/gm, 'h1. $1')
+    // Horizontal rule before list bullets so a `---` line isn't mistaken for one.
+    .replace(/^---+$/gm, '----')
+    // Checklist items (`- [ ]` / `- [x]`) → Jira bullet keeping the marker visible.
+    .replace(/^(\s*)[-*]\s+\[([ xX])\]\s+/gm, '$1* [$2] ')
+    // Plain bullet list (`- ` / `* `) → Jira `* `.
+    .replace(/^(\s*)[-*]\s+/gm, '$1* ')
+    // Ordered list (`1.`) → Jira `# `.
+    .replace(/^(\s*)\d+\.\s+/gm, '$1# ')
+    // Bold before code so `**x**` isn't clipped; italic `_x_` is already Jira syntax.
     .replace(/\*\*(.+?)\*\*/g, '*$1*')
     .replace(/`([^`]+)`/g, '{{$1}}')
-    .replace(/^---+$/gm, '----')
+}
+
+/** Compose the CR Jira description body: the CR description (which already
+ *  contains a Definition of Done section), divided from a styled metadata
+ *  footer carrying Change Type and Priority, so all of it lands in the single
+ *  Jira description field. Values are wrapped in `code` so they read as tokens. */
+function composeCrDescription(cr: { description: string; changeType: string; priority: string }): string {
+  const body = cr.description.replace(/\s+$/, '')
+  return `${body}\n\n---\n\n**Change Type:** \`${cr.changeType}\`\n**Priority:** \`${cr.priority}\``
 }
 
 /**
@@ -268,8 +320,8 @@ function buildJiraDescription(
   return `${before}\n\n${block}\n\n${after}`
 }
 
-export async function updateJiraIssue(app: string, jiraKey: string, bug: BugDetail, imageFileNames: string[] = [], videoFileNames: string[] = []): Promise<void> {
-  const config = await getConfig()
+export async function updateJiraIssue(app: string, jiraKey: string, bug: BugDetail, imageFileNames: string[] = [], videoFileNames: string[] = [], userId: number): Promise<void> {
+  const config = await getConfig(userId)
   const description = buildJiraDescription(bug.body, imageFileNames, videoFileNames)
   const fmt = await getBugFormat(app)
   const vc = getVariantConfig(fmt, bug.parent_key)
@@ -291,8 +343,8 @@ export async function updateJiraIssue(app: string, jiraKey: string, bug: BugDeta
   })
 }
 
-export async function createJiraIssue(app: string, bug: BugDetail, imageFileNames: string[] = [], videoFileNames: string[] = [], extraLabels: string[] = []): Promise<string> {
-  const config = await getConfig()
+export async function createJiraIssue(app: string, bug: BugDetail, imageFileNames: string[] = [], videoFileNames: string[] = [], extraLabels: string[] = [], userId: number): Promise<string> {
+  const config = await getConfig(userId)
 
   const description = buildJiraDescription(bug.body, imageFileNames, videoFileNames)
 
@@ -334,21 +386,227 @@ export async function createJiraIssue(app: string, bug: BugDetail, imageFileName
   const data = (await response.json()) as { key: string }
   const issueKey = data.key
 
-  if (config.boardId) {
-    // Board placement is secondary to issue creation, which already succeeded —
-    // warn rather than throw so a board-add hiccup can't fail the whole operation.
-    const boardResponse = await jiraFetch(config, `/rest/agile/1.0/board/${config.boardId}/issue`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ issues: [issueKey] }),
-    })
-    if (!boardResponse.ok) {
-      const errorBody = await boardResponse.text().catch(() => '')
-      console.warn(`[jira] Failed to add ${issueKey} to board ${config.boardId}: ${boardResponse.status} ${errorBody}`)
-    }
-  }
+  await addIssueToBoardBestEffort(config, config.boardId, issueKey)
 
   return issueKey
+}
+
+/**
+ * Add a freshly created issue to a board. Board placement is secondary to issue
+ * creation, which already succeeded by the time this runs — warn rather than
+ * throw so a board-add hiccup can't fail the whole operation.
+ */
+async function addIssueToBoardBestEffort(config: JiraConfig, boardId: string | null, issueKey: string): Promise<void> {
+  if (!boardId) return
+  const boardResponse = await jiraFetch(config, `/rest/agile/1.0/board/${boardId}/issue`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ issues: [issueKey] }),
+  })
+  if (!boardResponse.ok) {
+    const errorBody = await boardResponse.text().catch(() => '')
+    console.warn(`[jira] Failed to add ${issueKey} to board ${boardId}: ${boardResponse.status} ${errorBody}`)
+  }
+}
+
+// ─── Change requests ──────────────────────────────────────────────────────────
+
+/**
+ * Resolve the project/board a Change Request should be filed against for this
+ * app, honoring the per-app Jira source config (Settings → Retest Board) the
+ * same way `fetchStories` does for reads — a 'project' source overrides the
+ * project key, a 'board' source overrides the board id, and 'global' (or a
+ * source with a missing field) falls back to the shared instance config.
+ */
+async function resolveCrTarget(app: string, config: JiraConfig): Promise<{ projectKey: string; boardId: string | null }> {
+  const source = await getJiraSourceConfig(app)
+  if (source.mode === 'project' && source.projectKey) {
+    return { projectKey: source.projectKey, boardId: config.boardId }
+  }
+  if (source.mode === 'board' && source.boardId) {
+    return { projectKey: config.projectKey, boardId: source.boardId }
+  }
+  return { projectKey: config.projectKey, boardId: config.boardId }
+}
+
+/**
+ * Build the `{fieldId: value}` entries for every enabled Jira field sync on a
+ * CR variant. Same `resolveJiraFieldValue` machinery `buildSyncedFields` uses
+ * for bugs, but a CR has a single dynamic value worth syncing to a custom
+ * field (the change type), rather than one bug field per sync key.
+ */
+async function buildCrSyncedFields(
+  config: JiraConfig,
+  vc: CrVariant,
+  changeType: string,
+  source: { jiraKey: string } | { projectKey: string; issueType: string }
+): Promise<Record<string, unknown>> {
+  const out: Record<string, unknown> = {}
+  if (!changeType) return out
+  for (const key of Object.keys(vc.jiraFieldSyncs) as JiraSyncFieldKey[]) {
+    const sync = vc.jiraFieldSyncs[key]
+    if (!sync?.enabled || !sync.jiraFieldId) continue
+    out[sync.jiraFieldId] = await resolveJiraFieldValue(config, sync.jiraFieldId, changeType, sync.valueMap, source)
+  }
+  return out
+}
+
+/** Resolve the CR issue type for a parent-type variant: per-app CR_FORMAT override, else the shared setting. */
+async function crIssueTypeFor(app: string, parentType: CrParentType, vc: CrVariant): Promise<string> {
+  if (vc.issueType) return vc.issueType
+  const settingKey = parentType === 'story' ? 'jiraCrSubtaskIssueType' : 'jiraCrStoryIssueType'
+  const fallback = parentType === 'story' ? 'Sub-task' : 'Story'
+  return (await getSetting(app, settingKey)) ?? fallback
+}
+
+/**
+ * Jira Server/DC returns `description` as plain text (api/2). Cloud may return
+ * an Atlassian Document Format object — flatten it to text defensively.
+ */
+function descriptionToText(desc: unknown): string {
+  if (!desc) return ''
+  if (typeof desc === 'string') return desc
+  const parts: string[] = []
+  const walk = (node: unknown): void => {
+    if (!node || typeof node !== 'object') return
+    const n = node as { text?: string; content?: unknown[] }
+    if (typeof n.text === 'string') parts.push(n.text)
+    if (Array.isArray(n.content)) n.content.forEach(walk)
+  }
+  walk(desc)
+  return parts.join(' ')
+}
+
+/**
+ * Create a Change Request in Jira under a parent story or epic. The parent's
+ * `issuetype.hierarchyLevel` decides the shape: a story parent (level 0) gets
+ * a sub-task CR, an epic parent (level 1) gets a story CR; any other level
+ * (e.g. a sub-task, level -1) is rejected since a CR can't be filed under it.
+ */
+export async function createChangeRequest(
+  app: string,
+  cr: { parentKey: string; summary: string; description: string; changeType: string; priority: string },
+  userId: number
+): Promise<{ key: string; parentType: CrParentType }> {
+  const config = await getConfig(userId)
+
+  const parentResponse = await jiraFetchOrThrow(config, `/rest/api/2/issue/${encodeURIComponent(cr.parentKey)}?fields=issuetype`)
+  const parentData = (await parentResponse.json()) as { fields?: { issuetype?: { hierarchyLevel?: number } } }
+  const hierarchyLevel = parentData.fields?.issuetype?.hierarchyLevel
+
+  let parentType: CrParentType
+  if (hierarchyLevel === 0) parentType = 'story'
+  else if (hierarchyLevel === 1) parentType = 'epic'
+  else {
+    throw new Error(
+      `A Change Request can only be filed against a story or an epic. "${cr.parentKey}" is neither (hierarchy level: ${hierarchyLevel ?? 'unknown'}).`
+    )
+  }
+
+  const crFormat = await getCrFormat(app)
+  const vc = getCrVariantConfig(crFormat, parentType)
+  const issueType = await crIssueTypeFor(app, parentType, vc)
+  const target = await resolveCrTarget(app, config)
+
+  const labels = [...new Set([crFormat.label, ...vc.jiraLabels].filter(Boolean))]
+
+  const fields: Record<string, unknown> = {
+    project: { key: target.projectKey },
+    parent: { key: cr.parentKey },
+    issuetype: { name: issueType },
+    summary: crFormat.summaryPrefix + cr.summary,
+    description: markdownToJiraWiki(composeCrDescription(cr)),
+    labels,
+  }
+
+  if (vc.fields.priority) {
+    fields.priority = { name: priorityToJira(cr.priority) }
+  }
+  Object.assign(fields, await buildCrSyncedFields(config, vc, cr.changeType, { projectKey: target.projectKey, issueType }))
+
+  const response = await jiraFetchOrThrow(config, '/rest/api/2/issue', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields }),
+  })
+
+  const data = (await response.json()) as { key: string }
+  await addIssueToBoardBestEffort(config, target.boardId, data.key)
+
+  return { key: data.key, parentType }
+}
+
+/**
+ * Update a Change Request already pushed to Jira. Editmeta-gated like a real
+ * edit screen: a field is only included in the PUT body if Jira reports it as
+ * editable on this issue, so a workflow that has locked a field (or an issue
+ * type that never had it) can't produce a rejected update.
+ */
+export async function updateChangeRequest(
+  app: string,
+  cr: { crKey: string; summary: string; description: string; changeType: string; priority: string; parentType: CrParentType },
+  userId: number
+): Promise<void> {
+  const config = await getConfig(userId)
+  const crFormat = await getCrFormat(app)
+  const vc = getCrVariantConfig(crFormat, cr.parentType)
+
+  const editResponse = await jiraFetchOrThrow(config, `/rest/api/2/issue/${encodeURIComponent(cr.crKey)}/editmeta`)
+  const editData = (await editResponse.json()) as { fields?: Record<string, unknown> }
+  const editableFields = new Set(Object.keys(editData.fields ?? {}))
+
+  const fields: Record<string, unknown> = {}
+
+  if (editableFields.has('summary')) {
+    fields.summary = cr.summary.startsWith(crFormat.summaryPrefix) ? cr.summary : crFormat.summaryPrefix + cr.summary
+  }
+  if (editableFields.has('description')) {
+    fields.description = markdownToJiraWiki(composeCrDescription(cr))
+  }
+  if (vc.fields.priority && editableFields.has('priority')) {
+    fields.priority = { name: priorityToJira(cr.priority) }
+  }
+  Object.assign(fields, await buildCrSyncedFields(config, vc, cr.changeType, { jiraKey: cr.crKey }))
+
+  if (Object.keys(fields).length === 0) return
+
+  await jiraFetchOrThrow(config, `/rest/api/2/issue/${encodeURIComponent(cr.crKey)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields }),
+  })
+}
+
+/**
+ * Pull a Change Request's Jira-authoritative fields for a two-way sync —
+ * status, assignee, labels, summary, and description. The caller writes
+ * these onto the local record and stamps `syncedAt`.
+ */
+export async function pullChangeRequest(
+  app: string,
+  crKey: string,
+  userId: number
+): Promise<{ summary: string; description: string; status: string | null; assignee: string | null; labels: string[] }> {
+  void app // app-scoped config isn't needed to read a single already-resolved issue key
+  const config = await getConfig(userId)
+  const response = await jiraFetchOrThrow(config, `/rest/api/2/issue/${encodeURIComponent(crKey)}?fields=summary,description,status,assignee,labels`)
+  const data = (await response.json()) as {
+    fields?: {
+      summary?: string
+      description?: unknown
+      status?: { name?: string }
+      assignee?: { displayName?: string; accountId?: string; name?: string }
+      labels?: string[]
+    }
+  }
+  const f = data.fields ?? {}
+  return {
+    summary: f.summary ?? '',
+    description: descriptionToText(f.description),
+    status: f.status?.name ?? null,
+    assignee: f.assignee?.displayName ?? f.assignee?.accountId ?? f.assignee?.name ?? null,
+    labels: f.labels ?? [],
+  }
 }
 
 export type TestingPhase = 'testcase_design' | 'testcase_execution' | 'retesting'
@@ -359,9 +617,9 @@ const TESTING_PHASE_SUMMARIES: Record<TestingPhase, string> = {
   retesting: 'QA: Retesting',
 }
 
-export async function getMyJiraAssignee(): Promise<Record<string, string> | null> {
+export async function getMyJiraAssignee(userId: number): Promise<Record<string, string> | null> {
   try {
-    const config = await getConfig()
+    const config = await getConfig(userId)
     const response = await jiraFetch(config, '/rest/api/2/myself')
     if (!response.ok) return null
     const data = (await response.json()) as { accountId?: string; name?: string }
@@ -377,9 +635,10 @@ export async function createTestingSubtask(
   app: string,
   parentKey: string,
   phase: TestingPhase,
-  assignee?: Record<string, string>,
+  assignee: Record<string, string> | undefined,
+  userId: number,
 ): Promise<string> {
-  const config = await getConfig()
+  const config = await getConfig(userId)
   const subtaskType = (await getSetting(app, 'jiraSubtaskIssueType')) ?? 'Sub-task'
 
   const fields: Record<string, unknown> = {
@@ -412,10 +671,10 @@ export async function createTestingSubtask(
 export async function uploadJiraAttachments(
   jiraKey: string,
   files: { fileName: string; mimeType: string; data: Buffer }[],
-  opts: { skipExisting?: boolean } = {}
+  opts: { skipExisting?: boolean; userId: number }
 ): Promise<string[]> {
   if (files.length === 0) return []
-  const config = await getConfig()
+  const config = await getConfig(opts.userId)
 
   let toUpload = files
   if (opts.skipExisting) {
@@ -458,8 +717,8 @@ export async function getJiraIssueUrl(jiraKey: string): Promise<string> {
 }
 
 /** All distinct workflow status names configured for the project, across every issue type, first-seen order. */
-export async function getProjectStatuses(): Promise<string[]> {
-  const config = await getConfig()
+export async function getProjectStatuses(userId: number): Promise<string[]> {
+  const config = await getConfig(userId)
   const response = await jiraFetchOrThrow(config, `/rest/api/2/project/${config.projectKey}/statuses`)
   const data = (await response.json()) as { statuses: { name: string }[] }[]
   const seen = new Set<string>()
@@ -514,10 +773,10 @@ export interface IssueSyncInfo {
  * individually, skipping any that still fail, so one deleted issue can't
  * blank out an entire sync.
  */
-export async function fetchIssueStatuses(jiraKeys: string[]): Promise<Map<string, IssueSyncInfo>> {
+export async function fetchIssueStatuses(jiraKeys: string[], userId: number): Promise<Map<string, IssueSyncInfo>> {
   const result = new Map<string, IssueSyncInfo>()
   if (jiraKeys.length === 0) return result
-  const config = await getConfig()
+  const config = await getConfig(userId)
   const BATCH_SIZE = 100
   for (let i = 0; i < jiraKeys.length; i += BATCH_SIZE) {
     const batch = jiraKeys.slice(i, i + BATCH_SIZE)
@@ -541,25 +800,29 @@ export async function fetchIssueStatuses(jiraKeys: string[]): Promise<Map<string
   return result
 }
 
-/** Identifier of the Jira account configured in Settings (accountId on Cloud, username on Server/DC). */
-export async function getMyJiraIdentifier(): Promise<string | null> {
-  const me = await getMyJiraAssignee()
+/**
+ * Identifier of the Jira account resolved for this request (accountId on Cloud,
+ * username on Server/DC), resolved against `userId`'s own Jira credentials.
+ */
+export async function getMyJiraIdentifier(userId: number): Promise<string | null> {
+  const me = await getMyJiraAssignee(userId)
   return me?.accountId ?? me?.name ?? null
 }
 
 /** Available workflow transitions for an issue, with the status name each one leads to. */
 export async function getIssueTransitions(
-  jiraKey: string
+  jiraKey: string,
+  userId: number
 ): Promise<{ id: string; name: string; toStatus: string }[]> {
-  const config = await getConfig()
+  const config = await getConfig(userId)
   const response = await jiraFetchOrThrow(config, `/rest/api/2/issue/${jiraKey}/transitions`)
   const data = (await response.json()) as { transitions: { id: string; name: string; to?: { name: string } }[] }
   return (data.transitions ?? []).map((t) => ({ id: t.id, name: t.name, toStatus: t.to?.name ?? '' }))
 }
 
 /** Execute a workflow transition on an issue. Jira responds 204 on success. */
-export async function transitionIssue(jiraKey: string, transitionId: string): Promise<void> {
-  const config = await getConfig()
+export async function transitionIssue(jiraKey: string, transitionId: string, userId: number): Promise<void> {
+  const config = await getConfig(userId)
   await jiraFetchOrThrow(config, `/rest/api/2/issue/${jiraKey}/transitions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

@@ -12,6 +12,8 @@ import path from 'path'
 import { getApp } from './apps'
 import { setSetting } from './settings'
 import { getDataRoot } from './paths'
+import { getDataSource } from './db'
+import { IntakeDocumentEntity, IIntakeDocument, AutomationConfigEntity, IAutomationConfig } from './entities'
 import {
   APP_INTAKE_GROUPS,
   MODULE_INTAKE_GROUPS,
@@ -48,12 +50,34 @@ export function groupsForScope(scope: IntakeScope): IntakeGroup[] {
   return APP_INTAKE_GROUPS
 }
 
-export function intakeFileExists(scope: IntakeScope): boolean {
+/** The `scopeSlug` half of the intake_documents unique key: '' for app scope. */
+function scopeSlugFor(scope: IntakeScope): string {
+  const kind = scopeKind(scope)
+  if (kind === 'module') return (scope as { app: string; module: string }).module
+  if (kind === 'feature') return (scope as { app: string; feature: string }).feature
+  return ''
+}
+
+function intakeFileExistsFs(scope: IntakeScope): boolean {
   return fs.existsSync(intakeFilePath(scope))
 }
 
-/** Read the structured answers for a scope. Never throws — missing/malformed → empty. */
-export function readIntake(scope: IntakeScope): IntakeFile {
+/** DB-first: is there an intake_documents row for this scope? Falls back to
+ *  the intake.json file's presence when the DB throws or has no row. */
+export async function intakeFileExists(scope: IntakeScope): Promise<boolean> {
+  try {
+    const ds = await getDataSource()
+    const count = await ds.getRepository<IIntakeDocument>(IntakeDocumentEntity).count({
+      where: { appSlug: scope.app, scopeKind: scopeKind(scope), scopeSlug: scopeSlugFor(scope) },
+    })
+    if (count > 0) return true
+  } catch (err) {
+    console.warn(`[intake] DB read failed for intakeFileExists(${scope.app}) — falling back to intake.json (${err})`)
+  }
+  return intakeFileExistsFs(scope)
+}
+
+function readIntakeFs(scope: IntakeScope): IntakeFile {
   const file = intakeFilePath(scope)
   const empty: IntakeFile = { version: 1, updatedAt: new Date(0).toISOString(), answers: {} }
   if (!fs.existsSync(file)) return empty
@@ -70,6 +94,34 @@ export function readIntake(scope: IntakeScope): IntakeFile {
     // malformed JSON — treat as empty rather than throwing
   }
   return empty
+}
+
+/**
+ * Read the structured answers for a scope. DB-first: reads the intake_documents
+ * row. Falls back to intake.json (same behavior as before the DB migration)
+ * when the DB throws, has no row, or the row's answers column doesn't parse.
+ * Never throws — missing/malformed → empty.
+ */
+export async function readIntake(scope: IntakeScope): Promise<IntakeFile> {
+  try {
+    const ds = await getDataSource()
+    const row = await ds.getRepository<IIntakeDocument>(IntakeDocumentEntity).findOne({
+      where: { appSlug: scope.app, scopeKind: scopeKind(scope), scopeSlug: scopeSlugFor(scope) },
+    })
+    if (row) {
+      const parsed = JSON.parse(row.answers)
+      if (parsed && typeof parsed === 'object') {
+        return {
+          version: 1,
+          updatedAt: row.updatedAt ? row.updatedAt.toISOString() : new Date(0).toISOString(),
+          answers: parsed,
+        }
+      }
+    }
+  } catch (err) {
+    console.warn(`[intake] DB read failed for readIntake(${scope.app}) — falling back to intake.json (${err})`)
+  }
+  return readIntakeFs(scope)
 }
 
 /** Thrown when a compiled target exists but was hand-written (no marker) and force wasn't passed. */
@@ -294,7 +346,16 @@ ${severity}
   await setSetting(appSlug, 'bugEnvironment', `Browser: ${browserOs || '—'} | Environment: ${envLabel || '—'}`)
 }
 
-function compileAutomation(appSlug: string, answers: Record<string, IntakeValue>, force: boolean): void {
+/**
+ * Renders automation.json (unchanged this phase) AND upserts the automation_configs
+ * row, so the DB becomes populated going forward for every app whose automation
+ * intake group is saved through the UI. Once the row exists, automation-cache.ts's
+ * writeAutomationCache() can re-derive the same file from it — redundant right
+ * after this call (the file was just written directly), but it keeps the cache
+ * ready for automation-regression.ts / automation-scheduler.ts to call before a
+ * regression run, independent of when the intake form was last saved.
+ */
+async function compileAutomation(appSlug: string, answers: Record<string, IntakeValue>, force: boolean): Promise<void> {
   const baseUrlEnv = text(answers, 'baseUrlEnv')
   const credentialEnvs = rows(answers, 'credentialEnvs').map((r) => r.name).filter(Boolean)
   // Login steps are opaque to this compiler — the automation-hub schema is owned
@@ -313,6 +374,24 @@ function compileAutomation(appSlug: string, answers: Record<string, IntakeValue>
   assertJsonWritable(filePath, force)
   fs.mkdirSync(path.dirname(filePath), { recursive: true })
   fs.writeFileSync(filePath, JSON.stringify(config, null, 2), 'utf-8')
+
+  try {
+    const ds = await getDataSource()
+    const repo = ds.getRepository<IAutomationConfig>(AutomationConfigEntity)
+    const existing = await repo.findOne({ where: { appSlug } })
+    const row: Partial<IAutomationConfig> = {
+      appSlug,
+      baseUrlEnv,
+      credentialEnvs: JSON.stringify(credentialEnvs),
+      login: JSON.stringify(login),
+      generatedFromIntake: true,
+      updatedAt: new Date(),
+    }
+    if (existing) await repo.update(existing.id, row)
+    else await repo.insert(row)
+  } catch (err) {
+    console.warn(`[intake] DB write failed for compileAutomation("${appSlug}") — automation.json fallback still updated (${err})`)
+  }
 }
 
 function compileModuleOverview(appSlug: string, moduleSlug: string, answers: Record<string, IntakeValue>, force: boolean): void {
@@ -477,21 +556,21 @@ export async function saveIntakeGroup(
     throw Object.assign(new Error(`Unknown intake group "${groupId}" for this scope`), { status: 400 })
   }
 
-  const intake = readIntake(scope)
+  const intake = await readIntake(scope)
   const nextAnswers = { ...intake.answers, [groupId]: answers }
   const force = opts.force === true
 
   if (kind === 'app') {
     const appSlug = scope.app
     if (groupId === 'domain') {
-      const app = getApp(appSlug)
+      const app = await getApp(appSlug)
       compileDomain(appSlug, app?.name ?? appSlug, answers, force)
     } else if (groupId === 'testing') {
       await compileTesting(appSlug, answers, nextAnswers.domain ?? {}, force)
     } else if (groupId === 'bugs') {
       await compileBugs(appSlug, answers, force)
     } else if (groupId === 'automation') {
-      compileAutomation(appSlug, answers, force)
+      await compileAutomation(appSlug, answers, force)
     }
   } else if (kind === 'module') {
     compileModuleOverview(scope.app, (scope as { app: string; module: string }).module, answers, force)
@@ -499,9 +578,26 @@ export async function saveIntakeGroup(
     compileFeatureWorkflow(scope.app, (scope as { app: string; feature: string }).feature, answers, force)
   }
 
-  const updated: IntakeFile = { version: 1, updatedAt: new Date().toISOString(), answers: nextAnswers }
+  const updatedAt = new Date()
+  const updated: IntakeFile = { version: 1, updatedAt: updatedAt.toISOString(), answers: nextAnswers }
   const file = intakeFilePath(scope)
   fs.mkdirSync(path.dirname(file), { recursive: true })
   fs.writeFileSync(file, JSON.stringify(updated, null, 2), 'utf-8')
+
+  // Write-through: intake.json (above) stays the FS fallback; the intake_documents
+  // row is upserted non-fatally so a DB hiccup never blocks a save the file already
+  // recorded.
+  try {
+    const ds = await getDataSource()
+    const repo = ds.getRepository<IIntakeDocument>(IntakeDocumentEntity)
+    const where = { appSlug: scope.app, scopeKind: kind, scopeSlug: scopeSlugFor(scope) }
+    const existing = await repo.findOne({ where })
+    const row: Partial<IIntakeDocument> = { ...where, answers: JSON.stringify(nextAnswers), updatedAt }
+    if (existing) await repo.update(existing.id, row)
+    else await repo.insert(row)
+  } catch (err) {
+    console.warn(`[intake] DB write failed for saveIntakeGroup(${scope.app}) — intake.json fallback still updated (${err})`)
+  }
+
   return updated
 }

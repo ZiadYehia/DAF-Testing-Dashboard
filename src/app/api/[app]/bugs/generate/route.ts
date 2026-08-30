@@ -21,13 +21,13 @@ export async function POST(
 
   return sseResponse(async (emit) => {
     // Warn (don't block) on missing bug-report context.
-    const missing = appReadiness(app).capabilities.bugGen
+    const missing = (await appReadiness(app)).capabilities.bugGen
     if (missing.length > 0) {
       emit('warning', { missing })
     }
 
     try {
-      const report = await generateBugReport(app, body.notes, body.model,
+      const report = await generateBugReport(app, guard.access.user.id, body.notes, body.model,
         (phase) => emit('phase', phase), variant)
       emit('complete', { data: report })
     } catch (err) {

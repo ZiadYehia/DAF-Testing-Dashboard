@@ -10,7 +10,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const guard = await guardApp(app, 'knowledge.view')
   if (!guard.ok) return guard.response
 
-  const gaps = collectKnowledgeGaps(app)
+  const gaps = await collectKnowledgeGaps(app)
   const totalItems = gaps.reduce((n, g) => n + g.items.length, 0)
   return NextResponse.json({ gaps, totalItems })
 }

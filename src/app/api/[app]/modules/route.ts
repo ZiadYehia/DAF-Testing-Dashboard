@@ -10,6 +10,6 @@ export async function GET(
   const guard = await guardAppMember(app)
   if (!guard.ok) return guard.response
 
-  const modules = listModules(app)
+  const modules = await listModules(app)
   return NextResponse.json(modules)
 }

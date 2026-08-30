@@ -1,10 +1,12 @@
 import { getDataSource } from './db'
 import { SettingEntity, ISetting } from './entities'
+import { encryptSecret, decryptSecret, isEncrypted } from './secret-crypto'
 
 export const GLOBAL_KEYS = [
   'GEMINI_API_KEY',
   'ANTHROPIC_API_KEY',
   'GROQ_API_KEY',
+  'MOONSHOT_API_KEY',
   'JIRA_BASE_URL',
   'JIRA_PROJECT_KEY',
   'JIRA_BOARD_ID',
@@ -27,6 +29,9 @@ export const APP_DEFAULT_KEYS = [
   'jiraSubtaskIssueType',
   'jiraStoryBugIssueType',
   'jiraEpicBugIssueType',
+  // Jira issue-type names for change requests filed under a story (sub-task) vs an epic (story)
+  'jiraCrSubtaskIssueType',
+  'jiraCrStoryIssueType',
 ] as const
 
 export const APP_DEFAULTS: Record<string, string> = {
@@ -36,6 +41,8 @@ export const APP_DEFAULTS: Record<string, string> = {
   jiraSubtaskIssueType: 'Sub-task',
   jiraStoryBugIssueType: 'Dev Bug',
   jiraEpicBugIssueType: 'Bug',
+  jiraCrSubtaskIssueType: 'Sub-task',
+  jiraCrStoryIssueType: 'Story',
 }
 
 /** Setting keys whose values are secrets (API keys/tokens/PATs/passwords) and must be masked in API responses.
@@ -61,7 +68,10 @@ export async function getSetting(scope: string, key: string): Promise<string | n
     const ds = await getDataSource()
     const repo = ds.getRepository(SettingEntity)
     const row = await repo.findOne({ where: { scope, key } })
-    if (row !== null && row.value !== '') return row.value
+    if (row !== null && row.value !== '') {
+      const v = decryptSecret(row.value)
+      if (v !== '') return v
+    }
     if (scope === 'global' && process.env[key]) return process.env[key]!
     if (key in APP_DEFAULTS) return APP_DEFAULTS[key]
     return null
@@ -71,6 +81,7 @@ export async function getSetting(scope: string, key: string): Promise<string | n
 }
 
 export async function setSetting(scope: string, key: string, value: string): Promise<void> {
+  if (isSecretKey(key) && value !== '') value = encryptSecret(value)
   const ds = await getDataSource()
   const repo = ds.getRepository(SettingEntity)
   const existing = await repo.findOne({ where: { scope, key } })
@@ -108,7 +119,8 @@ export async function getSettingsForScope(scope: string): Promise<Record<string,
     const repo = ds.getRepository(SettingEntity)
     const rows = await repo.find({ where: { scope } })
     for (const row of rows) {
-      result[row.key] = row.value
+      const v = isEncrypted(row.value) ? decryptSecret(row.value) : row.value
+      if (v !== '' || row.value === '') result[row.key] = v
     }
   } catch {
     // DB unavailable or table not yet created — baseline values are used
@@ -125,10 +137,12 @@ export async function seedGlobalSettings(): Promise<void> {
     for (const key of GLOBAL_KEYS) {
       const existing = await repo.findOne({ where: { scope: 'global', key } })
       if (!existing) {
+        let value = process.env[key] ?? ''
+        if (isSecretKey(key) && value !== '') value = encryptSecret(value)
         await repo.save({
           scope: 'global',
           key,
-          value: process.env[key] ?? '',
+          value,
           updatedAt: new Date(),
         } as ISetting)
       }

@@ -1,11 +1,10 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { ModelSelector } from '@/components/shared/ModelSelector'
 import {
@@ -13,42 +12,23 @@ import {
   DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog'
 import {
-  Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue,
-} from '@/components/ui/select'
-import {
   Bot, Play, Plus, Save, Trash2, Film, FileArchive, Loader2, CheckCircle2,
-  XCircle, Circle, FlaskConical, MessageSquare, Send, Wrench, Square,
-  AlertTriangle, Tag, X, Folder, ChevronDown, ChevronRight, Bug, Link2,
-  Download, Wand2, Search, FileCode2,
+  XCircle, FlaskConical, MessageSquare, Tag, X, Folder, ChevronDown, ChevronRight,
+  Bug, Link2, Search,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useModels } from '@/hooks/useModels'
 import { useApp } from '@/lib/use-apps'
 import { AutomationBugDialog } from './AutomationBugDialog'
 import { SpecEditor } from './SpecEditor'
-import { ArtifactEditor } from './ArtifactEditor'
 import { useArtifactFiles } from './useArtifactFiles'
+import { useChatSession } from './useChatSession'
+import { ChatAuthoringTab } from './ChatAuthoringTab'
+import { SpecTab, type PageFile } from './SpecTab'
+import { NewAutomationDialog } from './NewAutomationDialog'
+import { FlakyBadge, StatusPill, isFlaky, type RunStatus, type RunRecord } from './statusBadges'
 import { toast } from 'sonner'
 
-/** Sentinels for the create dialog's "Starting page" select. */
-const NO_START_PAGE = '__none__'
-const NEW_START_PAGE = '__new__'
-
-/** Client-side mirror of store.ts slugify() — only previews the scaffolded page path. */
-function slugifyPreview(s: string): string {
-  return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60)
-}
-
-type RunStatus = 'pass' | 'fail' | 'never_run'
-
-interface RunRecord {
-  ts: string
-  status: 'pass' | 'fail'
-  durationMs: number
-  hasVideo: boolean
-  hasTrace: boolean
-  error?: string
-}
 interface LinkedTestcase {
   app: string
   feature: string
@@ -70,7 +50,6 @@ interface ProjectMeta {
   engine?: 'playwright' | 'appium'
   appium?: { apkPath?: string; appPackage?: string; appActivity?: string; avd?: string; udid?: string; noReset?: boolean }
 }
-interface PageFile { path: string; content: string }
 
 interface ProjectDetail extends ProjectMeta {
   spec: string
@@ -79,53 +58,6 @@ interface ProjectDetail extends ProjectMeta {
   pageFiles?: PageFile[]
   tsPageFiles?: PageFile[]
   frameworkFiles?: PageFile[]
-}
-interface PomPage { path: string; className: string }
-
-interface ChatTool { tool: string; ok: boolean }
-interface ChatMsg {
-  role: 'user' | 'assistant'
-  text: string
-  tools: ChatTool[]
-}
-
-/**
- * A project is "flaky" when its recent history flip-flops between pass and fail
- * (≥2 status changes in the kept run history) — the team should distrust it and
- * stabilize the spec rather than chase each red run.
- */
-function isFlaky(runs: RunRecord[]): boolean {
-  let flips = 0
-  for (let i = 1; i < runs.length; i++) {
-    if (runs[i].status !== runs[i - 1].status) flips++
-  }
-  return flips >= 2
-}
-
-function FlakyBadge() {
-  return (
-    <span
-      className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400"
-      title="Recent runs flip between pass and fail — stabilize this spec"
-    >
-      <AlertTriangle className="h-3 w-3" /> Flaky
-    </span>
-  )
-}
-
-function StatusPill({ status }: { status: RunStatus }) {
-  const map = {
-    pass: { icon: CheckCircle2, cls: 'text-emerald-600 dark:text-emerald-400', label: 'Passing' },
-    fail: { icon: XCircle, cls: 'text-red-600 dark:text-red-400', label: 'Failing' },
-    never_run: { icon: Circle, cls: 'text-muted-foreground', label: 'Never run' },
-  }[status]
-  const Icon = map.icon
-  return (
-    <span className={cn('inline-flex items-center gap-1.5 text-xs font-medium', map.cls)}>
-      <Icon className="h-3.5 w-3.5" />
-      {map.label}
-    </span>
-  )
 }
 
 export function AutomationHub({ app }: { app: string }) {
@@ -158,22 +90,9 @@ export function AutomationHub({ app }: { app: string }) {
     return fixture ? pyFiles.files.filter((f) => f.path.endsWith(`/${fixture}.py`)).map((f) => f.path) : []
   }, [pyFiles.testDraft, pyFiles.files])
   const [runLog, setRunLog] = useState<string | null>(null)
-  const [newOpen, setNewOpen] = useState(false)
-  const [newTitle, setNewTitle] = useState('')
-  const [newEngine, setNewEngine] = useState<'playwright' | 'appium'>('playwright')
-  const [newApkPath, setNewApkPath] = useState('')
-  const [newAvd, setNewAvd] = useState('')
-  const [newAppPackage, setNewAppPackage] = useState('')
-  const [newAppActivity, setNewAppActivity] = useState('')
-  const [newUdid, setNewUdid] = useState('')
-  const [newNoReset, setNewNoReset] = useState(false)
-  // Playwright-only starter page binding: an existing pages/<app>/*.page.ts, or scaffold a new one.
-  const [pomPages, setPomPages] = useState<PomPage[]>([])
-  const [pomLoading, setPomLoading] = useState(false)
-  const [startPagePath, setStartPagePath] = useState<string>(NO_START_PAGE)
-  const [newPageScreen, setNewPageScreen] = useState('')
-  const [creating, setCreating] = useState(false)
-  const [createErr, setCreateErr] = useState<string | null>(null)
+  // Declared up here (not beside the rest of the Folders section below) so
+  // `loadDetail` can seed it without a use-before-declare ordering hazard.
+  const [folderDraft, setFolderDraft] = useState('')
 
   const base = `/api/${app}/automation`
   // Web apps automate via Playwright only, mobile apps via Appium only —
@@ -238,9 +157,6 @@ export function AutomationHub({ app }: { app: string }) {
     setAllSummary(`${pass} passed · ${fail} failed${scope ? ` (${scope})` : ''}`)
     if (selected) loadDetail(selected)
   }
-
-  // "Run all" honors the active tag/search/status filters, so running while filtered = a scoped run.
-  const runAll = () => runList(visibleProjects, tagFilter ? `tag: ${tagFilter}` : filtersActive ? 'filtered' : null)
 
   // Phase 5: self-heal — ask AI to fix a failing spec from its run output, then replay.
   async function selfHeal() {
@@ -384,68 +300,12 @@ export function AutomationHub({ app }: { app: string }) {
     URL.revokeObjectURL(url)
   }
 
-  async function createProject() {
-    setCreating(true)
-    setCreateErr(null)
-    try {
-      const res = await fetch(base, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: newTitle,
-          ...(newEngine === 'appium'
-            ? {
-                engine: 'appium',
-                appium: {
-                  ...(newApkPath.trim() ? { apkPath: newApkPath.trim() } : {}),
-                  ...(newAppPackage.trim() ? { appPackage: newAppPackage.trim() } : {}),
-                  ...(newAppActivity.trim() ? { appActivity: newAppActivity.trim() } : {}),
-                  ...(newAvd.trim() ? { avd: newAvd.trim() } : {}),
-                  ...(newUdid.trim() ? { udid: newUdid.trim() } : {}),
-                  noReset: newNoReset,
-                },
-              }
-            : startPagePath === NEW_START_PAGE
-              ? { newPageScreen: newPageScreen.trim() }
-              : startPagePath !== NO_START_PAGE
-                ? { startPagePath }
-                : {}),
-        }),
-      })
-      const data = await res.json()
-      if (!res.ok) { setCreateErr(data?.error ?? 'Failed to create'); return }
-      setNewOpen(false)
-      setNewTitle('')
-      setNewEngine('playwright')
-      setNewApkPath('')
-      setNewAvd('')
-      setNewAppPackage('')
-      setNewAppActivity('')
-      setNewUdid('')
-      setNewNoReset(false)
-      // A freshly scaffolded page won't be in the cached list yet — force a refetch next time the dialog opens.
-      if (startPagePath === NEW_START_PAGE) setPomPages([])
-      setStartPagePath(NO_START_PAGE)
-      setNewPageScreen('')
-      await loadList()
-      setSelected(data.name)
-      if (data.pyWarning) toast.warning(data.pyWarning)
-    } finally {
-      setCreating(false)
-    }
+  /** After a new project is scaffolded — refresh the list and select it. */
+  async function onProjectCreated(name: string, pyWarning?: string) {
+    await loadList()
+    setSelected(name)
+    if (pyWarning) toast.warning(pyWarning)
   }
-
-  // Lazily fetch the app's shared page objects when the create dialog opens (playwright only).
-  useEffect(() => {
-    if (newOpen && newEngine === 'playwright' && pomPages.length === 0) {
-      setPomLoading(true)
-      fetch(`${base}/pages`)
-        .then((r) => (r.ok ? r.json() : { pages: [] }))
-        .then((d) => setPomPages(d.pages ?? []))
-        .catch(() => {})
-        .finally(() => setPomLoading(false))
-    }
-  }, [newOpen, newEngine, pomPages.length, base])
 
   async function deleteSelected() {
     if (!selected) return
@@ -455,36 +315,29 @@ export function AutomationHub({ app }: { app: string }) {
     await loadList()
   }
 
-  // ── MCP Chat state ──────────────────────────────────────────────────────
+  // ── MCP Chat ─────────────────────────────────────────────────────────────
   const { models } = useModels()
   const [chatModel, setChatModel] = useState<string>('')
-  const [chat, setChat] = useState<ChatMsg[]>([])
-  const [chatInput, setChatInput] = useState('')
-  const [chatBusy, setChatBusy] = useState(false)
-  const [chatSession, setChatSession] = useState<string | null>(null)
-  const [chatEngine, setChatEngine] = useState<'playwright' | 'appium'>('playwright')
-  const [chatApkPath, setChatApkPath] = useState('')
-  const [chatAvd, setChatAvd] = useState('')
-  // Force both authoring paths onto the app's locked engine (registry loads async).
-  useEffect(() => {
-    if (lockedEngine) {
-      setNewEngine(lockedEngine)
-      setChatEngine(lockedEngine)
-    }
-  }, [lockedEngine])
-  const chatScrollRef = useRef<HTMLDivElement>(null)
   const [activeTab, setActiveTab] = useState('automations')
-  const [saveOpen, setSaveOpen] = useState(false)
-  const [saveTitle, setSaveTitle] = useState('')
-  const [savingChat, setSavingChat] = useState(false)
-  const [saveErr, setSaveErr] = useState<string | null>(null)
-  const canSave = !!chatSession && !chatBusy && chat.some((m) => m.role === 'assistant' && m.tools.length > 0)
+  // Owns the live browser/Android session — instantiated here (not inside the
+  // chat tab's panel) so it survives switching away from the chat tab, since
+  // base-ui's Tabs unmount inactive panels.
+  const session = useChatSession({
+    base,
+    chatModel,
+    lockedEngine,
+    onSaved: async (name, pyWarning) => {
+      await loadList()
+      setSelected(name)
+      setActiveTab('automations')
+      if (pyWarning) toast.warning(pyWarning)
+    },
+  })
 
   // ── Phase 4: link to dashboard test cases ───────────────────────────────
   const [testcases, setTestcases] = useState<{ feature: string; id: string; objective: string; steps: string }[]>([])
   const [tcOpen, setTcOpen] = useState(false)
   const [tcFilter, setTcFilter] = useState('')
-  const [pendingLink, setPendingLink] = useState<{ feature: string; testcaseId: string } | null>(null)
   const [syncNote, setSyncNote] = useState<string | null>(null)
   const [tcMode, setTcMode] = useState<'chat' | 'generate'>('chat')
   // 'create' = author a new automation from the case; 'link' = attach the case to the selected project.
@@ -526,9 +379,11 @@ export function AutomationHub({ app }: { app: string }) {
     })
   }, [projects, tagFilter, statusFilter, searchQuery])
 
+  // "Run all" honors the active tag/search/status filters, so running while filtered = a scoped run.
+  const runAll = () => runList(visibleProjects, tagFilter ? `tag: ${tagFilter}` : filtersActive ? 'filtered' : null)
+
   // ── Folders: file automations into suites; the list groups by folder ──
   const [collapsedFolders, setCollapsedFolders] = useState<Record<string, boolean>>({})
-  const [folderDraft, setFolderDraft] = useState('')
 
   const allFolders = useMemo(
     () => [...new Set(projects.map((p) => p.folder?.trim() || '').filter(Boolean))].sort(),
@@ -567,7 +422,7 @@ export function AutomationHub({ app }: { app: string }) {
       }
       return changed ? next : prev
     })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [folderCounts, folderStorageKey])
 
   function toggleFolder(name: string) {
@@ -655,15 +510,7 @@ export function AutomationHub({ app }: { app: string }) {
   }
 
   function startFromTestcase(tc: { feature: string; id: string; objective: string; steps: string }) {
-    if (chatSession) fetch(`${base}/chat?sessionId=${chatSession}`, { method: 'DELETE' }).catch(() => {})
-    setChatSession(null)
-    setChat([])
-    setPendingLink({ feature: tc.feature, testcaseId: tc.id })
-    setSaveTitle(`${tc.id} — ${tc.objective}`.slice(0, 80))
-    setChatInput(
-      `Automate this test case end-to-end in the browser, then tell me exactly what you verified.\n\n` +
-      `Test case ${tc.id} (feature: ${tc.feature})\nObjective: ${tc.objective}\n\nSteps:\n${tc.steps}`,
-    )
+    session.beginFromTestcase(tc)
     setActiveTab('chat')
     setTcOpen(false)
   }
@@ -732,121 +579,6 @@ export function AutomationHub({ app }: { app: string }) {
     const firstClaude = models.find((m) => m.provider === 'anthropic' && m.enabled)
     if (firstClaude) setChatModel(firstClaude.id)
   }, [models])
-
-  useEffect(() => {
-    chatScrollRef.current?.scrollTo({ top: chatScrollRef.current.scrollHeight })
-  }, [chat])
-
-  // Close the browser session when leaving the page.
-  useEffect(() => {
-    return () => {
-      if (chatSession) {
-        navigator.sendBeacon?.(`${base}/chat?sessionId=${chatSession}`)
-        fetch(`${base}/chat?sessionId=${chatSession}`, { method: 'DELETE' }).catch(() => {})
-      }
-    }
-  }, [chatSession, base])
-
-  async function sendChat() {
-    const message = chatInput.trim()
-    const startingAppiumChat = !chatSession && chatEngine === 'appium'
-    if (!message || chatBusy || !chatModel || (startingAppiumChat && !chatApkPath.trim())) return
-    setChatInput('')
-    setChatBusy(true)
-    setChat((c) => [...c, { role: 'user', text: message, tools: [] }, { role: 'assistant', text: '', tools: [] }])
-
-    // Mutate the last (assistant) message as events stream in.
-    const patchAssistant = (fn: (m: ChatMsg) => void) =>
-      setChat((c) => {
-        const next = [...c]
-        const last = { ...next[next.length - 1] }
-        fn(last)
-        next[next.length - 1] = last
-        return next
-      })
-
-    try {
-      const res = await fetch(`${base}/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message,
-          model: chatModel,
-          sessionId: chatSession,
-          ...(startingAppiumChat
-            ? { engine: 'appium', appium: { apkPath: chatApkPath, ...(chatAvd.trim() ? { avd: chatAvd.trim() } : {}) } }
-            : {}),
-        }),
-      })
-      if (!res.ok || !res.body) {
-        const err = await res.json().catch(() => ({}))
-        patchAssistant((m) => { m.text = `⚠️ ${err?.error ?? 'Request failed'}` })
-        return
-      }
-      const reader = res.body.getReader()
-      const decoder = new TextDecoder()
-      let buf = ''
-      for (;;) {
-        const { value, done } = await reader.read()
-        if (done) break
-        buf += decoder.decode(value, { stream: true })
-        const frames = buf.split('\n\n')
-        buf = frames.pop() ?? ''
-        for (const frame of frames) {
-          const line = frame.replace(/^data: /, '').trim()
-          if (!line) continue
-          let e: any
-          try { e = JSON.parse(line) } catch { continue }
-          if (e.type === 'session') setChatSession(e.sessionId)
-          else if (e.type === 'text') patchAssistant((m) => { m.text += (m.text ? '\n\n' : '') + e.text })
-          else if (e.type === 'tool_use') patchAssistant((m) => { m.tools.push({ tool: e.tool, ok: true }) })
-          else if (e.type === 'tool_result') patchAssistant((m) => {
-            // reflect the latest matching tool's outcome
-            for (let i = m.tools.length - 1; i >= 0; i--) {
-              if (m.tools[i].tool === e.tool) { m.tools[i] = { tool: e.tool, ok: e.ok }; break }
-            }
-          })
-          else if (e.type === 'error') patchAssistant((m) => { m.text += `\n\n⚠️ ${e.message}` })
-        }
-      }
-    } catch (err: any) {
-      patchAssistant((m) => { m.text += `\n\n⚠️ ${err?.message ?? 'Connection lost'}` })
-    } finally {
-      setChatBusy(false)
-    }
-  }
-
-  async function saveAsAutomation() {
-    if (!chatSession || !saveTitle.trim()) return
-    setSavingChat(true)
-    setSaveErr(null)
-    try {
-      const res = await fetch(`${base}/chat/save`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId: chatSession, title: saveTitle, linkedTestcase: pendingLink }),
-      })
-      const data = await res.json()
-      if (!res.ok) { setSaveErr(data?.error ?? 'Failed to save'); return }
-      setSaveOpen(false)
-      setSaveTitle('')
-      setPendingLink(null)
-      await loadList()
-      setSelected(data.name)
-      setActiveTab('automations')
-      if (data.pyWarning) toast.warning(data.pyWarning)
-    } finally {
-      setSavingChat(false)
-    }
-  }
-
-  async function resetChat() {
-    if (chatSession) {
-      fetch(`${base}/chat?sessionId=${chatSession}`, { method: 'DELETE' }).catch(() => {})
-    }
-    setChatSession(null)
-    setChat([])
-  }
 
   const latestVideo = detail?.runs.find((r) => r.hasVideo)
   const videoFileName = detail?.engine === 'appium' ? 'video.mp4' : 'video.webm'
@@ -1003,7 +735,7 @@ export function AutomationHub({ app }: { app: string }) {
                   {allTags.map((t) => (
                     <button
                       key={t}
-                      onClick={() => setTagFilter(tagFilter === t ? null : t)}
+                      onClick={() => setTagFilter((cur) => (cur === t ? null : t))}
                       className={cn(
                         'rounded-full border px-2 py-0.5 text-[10px] font-medium transition-colors',
                         tagFilter === t
@@ -1021,159 +753,7 @@ export function AutomationHub({ app }: { app: string }) {
                   Regression: <span className="font-medium text-foreground">{allSummary}</span>
                 </div>
               )}
-              <Dialog open={newOpen} onOpenChange={setNewOpen}>
-                <DialogTrigger render={<Button className="w-full gap-2"><Plus className="h-4 w-4" /> New automation</Button>} />
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>New automation</DialogTitle>
-                    <DialogDescription>
-                      {lockedEngine === 'playwright'
-                        ? 'Creates a Playwright project with a starter spec you can edit and replay.'
-                        : lockedEngine === 'appium'
-                          ? 'Creates an Appium project with a starter spec you can edit and replay against the Android app.'
-                          : 'Creates a project with a starter spec you can edit and replay, for a web app (Playwright) or an Android app (Appium).'}
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-2">
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-muted-foreground">Title</label>
-                      <Input
-                        placeholder="e.g. Checkout happy path"
-                        value={newTitle}
-                        onChange={(e) => setNewTitle(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === 'Enter' && newTitle.trim()) createProject() }}
-                        autoFocus
-                      />
-                    </div>
-                    {!lockedEngine && (
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => setNewEngine('playwright')}
-                          className={cn('rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
-                            newEngine === 'playwright' ? 'border-primary bg-primary text-primary-foreground' : 'border-border/60 text-muted-foreground hover:border-primary/50 hover:text-foreground')}
-                        >
-                          Web (Playwright)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setNewEngine('appium')}
-                          className={cn('rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
-                            newEngine === 'appium' ? 'border-primary bg-primary text-primary-foreground' : 'border-border/60 text-muted-foreground hover:border-primary/50 hover:text-foreground')}
-                        >
-                          Android (Appium)
-                        </button>
-                      </div>
-                    )}
-                    {newEngine === 'appium' && (
-                      <div className="space-y-2">
-                        <Input
-                          placeholder="Path to the APK, e.g. C:\builds\app-debug.apk (optional if package + activity are set)"
-                          value={newApkPath}
-                          onChange={(e) => setNewApkPath(e.target.value)}
-                        />
-                        <Input
-                          placeholder="App package, e.g. com.example.app (optional if APK path is set)"
-                          value={newAppPackage}
-                          onChange={(e) => setNewAppPackage(e.target.value)}
-                        />
-                        <Input
-                          placeholder="App activity, e.g. .MainActivity (optional if APK path is set)"
-                          value={newAppActivity}
-                          onChange={(e) => setNewAppActivity(e.target.value)}
-                        />
-                        <Input
-                          placeholder="AVD name override (optional — defaults to ANDROID_AVD)"
-                          value={newAvd}
-                          onChange={(e) => setNewAvd(e.target.value)}
-                        />
-                        <Input
-                          placeholder="Device serial (adb udid) — optional, uses emulator if empty"
-                          value={newUdid}
-                          onChange={(e) => setNewUdid(e.target.value)}
-                        />
-                        <label className="flex items-center gap-2 text-sm font-medium">
-                          <input
-                            type="checkbox"
-                            checked={newNoReset}
-                            onChange={(e) => setNewNoReset(e.target.checked)}
-                            className="h-4 w-4 accent-primary"
-                          />
-                          App is pre-installed — don&apos;t reinstall/reset
-                        </label>
-                      </div>
-                    )}
-                    {newEngine === 'playwright' && (
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-muted-foreground">Starting page (optional)</label>
-                        <Select value={startPagePath} onValueChange={(v) => { if (v) setStartPagePath(v) }}>
-                          <SelectTrigger className="w-full" disabled={pomLoading}>
-                            {pomLoading
-                              ? <span className="flex items-center gap-1.5 text-muted-foreground"><Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading pages…</span>
-                              : <SelectValue placeholder="No starting page" />}
-                          </SelectTrigger>
-                          <SelectContent align="start" side="bottom" sideOffset={6} alignItemWithTrigger={false}>
-                            <SelectItem value={NO_START_PAGE}>
-                              <span className="text-muted-foreground">No starting page</span>
-                            </SelectItem>
-                            {pomPages.length > 0 && <SelectSeparator />}
-                            {pomPages.map((p) => (
-                              <SelectItem key={p.path} value={p.path}>
-                                <FileCode2 className="h-3.5 w-3.5 text-muted-foreground" />
-                                {p.className}
-                                <span className="text-xs text-muted-foreground">{p.path.split('/').pop()}</span>
-                              </SelectItem>
-                            ))}
-                            <SelectSeparator />
-                            <SelectItem value={NEW_START_PAGE}>
-                              <Plus className="h-3.5 w-3.5" /> New page…
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                        {startPagePath === NEW_START_PAGE ? (
-                          <>
-                            <Input
-                              placeholder="Screen name, e.g. Checkout Review"
-                              value={newPageScreen}
-                              onChange={(e) => setNewPageScreen(e.target.value)}
-                              onKeyDown={(e) => { if (e.key === 'Enter' && newTitle.trim() && newPageScreen.trim()) createProject() }}
-                              autoFocus
-                            />
-                            <p className="text-[11px] leading-4 text-muted-foreground">
-                              {newPageScreen.trim()
-                                ? <>Scaffolds <code className="rounded bg-muted px-1 py-0.5">pages/{app}/{slugifyPreview(newPageScreen)}.page.ts</code> and starts the test from it.</>
-                                : 'Name the screen this test starts on — a page object is scaffolded for it.'}
-                            </p>
-                          </>
-                        ) : (
-                          <p className="text-[11px] leading-4 text-muted-foreground">
-                            {startPagePath === NO_START_PAGE
-                              ? (pomPages.length === 0 && !pomLoading
-                                  ? 'No page objects exist for this app yet — pick "New page…" to scaffold the first one.'
-                                  : 'The starter spec begins with a commented example — pick a page to chain from its entry.')
-                              : <>Test starts from <code className="rounded bg-muted px-1 py-0.5">{pomPages.find((p) => p.path === startPagePath)?.className}.open(page)</code>.</>}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                    {createErr && <p className="text-xs text-red-600 dark:text-red-400">{createErr}</p>}
-                  </div>
-                  <DialogFooter>
-                    <Button
-                      onClick={createProject}
-                      disabled={
-                        !newTitle.trim() ||
-                        creating ||
-                        (newEngine === 'appium' && !(newApkPath.trim() || (newAppPackage.trim() && newAppActivity.trim()))) ||
-                        (newEngine === 'playwright' && startPagePath === NEW_START_PAGE && !newPageScreen.trim())
-                      }
-                      className="gap-2"
-                    >
-                      {creating && <Loader2 className="h-4 w-4 animate-spin" />} Create
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+              <NewAutomationDialog base={base} app={app} lockedEngine={lockedEngine} onCreated={onProjectCreated} />
 
               <Dialog open={tcOpen} onOpenChange={setTcOpen}>
                 <DialogTrigger render={
@@ -1528,113 +1108,41 @@ export function AutomationHub({ app }: { app: string }) {
 
                         {/* TypeScript spec — the source of truth the hub replays */}
                         <TabsContent value="ts" className="space-y-2 pt-3">
-                          <ArtifactEditor
-                            language="typescript"
-                            testLabel="test.spec.ts"
-                            files={tsFiles.files}
+                          <SpecTab
+                            language="ts"
+                            selected={selected ?? ''}
+                            artifact={tsFiles}
                             primaryPaths={tsPrimaryPages}
                             lockedFiles={detail.frameworkFiles ?? []}
-                            active={tsFiles.active}
-                            onSelect={tsFiles.select}
-                            recentlyTouched={tsFiles.recentlyTouched}
-                            activeContent={tsFiles.activeContent}
-                            onActiveContentChange={tsFiles.setActiveContent}
-                            activeIsTest={tsFiles.activeIsTest}
-                            activeDirty={tsFiles.activeDirty}
                             saving={tsSaving}
                             onSave={saveTsFile}
-                            aiRow={aiEnabled && (
-                              <div className="flex items-center gap-2 border-t pt-2">
-                                <Input
-                                  value={aiInstruction}
-                                  onChange={(e) => setAiInstruction(e.target.value)}
-                                  onKeyDown={(e) => { if (e.key === 'Enter' && aiInstruction.trim()) improveSpec() }}
-                                  placeholder="Ask AI to change the spec — e.g. “wait for the table to load before asserting”"
-                                  disabled={improving}
-                                  className="h-8 flex-1 text-xs"
-                                />
-                                <Button size="sm" variant="outline" onClick={improveSpec} disabled={!aiInstruction.trim() || improving} className="gap-1.5">
-                                  {improving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Bot className="h-3.5 w-3.5" />}
-                                  Ask AI
-                                </Button>
-                              </div>
-                            )}
+                            aiEnabled={aiEnabled}
+                            aiInstruction={aiInstruction}
+                            setAiInstruction={setAiInstruction}
+                            improving={improving}
+                            onImprove={improveSpec}
                           />
                         </TabsContent>
 
                         {/* Python spec — generated from the TS spec; can't be replayed by the hub */}
                         <TabsContent value="py" className="space-y-2 pt-3">
-                          {!pyFiles.testDraft.trim() ? (
-                            <div className="flex flex-col items-center justify-center gap-3 rounded-md border border-dashed py-10 text-center">
-                              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted">
-                                <Wand2 className="h-4 w-4 text-muted-foreground" />
-                              </div>
-                              <div className="space-y-1">
-                                <p className="text-sm font-medium">No Python spec yet</p>
-                                <p className="mx-auto max-w-xs text-xs text-muted-foreground">
-                                  Generate a Python equivalent of the TypeScript spec above for use outside the hub.
-                                </p>
-                              </div>
-                              {detail.pythonEnabled === false ? (
-                                <p className="text-xs text-muted-foreground">
-                                  Python generation isn’t configured for this app.
-                                </p>
-                              ) : (
-                                <Button size="sm" onClick={() => translateSpec(false)} disabled={translating} className="gap-1.5">
-                                  {translating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
-                                  {translating ? 'Generating…' : 'Generate Python from TypeScript'}
-                                </Button>
-                              )}
-                            </div>
-                          ) : (
-                            <>
-                              <ArtifactEditor
-                                language="python"
-                                testLabel={`test_${selected}.py`}
-                                files={pyFiles.files}
-                                primaryPaths={pyPrimaryPages}
-                                active={pyFiles.active}
-                                onSelect={pyFiles.select}
-                                recentlyTouched={pyFiles.recentlyTouched}
-                                activeContent={pyFiles.activeContent}
-                                onActiveContentChange={pyFiles.setActiveContent}
-                                activeIsTest={pyFiles.activeIsTest}
-                                activeDirty={pyFiles.activeDirty}
-                                saving={pySaving}
-                                onSave={savePyFile}
-                                extraToolbar={
-                                  <>
-                                    <Button size="sm" variant="outline" onClick={downloadPySpec} className="h-7 gap-1.5 text-xs">
-                                      <Download className="h-3.5 w-3.5" /> Download
-                                    </Button>
-                                    <Button size="sm" variant="outline" onClick={() => translateSpec(true)} disabled={translating} className="h-7 gap-1.5 text-xs">
-                                      {translating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
-                                      Regenerate from TS
-                                    </Button>
-                                  </>
-                                }
-                                aiRow={aiEnabled && (
-                                  <div className="flex items-center gap-2 border-t pt-2">
-                                    <Input
-                                      value={aiInstruction}
-                                      onChange={(e) => setAiInstruction(e.target.value)}
-                                      onKeyDown={(e) => { if (e.key === 'Enter' && aiInstruction.trim()) improvePySpec() }}
-                                      placeholder="Ask AI to change the Python spec…"
-                                      disabled={improvingPy}
-                                      className="h-8 flex-1 text-xs"
-                                    />
-                                    <Button size="sm" variant="outline" onClick={improvePySpec} disabled={!aiInstruction.trim() || improvingPy} className="gap-1.5">
-                                      {improvingPy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Bot className="h-3.5 w-3.5" />}
-                                      Ask AI
-                                    </Button>
-                                  </div>
-                                )}
-                              />
-                              <p className="text-[11px] text-muted-foreground">
-                                The hub replays the TypeScript spec only — run this file with pytest outside the dashboard.
-                              </p>
-                            </>
-                          )}
+                          <SpecTab
+                            language="py"
+                            selected={selected ?? ''}
+                            artifact={pyFiles}
+                            primaryPaths={pyPrimaryPages}
+                            pythonEnabled={detail.pythonEnabled}
+                            saving={pySaving}
+                            onSave={savePyFile}
+                            aiEnabled={aiEnabled}
+                            aiInstruction={aiInstruction}
+                            setAiInstruction={setAiInstruction}
+                            improving={improvingPy}
+                            onImprove={improvePySpec}
+                            translating={translating}
+                            onTranslate={translateSpec}
+                            onDownload={downloadPySpec}
+                          />
                         </TabsContent>
                       </Tabs>
                       )}
@@ -1687,195 +1195,13 @@ export function AutomationHub({ app }: { app: string }) {
 
         {/* ── MCP Chat ──────────────────────────────────────────────────── */}
         <TabsContent value="chat" className="pt-4">
-          {!aiEnabled ? (
-            <Card className="border-dashed">
-              <CardContent className="flex h-64 flex-col items-center justify-center gap-3 text-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted">
-                  <Bot className="h-5 w-5 text-muted-foreground" />
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">AI is turned off for this app</p>
-                  <p className="mx-auto max-w-sm text-sm text-muted-foreground">
-                    Enable the Automation Hub under <span className="font-medium">Settings → AI &amp; Models</span> to use chat authoring, generate-from-test-case, and AI spec edits.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-          <Card className="flex h-[70vh] flex-col">
-            {/* Toolbar: live status + engine toggle + save / new chat */}
-            <div className="flex items-center justify-between gap-2 border-b px-3 py-2">
-              <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <span className={cn('h-1.5 w-1.5 rounded-full', chatSession ? 'bg-emerald-500' : 'bg-muted-foreground/40')} />
-                {chatSession
-                  ? (chatEngine === 'appium' ? 'Live Android session' : 'Live browser session')
-                  : (chatEngine === 'appium' ? 'Drives a real Android app' : 'Drives a real browser')}
-                <span className="hidden sm:inline">·</span>
-                <span className="hidden font-medium text-foreground sm:inline">{modelName}</span>
-              </span>
-              <div className="flex items-center gap-2">
-                {!lockedEngine && (
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setChatEngine('playwright')}
-                      disabled={!!chatSession}
-                      className={cn('rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
-                        chatSession ? 'opacity-50' : '',
-                        chatEngine === 'playwright' ? 'border-primary bg-primary text-primary-foreground' : 'border-border/60 text-muted-foreground hover:border-primary/50 hover:text-foreground')}
-                    >
-                      Web
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setChatEngine('appium')}
-                      disabled={!!chatSession}
-                      className={cn('rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
-                        chatSession ? 'opacity-50' : '',
-                        chatEngine === 'appium' ? 'border-primary bg-primary text-primary-foreground' : 'border-border/60 text-muted-foreground hover:border-primary/50 hover:text-foreground')}
-                    >
-                      Android
-                    </button>
-                  </div>
-                )}
-                <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
-                  <DialogTrigger render={
-                    <Button variant="outline" size="sm" disabled={!canSave} className="gap-1.5" title={canSave ? 'Save this session as a replayable automation' : 'Drive a flow first'}>
-                      <Save className="h-3.5 w-3.5" /> Save as automation
-                    </Button>
-                  } />
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Save as automation</DialogTitle>
-                      <DialogDescription>
-                        {chatEngine === 'appium'
-                          ? 'Generates an Appium spec from this session’s actions and adds it to your automations, ready to replay.'
-                          : 'Generates a Playwright spec from this session’s actions and adds it to your automations, ready to replay.'}
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-2">
-                      <Input
-                        placeholder="e.g. Example domain heading check"
-                        value={saveTitle}
-                        onChange={(e) => setSaveTitle(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === 'Enter' && saveTitle.trim()) saveAsAutomation() }}
-                        autoFocus
-                      />
-                      {pendingLink && (
-                        <p className="text-xs text-muted-foreground">
-                          Links to <span className="font-mono">{pendingLink.testcaseId}</span> — replays will sync its status.
-                        </p>
-                      )}
-                      {saveErr && <p className="text-xs text-red-600 dark:text-red-400">{saveErr}</p>}
-                    </div>
-                    <DialogFooter>
-                      <Button onClick={saveAsAutomation} disabled={!saveTitle.trim() || savingChat} className="gap-2">
-                        {savingChat && <Loader2 className="h-4 w-4 animate-spin" />} Generate &amp; save
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-                <Button variant="outline" size="sm" onClick={resetChat} disabled={chatBusy || chat.length === 0} className="gap-1.5">
-                  <Plus className="h-3.5 w-3.5" /> New chat
-                </Button>
-              </div>
-            </div>
-
-            {/* Appium target: editable before a session starts, read-only once bound */}
-            {chatEngine === 'appium' && (
-              chatSession ? (
-                <div className="flex items-center gap-1.5 border-b px-3 py-2">
-                  <Badge variant="outline" className="gap-1 font-mono text-[10px]">
-                    Android · {chatApkPath.split(/[\\/]/).pop() ?? 'no APK'}
-                  </Badge>
-                </div>
-              ) : (
-                <div className="flex flex-wrap items-center gap-2 border-b px-3 py-2">
-                  <Input
-                    placeholder="Path to the APK, e.g. C:\builds\app-debug.apk"
-                    value={chatApkPath}
-                    onChange={(e) => setChatApkPath(e.target.value)}
-                    className="h-8 flex-1 text-xs"
-                  />
-                  <Input
-                    placeholder="AVD name override (optional — defaults to ANDROID_AVD)"
-                    value={chatAvd}
-                    onChange={(e) => setChatAvd(e.target.value)}
-                    className="h-8 flex-1 text-xs"
-                  />
-                </div>
-              )
-            )}
-
-            {/* Transcript */}
-            <div ref={chatScrollRef} className="flex-1 space-y-4 overflow-y-auto p-4">
-              {chat.length === 0 && (
-                <div className="flex h-full flex-col items-center justify-center gap-2 text-center text-sm text-muted-foreground">
-                  <MessageSquare className="h-8 w-8 text-primary/50" />
-                  <p className="max-w-md">
-                    {chatEngine === 'appium' ? (
-                      <>
-                        Describe a flow and Claude will drive a real Android app via Appium MCP —
-                        e.g. <em>“Open the app, log in, and confirm the home screen shows my dashboard.”</em>
-                      </>
-                    ) : (
-                      <>
-                        Describe a flow and Claude will drive a real browser via Playwright MCP —
-                        e.g. <em>“Go to example.com and confirm the heading says Example Domain.”</em>
-                      </>
-                    )}
-                  </p>
-                </div>
-              )}
-              {chat.map((m, i) => (
-                <div key={i} className={cn('flex items-start gap-2', m.role === 'user' ? 'justify-end' : 'justify-start')}>
-                  {m.role === 'assistant' && (
-                    <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                      <Bot className="h-3.5 w-3.5 text-primary" />
-                    </div>
-                  )}
-                  <div className={cn(
-                    'max-w-[85%] rounded-2xl px-3.5 py-2 text-sm shadow-sm',
-                    m.role === 'user' ? 'rounded-br-sm bg-primary text-primary-foreground' : 'rounded-bl-sm bg-muted',
-                  )}>
-                    {m.tools.length > 0 && (
-                      <div className="mb-1.5 flex flex-wrap gap-1">
-                        {m.tools.map((t, j) => (
-                          <span key={j} className="inline-flex items-center gap-1 rounded bg-background/60 px-1.5 py-0.5 text-[10px] font-mono">
-                            {t.ok ? <Wrench className="h-2.5 w-2.5" /> : <XCircle className="h-2.5 w-2.5 text-red-500" />}
-                            {t.tool}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    {m.text
-                      ? <p className="whitespace-pre-wrap leading-relaxed">{m.text}</p>
-                      : <span className="inline-flex items-center gap-1.5 text-muted-foreground"><Loader2 className="h-3.5 w-3.5 animate-spin" /> working…</span>}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Composer */}
-            <div className="flex items-end gap-2 border-t p-3">
-              <Textarea
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat() } }}
-                placeholder={chatModel ? 'Describe the flow to automate…' : 'No AI model available — add a provider API key in Settings → AI & Models.'}
-                disabled={chatBusy || !chatModel}
-                className="min-h-[44px] max-h-32 flex-1 resize-none text-sm"
-              />
-              <Button
-                onClick={sendChat}
-                disabled={chatBusy || !chatInput.trim() || !chatModel || (!chatSession && chatEngine === 'appium' && !chatApkPath.trim())}
-                className="gap-1.5"
-              >
-                {chatBusy ? <Square className="h-4 w-4" /> : <Send className="h-4 w-4" />}
-              </Button>
-            </div>
-          </Card>
-          )}
+          <ChatAuthoringTab
+            session={session}
+            aiEnabled={aiEnabled}
+            lockedEngine={lockedEngine}
+            chatModel={chatModel}
+            modelName={modelName}
+          />
         </TabsContent>
       </Tabs>
 

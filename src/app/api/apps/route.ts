@@ -10,5 +10,5 @@ export async function GET() {
     const status = (err as { status?: number }).status ?? 401
     return NextResponse.json({ error: 'Unauthorized' }, { status })
   }
-  return NextResponse.json(getEnabledApps())
+  return NextResponse.json(await getEnabledApps())
 }

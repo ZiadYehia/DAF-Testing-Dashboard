@@ -1,28 +1,6 @@
-import fs from 'fs'
-import path from 'path'
 import { getDataSource } from './db'
 import { FeatureEntity, AcceptanceCriterionEntity } from './entities'
 import type { AcceptanceCriterion } from './ai'
-import { getDataRoot } from './paths'
-
-function acFilePath(appSlug: string, featureName: string): string {
-  return path.join(getDataRoot(), appSlug, 'features', featureName, 'acceptance-criteria.json')
-}
-
-function readAcsFromFs(appSlug: string, featureName: string): AcceptanceCriterion[] {
-  const file = acFilePath(appSlug, featureName)
-  if (!fs.existsSync(file)) return []
-  try {
-    const raw = JSON.parse(fs.readFileSync(file, 'utf-8')) as AcceptanceCriterion[]
-    return raw.map(ac => ({ ...ac, parentId: ac.parentId ?? null }))
-  } catch { return [] }
-}
-
-function writeAcsToFs(appSlug: string, featureName: string, acs: AcceptanceCriterion[]): void {
-  const file = acFilePath(appSlug, featureName)
-  fs.mkdirSync(path.dirname(file), { recursive: true })
-  fs.writeFileSync(file, JSON.stringify(acs, null, 2), 'utf-8')
-}
 
 export interface AcStats {
   hasAcceptanceCriteria: boolean
@@ -52,57 +30,47 @@ function rowsToAcs(rows: { criterionKey: string; text: string; parentId: string 
   }))
 }
 
+/** Read a feature's acceptance criteria — DB-only. Returns [] if the feature doesn't exist. */
 export async function getAcs(appSlug: string, featureName: string): Promise<AcceptanceCriterion[]> {
-  try {
-    const ds = await getDataSource()
-    const feature = await ds.getRepository(FeatureEntity).findOne({ where: { appSlug, name: featureName } })
-    if (!feature) return readAcsFromFs(appSlug, featureName)
+  const ds = await getDataSource()
+  const feature = await ds.getRepository(FeatureEntity).findOne({ where: { appSlug, name: featureName } })
+  if (!feature) return []
 
-    const rows = await ds.getRepository(AcceptanceCriterionEntity)
-      .createQueryBuilder('ac')
-      .where('ac.featureId = :fId', { fId: feature.id })
-      .orderBy('ac.sortOrder', 'ASC')
-      .getMany()
+  const rows = await ds.getRepository(AcceptanceCriterionEntity)
+    .createQueryBuilder('ac')
+    .where('ac.featureId = :fId', { fId: feature.id })
+    .orderBy('ac.sortOrder', 'ASC')
+    .getMany()
 
-    // No DB rows yet — data not migrated, fall back to FS
-    if (rows.length === 0 && fs.existsSync(acFilePath(appSlug, featureName))) {
-      return readAcsFromFs(appSlug, featureName)
-    }
-
-    return rowsToAcs(rows)
-  } catch {
-    return readAcsFromFs(appSlug, featureName)
-  }
+  return rowsToAcs(rows)
 }
 
+/**
+ * Replace a feature's whole acceptance-criteria set — DB-only. Throws if the
+ * feature doesn't exist, or if the DB write fails, so callers see the failure
+ * instead of silently losing the save.
+ */
 export async function saveAcs(appSlug: string, featureName: string, acs: AcceptanceCriterion[]): Promise<void> {
-  // FS write first — keeps file available for Copilot agents and as fallback
-  writeAcsToFs(appSlug, featureName, acs)
+  const ds = await getDataSource()
+  const feature = await ds.getRepository(FeatureEntity).findOne({ where: { appSlug, name: featureName } })
+  if (!feature) throw new Error(`Feature not found: ${appSlug}/${featureName}`)
 
-  try {
-    const ds = await getDataSource()
-    const feature = await ds.getRepository(FeatureEntity).findOne({ where: { appSlug, name: featureName } })
-    if (!feature) return
+  // Replace whole set: delete existing rows, insert new ones
+  await ds.query('DELETE FROM acceptance_criteria WHERE featureId = @0', [feature.id])
 
-    // Replace whole set: delete existing rows, insert new ones
-    await ds.query('DELETE FROM acceptance_criteria WHERE featureId = @0', [feature.id])
-
-    if (acs.length > 0) {
-      await ds.getRepository(AcceptanceCriterionEntity).insert(
-        acs.map((ac, idx) => ({
-          criterionKey: ac.id,
-          text: ac.text,
-          parentId: ac.parentId,
-          manualCoverage: ac.manualCoverage,
-          aiCoveredBy: JSON.stringify(ac.aiCoveredBy),
-          aiAnalyzedAt: ac.aiAnalyzedAt ? new Date(ac.aiAnalyzedAt) : null,
-          sortOrder: idx,
-          feature: { id: feature.id },
-        }))
-      )
-    }
-  } catch {
-    // DB write failed — FS write above ensures data is not lost
+  if (acs.length > 0) {
+    await ds.getRepository(AcceptanceCriterionEntity).insert(
+      acs.map((ac, idx) => ({
+        criterionKey: ac.id,
+        text: ac.text,
+        parentId: ac.parentId,
+        manualCoverage: ac.manualCoverage,
+        aiCoveredBy: JSON.stringify(ac.aiCoveredBy),
+        aiAnalyzedAt: ac.aiAnalyzedAt ? new Date(ac.aiAnalyzedAt) : null,
+        sortOrder: idx,
+        feature: { id: feature.id },
+      }))
+    )
   }
 }
 

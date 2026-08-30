@@ -18,8 +18,8 @@ const resolveId = (id: string) => (id === 'claude-haiku-4-5' ? 'claude-haiku-4-5
  * first enabled Claude model (kept as the default since it's the best-tested path).
  * Null if nothing is configured.
  */
-async function pickModel(requested?: string): Promise<{ modelId: string; provider: string } | null> {
-  const models = await getModelsWithStatusAsync()
+async function pickModel(userId: number, requested?: string): Promise<{ modelId: string; provider: string } | null> {
+  const models = await getModelsWithStatusAsync(userId)
   const enabled = models.filter((x) => x.enabled)
   const match = requested ? enabled.find((m) => m.id === requested) : undefined
   const chosen = match ?? enabled.find((m) => m.provider === 'anthropic') ?? enabled[0]
@@ -53,8 +53,8 @@ export async function POST(
   const row = detail ? parseTestcaseRows(detail.testcases).find((r) => r.id === testcaseId) : undefined
   if (!row) return NextResponse.json({ error: 'Test case not found' }, { status: 404 })
 
-  const picked = await pickModel(typeof body?.model === 'string' ? body.model : undefined)
-  const apiKey = picked?.provider === 'anthropic' ? (await getSetting('global', 'ANTHROPIC_API_KEY')) ?? '' : ''
+  const picked = await pickModel(guard.access.user.id, typeof body?.model === 'string' ? body.model : undefined)
+  const apiKey = picked?.provider === 'anthropic' ? (await getSetting(`user:${guard.access.user.id}`, 'ANTHROPIC_API_KEY')) ?? '' : ''
   if (!picked) {
     return NextResponse.json({ error: 'No AI model available — add a provider API key in Settings → AI & Models' }, { status: 400 })
   }
@@ -62,6 +62,7 @@ export async function POST(
   try {
     const artifacts = await generateSpecFromTestcase({
       apiKey, modelId: picked.modelId, provider: picked.provider, title, objective: row.objective, steps: row.steps, app,
+      userId: guard.access.user.id,
     })
     const meta = await createProject({
       title,
@@ -77,6 +78,7 @@ export async function POST(
       try {
         const artifacts = await generateSpecPythonFromTestcase({
           apiKey, modelId: picked.modelId, provider: picked.provider, title, objective: row.objective, steps: row.steps, app,
+          userId: guard.access.user.id,
         })
         await applyPyArtifacts(meta.name, artifacts)
       } catch (err: any) {

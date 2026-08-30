@@ -9,8 +9,9 @@ import {
   IScreenshot,
   RequirementEntity,
   TestcaseVersionEntity,
+  KnowledgeFileEntity,
 } from './entities'
-import { getAcStatsBulk, computeAcStats, AcStats } from './acceptance-criteria'
+import { getAcStatsBulk, AcStats } from './acceptance-criteria'
 import { MARKER as INTAKE_MARKER } from './intake'
 import { clearExecutions, removeExecutionEntries } from './execution'
 
@@ -34,6 +35,9 @@ function metadataFile(appSlug: string, name: string): string {
   return path.join(featuresDir(appSlug), name, 'metadata.json')
 }
 
+/** Pure FS fallback read — used only by the filesystem-only safety-net paths
+ *  (listFeaturesFallback, getFeature's catch branch) when a feature has no DB
+ *  row at all. Never used to overlay or self-heal a DB-backed read/write. */
 function readFeatureMetadata(appSlug: string, name: string): { jiraKey?: string; storyKey?: string; module?: string | null; archived?: boolean; archivedAt?: string } {
   const file = metadataFile(appSlug, name)
   if (!fs.existsSync(file)) return {}
@@ -41,84 +45,69 @@ function readFeatureMetadata(appSlug: string, name: string): { jiraKey?: string;
 }
 
 export async function saveFeatureMetadata(appSlug: string, name: string, data: { jiraKey?: string; storyKey?: string; module?: string | null }): Promise<void> {
-  const file = metadataFile(appSlug, name)
-  fs.mkdirSync(path.dirname(file), { recursive: true })
-  const existing = readFeatureMetadata(appSlug, name)
-  fs.writeFileSync(file, JSON.stringify({ ...existing, ...data }, null, 2), 'utf-8')
-  try {
-    const ds = await getDataSource()
-    const repo = ds.getRepository(FeatureEntity)
-    const feature = await repo.findOne({ where: { appSlug, name } })
-    if (feature) {
-      const updates: Partial<IFeature> = {}
-      if ('jiraKey' in data) updates.jiraKey = data.jiraKey ?? null
-      if ('storyKey' in data) updates.storyKey = data.storyKey ?? null
-      if ('module' in data) updates.module = data.module ?? null
-      if (Object.keys(updates).length > 0) await repo.update(feature.id, updates)
-    }
-  } catch {
-    // DB unavailable — FS write above is sufficient
+  const ds = await getDataSource()
+  const repo = ds.getRepository(FeatureEntity)
+  const feature = await repo.findOne({ where: { appSlug, name } })
+  const updates: Partial<IFeature> = {}
+  if ('jiraKey' in data) updates.jiraKey = data.jiraKey ?? null
+  if ('storyKey' in data) updates.storyKey = data.storyKey ?? null
+  if ('module' in data) updates.module = data.module ?? null
+  if (feature) {
+    if (Object.keys(updates).length > 0) await repo.update(feature.id, updates)
+  } else {
+    await repo.save({ appSlug, name, workflow: '', testcases: '', lastModified: new Date(), ...updates })
   }
 }
 
-/** Soft-deletes a feature: marks it archived in metadata.json (FS is authoritative).
- *  Returns false when the feature folder doesn't exist. */
+/** Soft-deletes a feature by setting archivedAt (DB-authoritative).
+ *  Returns false when the feature has no DB row. */
 export async function archiveFeature(appSlug: string, name: string): Promise<boolean> {
-  const featureDir = path.join(featuresDir(appSlug), name)
-  if (!fs.existsSync(featureDir)) return false
-
-  const archivedAt = new Date().toISOString()
-  const file = metadataFile(appSlug, name)
-  fs.mkdirSync(path.dirname(file), { recursive: true })
-  const existing = readFeatureMetadata(appSlug, name)
-  fs.writeFileSync(file, JSON.stringify({ ...existing, archived: true, archivedAt }, null, 2), 'utf-8')
-
-  try {
-    const ds = await getDataSource()
-    const repo = ds.getRepository(FeatureEntity)
-    const feature = await repo.findOne({ where: { appSlug, name } })
-    if (feature) await repo.update(feature.id, { archivedAt: new Date(archivedAt) })
-  } catch {
-    // DB unavailable — FS write above is sufficient
-  }
+  const ds = await getDataSource()
+  const repo = ds.getRepository(FeatureEntity)
+  const feature = await repo.findOne({ where: { appSlug, name } })
+  if (!feature) return false
+  await repo.update(feature.id, { archivedAt: new Date() })
   return true
 }
 
-/** Restores a previously archived feature. Returns false when the feature folder doesn't exist. */
+/** Restores a previously archived feature. Returns false when the feature has no DB row. */
 export async function restoreFeature(appSlug: string, name: string): Promise<boolean> {
-  const featureDir = path.join(featuresDir(appSlug), name)
-  if (!fs.existsSync(featureDir)) return false
-
-  const file = metadataFile(appSlug, name)
-  fs.mkdirSync(path.dirname(file), { recursive: true })
-  const existing = { ...readFeatureMetadata(appSlug, name) }
-  delete existing.archived
-  delete existing.archivedAt
-  fs.writeFileSync(file, JSON.stringify({ ...existing, archived: false }, null, 2), 'utf-8')
-
-  try {
-    const ds = await getDataSource()
-    const repo = ds.getRepository(FeatureEntity)
-    const feature = await repo.findOne({ where: { appSlug, name } })
-    if (feature) await repo.update(feature.id, { archivedAt: null })
-  } catch {
-    // DB unavailable — FS write above is sufficient
-  }
+  const ds = await getDataSource()
+  const repo = ds.getRepository(FeatureEntity)
+  const feature = await repo.findOne({ where: { appSlug, name } })
+  if (!feature) return false
+  await repo.update(feature.id, { archivedAt: null })
   return true
 }
 
 export async function saveFeatureKnowledge(appSlug: string, name: string, content: string): Promise<void> {
-  const featureDir = path.join(featuresDir(appSlug), name)
-  fs.mkdirSync(featureDir, { recursive: true })
-  fs.writeFileSync(path.join(featureDir, 'knowledge.md'), content, 'utf-8')
+  const ds = await getDataSource()
+  const repo = ds.getRepository(FeatureEntity)
+  const feature = await repo.findOne({ where: { appSlug, name } })
+  if (feature) {
+    await repo.update(feature.id, { knowledge: content })
+  } else {
+    await repo.save({ appSlug, name, workflow: '', testcases: '', knowledge: content, lastModified: new Date() })
+  }
+}
+
+/** DB-first read of the workflow template (knowledge_files docType='template'),
+ *  with an FS fallback for apps not yet migrated. */
+async function getWorkflowTemplate(appSlug: string): Promise<string> {
   try {
     const ds = await getDataSource()
-    const repo = ds.getRepository(FeatureEntity)
-    const feature = await repo.findOne({ where: { appSlug, name } })
-    if (feature) await repo.update(feature.id, { knowledge: content })
+    const row = await ds
+      .getRepository(KnowledgeFileEntity)
+      .createQueryBuilder('k')
+      .where('k.appSlug = :appSlug', { appSlug })
+      .andWhere("k.docType = 'template'")
+      .getOne()
+    if (row) return row.content
   } catch {
-    // DB unavailable — FS write above is sufficient
+    // fall through to FS
   }
+  const tpl = templateFile(appSlug)
+  return fs.existsSync(tpl) ? fs.readFileSync(tpl, 'utf-8') : ''
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -190,29 +179,10 @@ function countTestcases(content: string): number {
   return Math.max(0, lines.length - 2)
 }
 
-/** Write-through: keeps workflow/testcase markdown files for Copilot agent use. Non-fatal. */
-function writeFeatureMarkdown(
-  appSlug: string,
-  name: string,
-  type: 'workflow' | 'testcases',
-  content: string
-): void {
-  try {
-    const featurePath = path.join(featuresDir(appSlug), name)
-    fs.mkdirSync(featurePath, { recursive: true })
-    const filePath =
-      type === 'workflow'
-        ? path.join(featurePath, 'workflow.md')
-        : path.join(featurePath, `${name}-testcases.md`)
-    fs.writeFileSync(filePath, content, 'utf-8')
-  } catch {
-    // Non-fatal
-  }
-}
-
 /** Returns all testcase version files for a feature, with content embedded. Filesystem-based.
  *  Only reads numbered version files ({name}-testcases-vN.md) — never the base file, which
- *  is a write-through copy of the latest version used only for backward compat/Copilot agents. */
+ *  is a write-through copy of the latest version used only for backward compat/Copilot agents.
+ *  Pure FS fallback — used only when a feature has no DB row / rows (see listVersions). */
 function listVersionsFromFs(appSlug: string, name: string): TestcaseVersion[] {
   const featureDir = path.join(featuresDir(appSlug), name)
   if (!fs.existsSync(featureDir)) return []
@@ -258,6 +228,24 @@ async function listVersions(appSlug: string, name: string): Promise<TestcaseVers
   } catch {
     return listVersionsFromFs(appSlug, name)
   }
+}
+
+/** DB rows (version + content + id) for a feature, ordered ascending. Used by the
+ *  write paths (saveTestcaseVersion / saveTestcaseAdditions / undoLastAddition) —
+ *  these operate on testcase_versions rows directly, no FS involved. */
+async function getDbVersionRows(
+  appSlug: string,
+  name: string
+): Promise<{ ds: Awaited<ReturnType<typeof getDataSource>>; feature: IFeature | null; rows: { id: number; version: number; content: string }[] }> {
+  const ds = await getDataSource()
+  const feature = await ds.getRepository(FeatureEntity).findOne({ where: { appSlug, name } })
+  if (!feature) return { ds, feature: null, rows: [] }
+  const rows = await ds.getRepository(TestcaseVersionEntity)
+    .createQueryBuilder('tv')
+    .where('tv.featureId = :fId', { fId: feature.id })
+    .orderBy('tv.version', 'ASC')
+    .getMany()
+  return { ds, feature, rows }
 }
 
 // ─── Testcase Markdown Utilities ─────────────────────────────────────────────
@@ -412,67 +400,30 @@ export async function listFeatures(appSlug: string, module?: string | null, opts
       .getRawMany<{ featureId: number; count: string }>()
     const screenshotCountMap = new Map(screenshotCountRows.map((r) => [Number(r.featureId), Number(r.count)]))
 
-    const summaries = await Promise.all(
-      features.map(async (f) => {
-        let screenshotCount = screenshotCountMap.get(f.id) ?? 0
-        if (screenshotCount === 0) {
-          const ssDir = path.join(featuresDir(appSlug), f.name, 'screenshots')
-          if (fs.existsSync(ssDir)) {
-            screenshotCount = fs.readdirSync(ssDir)
-              .filter((file) => /\.(png|jpg|jpeg|gif|webp)$/i.test(file)).length
-          }
-        }
-        const baseFile = path.join(featuresDir(appSlug), f.name, `${f.name}-testcases.md`)
-        const testcasesContent = fs.existsSync(baseFile)
-          ? fs.readFileSync(baseFile, 'utf-8')
-          : (f.testcases ?? '')
+    const summaries = features.map((f) => {
+      // Screenshots stay disk-primary, but every upload now writes a metadata row
+      // alongside the file, so the DB count is authoritative going forward.
+      const screenshotCount = screenshotCountMap.get(f.id) ?? 0
 
-        // DB-first for metadata fields. Always read FS metadata (rather than only when
-        // jiraKey/storyKey are missing) because `archived` is FS-authoritative — the DB
-        // column may not exist yet on unsynced databases.
-        const meta = readFeatureMetadata(appSlug, f.name)
-        const jiraKey = f.jiraKey ?? meta.jiraKey
-        const storyKey = f.storyKey ?? meta.storyKey
-        const archived = meta.archived === true
-        const hasKnowledge = (f.knowledge != null && f.knowledge.trim().length > 0)
-          ? true
-          : fs.existsSync(path.join(featuresDir(appSlug), f.name, 'knowledge.md'))
+      // DB columns are authoritative for all text fields — no FS overlay/self-heal.
+      const acStats: AcStats = acStatsMap.get(f.id) ?? { hasAcceptanceCriteria: false, uncoveredAcCount: 0 }
 
-        // AC stats: DB bulk result or FS fallback per feature
-        let acStats: AcStats
-        if (acStatsMap.has(f.id)) {
-          acStats = acStatsMap.get(f.id)!
-        } else {
-          const acFile = path.join(featuresDir(appSlug), f.name, 'acceptance-criteria.json')
-          if (fs.existsSync(acFile)) {
-            try {
-              const acs = JSON.parse(fs.readFileSync(acFile, 'utf-8')) as Array<{ id: string; parentId?: string | null; manualCoverage: string | null; aiCoveredBy: string[]; aiAnalyzedAt: string | null }>
-              acStats = computeAcStats(acs.map(ac => ({ ...ac, text: '', parentId: ac.parentId ?? null, aiCoveredBy: ac.aiCoveredBy ?? [], manualCoverage: ac.manualCoverage as ('covered' | 'not_covered' | null) })))
-            } catch { acStats = { hasAcceptanceCriteria: false, uncoveredAcCount: 0 } }
-          } else {
-            acStats = { hasAcceptanceCriteria: false, uncoveredAcCount: 0 }
-          }
-        }
-
-        return {
-          name: f.name,
-          hasWorkflow: f.workflow
-            ? f.workflow.trim().length > 0
-            : fs.existsSync(path.join(featuresDir(appSlug), f.name, 'workflow.md')),
-          hasTestcases: testcasesContent.trim().length > 0,
-          testcaseCount: countTestcases(testcasesContent),
-          screenshotCount,
-          lastModified: f.lastModified ? f.lastModified.toISOString() : null,
-          jiraKey,
-          storyKey,
-          module: f.module ?? null,
-          hasKnowledge,
-          hasAcceptanceCriteria: acStats.hasAcceptanceCriteria,
-          uncoveredAcCount: acStats.uncoveredAcCount,
-          archived,
-        }
-      })
-    )
+      return {
+        name: f.name,
+        hasWorkflow: f.workflow.trim().length > 0,
+        hasTestcases: f.testcases.trim().length > 0,
+        testcaseCount: countTestcases(f.testcases),
+        screenshotCount,
+        lastModified: f.lastModified ? f.lastModified.toISOString() : null,
+        jiraKey: f.jiraKey ?? undefined,
+        storyKey: f.storyKey ?? undefined,
+        module: f.module ?? null,
+        hasKnowledge: f.knowledge != null && f.knowledge.trim().length > 0,
+        hasAcceptanceCriteria: acStats.hasAcceptanceCriteria,
+        uncoveredAcCount: acStats.uncoveredAcCount,
+        archived: f.archivedAt != null,
+      }
+    })
     return includeArchived ? summaries : summaries.filter((s) => !s.archived)
   } catch {
     return listFeaturesFallback(appSlug, module, includeArchived)
@@ -496,7 +447,7 @@ export async function getFeature(
       .orderBy('s.uploadedAt', 'ASC')
       .getMany()
     let screenshotNames = dbScreenshots.map((s) => s.fileName)
-    // FS is source of truth: surface and sync any disk images the DB doesn't know about.
+    // Screenshots stay disk-primary: surface and sync any disk images the DB doesn't know about.
     const ssDir = path.join(featuresDir(appSlug), name, 'screenshots')
     if (fs.existsSync(ssDir)) {
       const fsNames = fs.readdirSync(ssDir).filter((f) => /\.(png|jpg|jpeg|gif|webp)$/i.test(f))
@@ -517,55 +468,18 @@ export async function getFeature(
       (lower) => screenshotNames.find((n) => n.toLowerCase() === lower)!
     )
     const testcaseVersions = await listVersions(appSlug, name)
-    let latestTestcases: string
-    if (testcaseVersions.length > 0) {
-      latestTestcases = testcaseVersions[testcaseVersions.length - 1].content
-    } else {
-      // Filesystem base file is source of truth for manually written testcases.
-      // Always prefer it over the DB when it exists.
-      const baseFile = path.join(featuresDir(appSlug), name, `${name}-testcases.md`)
-      if (fs.existsSync(baseFile)) {
-        latestTestcases = fs.readFileSync(baseFile, 'utf-8')
-        // Sync to DB so list-view counts stay accurate
-        saveTestcases(appSlug, name, latestTestcases).catch(() => {})
-      } else {
-        latestTestcases = feature.testcases ?? ''
-      }
-    }
-    const meta = readFeatureMetadata(appSlug, name)
-    const jiraKey = feature.jiraKey ?? meta.jiraKey
-    const storyKey = feature.storyKey ?? meta.storyKey
-    const featureModule = feature.module ?? meta.module ?? null
-    const archived = meta.archived === true
-    let knowledge: string | undefined
-    if (feature.knowledge != null && feature.knowledge.trim().length > 0) {
-      knowledge = feature.knowledge
-    } else {
-      // DB is NULL or empty-string: FS is source of truth. Fall back and self-heal.
-      const knowledgeFile = path.join(featuresDir(appSlug), name, 'knowledge.md')
-      if (fs.existsSync(knowledgeFile)) {
-        const fsKnowledge = fs.readFileSync(knowledgeFile, 'utf-8')
-        knowledge = fsKnowledge.trim().length > 0 ? fsKnowledge : undefined
-        if (knowledge !== undefined && (feature.knowledge ?? '') === '') {
-          saveFeatureKnowledge(appSlug, name, fsKnowledge).catch(() => {})
-        }
-      } else {
-        knowledge = undefined
-      }
-    }
-    // Fall back to FS workflow.md if DB is empty, and sync back to DB so list-view is accurate
-    let workflow: string
-    if (feature.workflow) {
-      workflow = feature.workflow
-    } else {
-      const workflowFile = path.join(featuresDir(appSlug), name, 'workflow.md')
-      if (fs.existsSync(workflowFile)) {
-        workflow = fs.readFileSync(workflowFile, 'utf-8')
-        saveWorkflow(appSlug, name, workflow).catch(() => {})
-      } else {
-        workflow = ''
-      }
-    }
+    // DB columns are authoritative — no FS overlay/self-heal for workflow/testcases/knowledge/metadata.
+    const latestTestcases = testcaseVersions.length > 0
+      ? testcaseVersions[testcaseVersions.length - 1].content
+      : (feature.testcases ?? '')
+    const jiraKey = feature.jiraKey ?? undefined
+    const storyKey = feature.storyKey ?? undefined
+    const featureModule = feature.module ?? null
+    const archived = feature.archivedAt != null
+    const knowledge = (feature.knowledge != null && feature.knowledge.trim().length > 0)
+      ? feature.knowledge
+      : undefined
+    const workflow = feature.workflow ?? ''
     return {
       name: feature.name,
       workflow,
@@ -578,11 +492,11 @@ export async function getFeature(
       knowledge,
       testingPhase: feature.testingPhase ?? null,
       testingSubtasks: feature.testingSubtasks ? (JSON.parse(feature.testingSubtasks) as Record<string, string>) : {},
-      lastAddition: toLastAdditionSummary(getLastAddition(appSlug, name)),
+      lastAddition: toLastAdditionSummary(await getLastAddition(appSlug, name)),
       archived,
     }
   } catch {
-    // Fallback: filesystem
+    // Fallback: filesystem — feature has no DB row (not yet imported) or DB unavailable.
     const featureDir = path.join(featuresDir(appSlug), name)
     if (!fs.existsSync(featureDir)) return null
     const workflowFile = path.join(featureDir, 'workflow.md')
@@ -599,7 +513,7 @@ export async function getFeature(
     const { jiraKey, storyKey, module: fsModule, archived } = readFeatureMetadata(appSlug, name)
     const knowledgeFile = path.join(featureDir, 'knowledge.md')
     const knowledge = fs.existsSync(knowledgeFile) ? fs.readFileSync(knowledgeFile, 'utf-8') : undefined
-    return { name, workflow, testcases: latestTestcases, screenshots, testcaseVersions, jiraKey, storyKey, module: fsModule ?? null, knowledge, testingPhase: null, testingSubtasks: {}, lastAddition: toLastAdditionSummary(getLastAddition(appSlug, name)), archived: archived === true }
+    return { name, workflow, testcases: latestTestcases, screenshots, testcaseVersions, jiraKey, storyKey, module: fsModule ?? null, knowledge, testingPhase: null, testingSubtasks: {}, lastAddition: toLastAdditionSummary(await getLastAddition(appSlug, name)), archived: archived === true }
   }
 }
 
@@ -649,28 +563,15 @@ export async function saveFeatureTestingPhase(
 }
 
 export async function createFeature(appSlug: string, name: string, module?: string | null): Promise<void> {
-  const tpl = templateFile(appSlug)
-  const workflow = fs.existsSync(tpl)
-    ? fs.readFileSync(tpl, 'utf-8')
-    : `${INTAKE_MARKER}\n# ${name} Workflow\n\n_Fill in workflow details here._\n`
-  // Always write to filesystem first (used by Copilot agents and as fallback)
-  writeFeatureMarkdown(appSlug, name, 'workflow', workflow)
+  const templateContent = await getWorkflowTemplate(appSlug)
+  const workflow = templateContent || `${INTAKE_MARKER}\n# ${name} Workflow\n\n_Fill in workflow details here._\n`
+  // Scaffold the screenshots directory only — screenshots stay disk-primary.
   try { fs.mkdirSync(path.join(featuresDir(appSlug), name, 'screenshots'), { recursive: true }) } catch { /* non-fatal */ }
-  // Write module to metadata.json so FS is source of truth
-  if (module) {
-    const existing = readFeatureMetadata(appSlug, name)
-    const file = metadataFile(appSlug, name)
-    fs.mkdirSync(path.dirname(file), { recursive: true })
-    fs.writeFileSync(file, JSON.stringify({ ...existing, module }, null, 2), 'utf-8')
-  }
-  try {
-    const ds = await getDataSource()
-    const repo = ds.getRepository(FeatureEntity)
-    const existing = await repo.findOne({ where: { appSlug, name } })
-    if (!existing) await repo.save({ appSlug, name, workflow, testcases: '', lastModified: new Date(), module: module ?? null })
-  } catch {
-    // DB unavailable — filesystem write above is sufficient
-  }
+
+  const ds = await getDataSource()
+  const repo = ds.getRepository(FeatureEntity)
+  const existing = await repo.findOne({ where: { appSlug, name } })
+  if (!existing) await repo.save({ appSlug, name, workflow, testcases: '', lastModified: new Date(), module: module ?? null })
 }
 
 export async function saveWorkflow(
@@ -678,18 +579,13 @@ export async function saveWorkflow(
   name: string,
   content: string
 ): Promise<void> {
-  writeFeatureMarkdown(appSlug, name, 'workflow', content)
-  try {
-    const ds = await getDataSource()
-    const repo = ds.getRepository(FeatureEntity)
-    const feature = await repo.findOne({ where: { appSlug, name } })
-    if (feature) {
-      await repo.update(feature.id, { workflow: content, lastModified: new Date() })
-    } else {
-      await repo.save({ appSlug, name, workflow: content, testcases: '', lastModified: new Date() })
-    }
-  } catch {
-    // DB unavailable — filesystem write above is sufficient
+  const ds = await getDataSource()
+  const repo = ds.getRepository(FeatureEntity)
+  const feature = await repo.findOne({ where: { appSlug, name } })
+  if (feature) {
+    await repo.update(feature.id, { workflow: content, lastModified: new Date() })
+  } else {
+    await repo.save({ appSlug, name, workflow: content, testcases: '', lastModified: new Date() })
   }
 }
 
@@ -698,18 +594,13 @@ export async function saveTestcases(
   name: string,
   content: string
 ): Promise<void> {
-  writeFeatureMarkdown(appSlug, name, 'testcases', content)
-  try {
-    const ds = await getDataSource()
-    const repo = ds.getRepository(FeatureEntity)
-    const feature = await repo.findOne({ where: { appSlug, name } })
-    if (feature) {
-      await repo.update(feature.id, { testcases: content, lastModified: new Date() })
-    } else {
-      await repo.save({ appSlug, name, workflow: '', testcases: content, lastModified: new Date() })
-    }
-  } catch {
-    // DB unavailable — filesystem write above is sufficient
+  const ds = await getDataSource()
+  const repo = ds.getRepository(FeatureEntity)
+  const feature = await repo.findOne({ where: { appSlug, name } })
+  if (feature) {
+    await repo.update(feature.id, { testcases: content, lastModified: new Date() })
+  } else {
+    await repo.save({ appSlug, name, workflow: '', testcases: content, lastModified: new Date() })
   }
 }
 
@@ -719,32 +610,23 @@ export async function updateTestcaseVersionContent(
   versionFilename: string,
   content: string
 ): Promise<void> {
-  const featureDir = path.join(featuresDir(appSlug), name)
-  fs.mkdirSync(featureDir, { recursive: true })
-  fs.writeFileSync(path.join(featureDir, versionFilename), content, 'utf-8')
-
   const versionRe = new RegExp(`^${name}-testcases-v(\\d+)\\.md$`)
   const match = versionFilename.match(versionRe)
   if (!match) return
   const version = parseInt(match[1], 10)
 
-  try {
-    const ds = await getDataSource()
-    const feature = await ds.getRepository(FeatureEntity).findOne({ where: { appSlug, name } })
-    if (feature) {
-      const tvRepo = ds.getRepository(TestcaseVersionEntity)
-      const existing = await tvRepo
-        .createQueryBuilder('tv')
-        .where('tv.featureId = :fId AND tv.version = :v', { fId: feature.id, v: version })
-        .getOne()
-      if (existing) {
-        await tvRepo.update(existing.id, { content })
-      } else {
-        await tvRepo.insert({ version, content, feature: { id: feature.id } })
-      }
-    }
-  } catch {
-    // DB unavailable — FS write above is sufficient
+  const ds = await getDataSource()
+  const feature = await ds.getRepository(FeatureEntity).findOne({ where: { appSlug, name } })
+  if (!feature) return
+  const tvRepo = ds.getRepository(TestcaseVersionEntity)
+  const existing = await tvRepo
+    .createQueryBuilder('tv')
+    .where('tv.featureId = :fId AND tv.version = :v', { fId: feature.id, v: version })
+    .getOne()
+  if (existing) {
+    await tvRepo.update(existing.id, { content })
+  } else {
+    await tvRepo.insert({ version, content, feature: { id: feature.id } })
   }
 }
 
@@ -754,53 +636,53 @@ export async function saveTestcaseVersion(
   content: string,
   opts?: { clearExecution?: boolean }
 ): Promise<number> {
-  const existing = listVersionsFromFs(appSlug, name)
-  const featureDir = path.join(featuresDir(appSlug), name)
-  fs.mkdirSync(featureDir, { recursive: true })
+  const ds = await getDataSource()
+  const featureRepo = ds.getRepository(FeatureEntity)
+  let feature = await featureRepo.findOne({ where: { appSlug, name } })
+  if (!feature) {
+    feature = (await featureRepo.save({ appSlug, name, workflow: '', testcases: '', lastModified: new Date() })) as IFeature
+  }
 
-  // If a base file exists (manually written) and no numbered versions exist yet,
-  // preserve it as v1.md so users can switch back to it after the AI generates v2.
-  const baseFile = path.join(featureDir, `${name}-testcases.md`)
-  const baseContent = fs.existsSync(baseFile) ? fs.readFileSync(baseFile, 'utf-8') : ''
+  const existingRows = await ds.getRepository(TestcaseVersionEntity)
+    .createQueryBuilder('tv')
+    .where('tv.featureId = :fId', { fId: feature.id })
+    .orderBy('tv.version', 'ASC')
+    .getMany()
+
+  // If the base `testcases` column holds manually-written content and no numbered
+  // version exists yet, preserve it as v1 so users can switch back to it after
+  // the AI generates v2.
+  const baseContent = feature.testcases ?? ''
   const baseExists = baseContent.trim().length > 0
-  const promotedBaseToV1 = baseExists && existing.length === 0
-  if (promotedBaseToV1) {
-    fs.writeFileSync(path.join(featureDir, `${name}-testcases-v1.md`), baseContent, 'utf-8')
-  }
-  const nextVersion = existing.length > 0
-    ? parseInt(existing[existing.length - 1].filename.match(new RegExp(`${name}-testcases-v(\\d+)\\.md`))![1], 10) + 1
+  const promotedBaseToV1 = baseExists && existingRows.length === 0
+  const nextVersion = existingRows.length > 0
+    ? existingRows[existingRows.length - 1].version + 1
     : baseExists ? 2 : 1
-  fs.writeFileSync(path.join(featureDir, `${name}-testcases-v${nextVersion}.md`), content, 'utf-8')
 
-  // DB write-through
-  try {
-    const ds = await getDataSource()
-    const feature = await ds.getRepository(FeatureEntity).findOne({ where: { appSlug, name } })
-    if (feature) {
-      const tvRepo = ds.getRepository(TestcaseVersionEntity)
-      if (promotedBaseToV1) {
-        await tvRepo.insert({ version: 1, content: baseContent, feature: { id: feature.id } })
-      }
-      await tvRepo.insert({ version: nextVersion, content, feature: { id: feature.id } })
+  const featureId = feature.id
+  await ds.transaction(async (manager) => {
+    const tvRepo = manager.getRepository(TestcaseVersionEntity)
+    if (promotedBaseToV1) {
+      await tvRepo.insert({ version: 1, content: baseContent, feature: { id: featureId } })
     }
-  } catch {
-    // DB unavailable — FS files above are sufficient
-  }
+    await tvRepo.insert({ version: nextVersion, content, feature: { id: featureId } })
 
-  // Write-through to base file (latest copy for backward compat / Copilot agents)
-  await saveTestcases(appSlug, name, content)
+    // A full regenerate creates a new version — its own execution file starts
+    // clean by construction, but clearExecutions (below, outside this transaction —
+    // it owns its own DB access) handles the reused-version-number edge case.
+    // The recorded undo batch belongs to the replaced case set; its IDs now mean
+    // different cases, so undo must not survive a regenerate. Additive callers
+    // (add-more, quick-add) pass nothing and keep existing statuses/lastAddition —
+    // only their newly-appended cases default to untested.
+    await manager.getRepository(FeatureEntity).update(featureId, {
+      testcases: content,
+      lastModified: new Date(),
+      ...(opts?.clearExecution ? { lastAddition: null } : {}),
+    })
+  })
 
-  // A full regenerate creates a new version — its own execution file starts
-  // clean by construction, but clear it explicitly in case a version number
-  // was reused (e.g. after a manual reset). Scoped to `nextVersion` only, so
-  // older versions' execution history is untouched. Additive callers
-  // (add-more, quick-add) pass nothing and keep existing statuses — only
-  // their newly-appended cases default to untested.
   if (opts?.clearExecution) {
     await clearExecutions(appSlug, name, String(nextVersion))
-    // The recorded undo batch belongs to the replaced case set; its IDs now mean
-    // different cases, so undo must not survive a regenerate.
-    clearLastAddition(appSlug, name)
   }
 
   return nextVersion
@@ -810,7 +692,7 @@ export async function saveTestcaseVersion(
 // Versions mark baselines (full generations / manual snapshots). Additive AI ops
 // (gap-fill "add more", scenario quick-add) mutate the LATEST version in place —
 // no version churn, and execution statuses (keyed by testcase ID) are untouched.
-// Rollback safety comes from last-addition.json + undoLastAddition instead.
+// Rollback safety comes from the lastAddition column + undoLastAddition instead.
 
 /** Saves `content` (the full merged table) into the latest version in place.
  *  Creates v1 only when no numbered version exists yet. Returns the version number. */
@@ -819,30 +701,25 @@ export async function saveTestcaseAdditions(
   name: string,
   content: string
 ): Promise<number> {
-  const existing = listVersionsFromFs(appSlug, name)
-  if (existing.length === 0) {
-    // First-ever save for this feature (or only a manual base file exists, which
-    // saveTestcaseVersion preserves as v1). Creating the initial version is fine.
+  const { ds, rows } = await getDbVersionRows(appSlug, name)
+  if (rows.length === 0) {
+    // First-ever save for this feature (or only a manually-written base exists,
+    // which saveTestcaseVersion preserves as v1). Creating the initial version is fine.
     return saveTestcaseVersion(appSlug, name, content)
   }
-  const latest = existing[existing.length - 1]
-  const versionRe = new RegExp(`^${name}-testcases-v(\\d+)\\.md$`)
-  const version = parseInt(latest.filename.match(versionRe)![1], 10)
-  await updateTestcaseVersionContent(appSlug, name, latest.filename, content)
-  // Write-through to base file (latest copy for backward compat / Copilot agents)
+  const latest = rows[rows.length - 1]
+  await ds.getRepository(TestcaseVersionEntity).update(latest.id, { content })
+  // Write-through to the base `testcases` column (latest copy for list-view counts).
   await saveTestcases(appSlug, name, content)
-  return version
+  return latest.version
 }
 
-function lastAdditionFile(appSlug: string, name: string): string {
-  return path.join(featuresDir(appSlug), name, 'last-addition.json')
-}
-
-export function getLastAddition(appSlug: string, name: string): LastAddition | null {
-  const file = lastAdditionFile(appSlug, name)
-  if (!fs.existsSync(file)) return null
+export async function getLastAddition(appSlug: string, name: string): Promise<LastAddition | null> {
   try {
-    const raw = JSON.parse(fs.readFileSync(file, 'utf-8')) as LastAddition
+    const ds = await getDataSource()
+    const feature = await ds.getRepository(FeatureEntity).findOne({ where: { appSlug, name } })
+    if (!feature?.lastAddition) return null
+    const raw = JSON.parse(feature.lastAddition) as LastAddition
     if (!Array.isArray(raw.ids) || raw.ids.length === 0) return null
     if (typeof raw.version !== 'number' || typeof raw.at !== 'string') return null
     return raw
@@ -851,21 +728,26 @@ export function getLastAddition(appSlug: string, name: string): LastAddition | n
   }
 }
 
-export function recordLastAddition(appSlug: string, name: string, ids: string[], version: number): void {
+export async function recordLastAddition(appSlug: string, name: string, ids: string[], version: number): Promise<void> {
   if (ids.length === 0) return
-  const file = lastAdditionFile(appSlug, name)
   try {
-    fs.mkdirSync(path.dirname(file), { recursive: true })
-    fs.writeFileSync(file, JSON.stringify({ ids, version, at: new Date().toISOString() }, null, 2), 'utf-8')
+    const ds = await getDataSource()
+    const repo = ds.getRepository(FeatureEntity)
+    const feature = await repo.findOne({ where: { appSlug, name } })
+    if (feature) {
+      await repo.update(feature.id, { lastAddition: JSON.stringify({ ids, version, at: new Date().toISOString() }) })
+    }
   } catch {
     // non-fatal — undo simply won't be offered
   }
 }
 
-export function clearLastAddition(appSlug: string, name: string): void {
+export async function clearLastAddition(appSlug: string, name: string): Promise<void> {
   try {
-    const file = lastAdditionFile(appSlug, name)
-    if (fs.existsSync(file)) fs.unlinkSync(file)
+    const ds = await getDataSource()
+    const repo = ds.getRepository(FeatureEntity)
+    const feature = await repo.findOne({ where: { appSlug, name } })
+    if (feature) await repo.update(feature.id, { lastAddition: null })
   } catch {
     // non-fatal
   }
@@ -877,18 +759,16 @@ export async function undoLastAddition(
   appSlug: string,
   name: string
 ): Promise<{ removed: number; version: number; testcases: string } | { error: string }> {
-  const last = getLastAddition(appSlug, name)
+  const last = await getLastAddition(appSlug, name)
   if (!last) return { error: 'Nothing to undo — no recent AI addition recorded.' }
 
-  const versions = listVersionsFromFs(appSlug, name)
-  if (versions.length === 0) return { error: 'No test case versions found.' }
-  const latest = versions[versions.length - 1]
-  const versionRe = new RegExp(`^${name}-testcases-v(\\d+)\\.md$`)
-  const latestNum = parseInt(latest.filename.match(versionRe)![1], 10)
-  if (latestNum !== last.version) {
+  const { ds, rows } = await getDbVersionRows(appSlug, name)
+  if (rows.length === 0) return { error: 'No test case versions found.' }
+  const latest = rows[rows.length - 1]
+  if (latest.version !== last.version) {
     // A newer version was created since the addition — its IDs no longer refer
     // to the recorded batch, so undoing would corrupt the current set.
-    clearLastAddition(appSlug, name)
+    await clearLastAddition(appSlug, name)
     return { error: 'The last addition belongs to an older version and can no longer be undone.' }
   }
 
@@ -902,11 +782,11 @@ export async function undoLastAddition(
     })
     .join('\n')
 
-  await updateTestcaseVersionContent(appSlug, name, latest.filename, kept)
+  await ds.getRepository(TestcaseVersionEntity).update(latest.id, { content: kept })
   await saveTestcases(appSlug, name, kept)
-  await removeExecutionEntries(appSlug, name, last.ids, String(latestNum))
-  clearLastAddition(appSlug, name)
-  return { removed: last.ids.length, version: latestNum, testcases: kept }
+  await removeExecutionEntries(appSlug, name, last.ids, String(latest.version))
+  await clearLastAddition(appSlug, name)
+  return { removed: last.ids.length, version: latest.version, testcases: kept }
 }
 
 export async function saveScreenshot(
@@ -915,7 +795,7 @@ export async function saveScreenshot(
   fileName: string,
   buffer: Buffer
 ): Promise<void> {
-  // Always write to filesystem (serves as both fallback and Copilot-agent source)
+  // Screenshots stay disk-primary — always write to filesystem.
   const screenshotsDir = path.join(featuresDir(appSlug), featureName, 'screenshots')
   fs.mkdirSync(screenshotsDir, { recursive: true })
   fs.writeFileSync(path.join(screenshotsDir, fileName), buffer)
@@ -932,10 +812,11 @@ export async function saveScreenshot(
     const existing = await screenshotRepo
       .createQueryBuilder('s').innerJoin('s.feature', 'f')
       .where('f.id = :fId AND s.fileName = :fn', { fId: feature.id, fn: fileName }).getOne()
+    // Metadata row only — the BLOB `data` column is no longer written on upload.
     if (existing) {
-      await screenshotRepo.update(existing.id, { data: buffer, mimeType })
+      await screenshotRepo.update(existing.id, { data: null, mimeType, byteSize: buffer.length })
     } else {
-      await screenshotRepo.save({ feature, fileName, mimeType, data: buffer, uploadedAt: new Date() } as Omit<IScreenshot, 'id'>)
+      await screenshotRepo.save({ feature, fileName, mimeType, data: null, byteSize: buffer.length, uploadedAt: new Date() } as Omit<IScreenshot, 'id'>)
     }
   } catch {
     // DB unavailable — filesystem write above is sufficient
@@ -970,6 +851,7 @@ export async function getScreenshotData(
   featureName: string,
   fileName: string
 ): Promise<{ data: Buffer; mimeType: string } | null> {
+  const screenshotPath = path.join(featuresDir(appSlug), featureName, 'screenshots', fileName)
   try {
     const ds = await getDataSource()
     const screenshot = await ds
@@ -979,20 +861,43 @@ export async function getScreenshotData(
       .innerJoin('s.feature', 'f')
       .where('f.appSlug = :appSlug AND f.name = :name AND s.fileName = :fn', { appSlug, name: featureName, fn: fileName })
       .getOne()
-    if (screenshot) return { data: screenshot.data, mimeType: screenshot.mimeType }
+    if (screenshot) {
+      // Disk is primary: serve the file when present.
+      if (fs.existsSync(screenshotPath)) {
+        return { data: fs.readFileSync(screenshotPath), mimeType: screenshot.mimeType }
+      }
+      // Disk file missing — fall back to the BLOB column (legacy rows only; new
+      // uploads never populate it).
+      if (screenshot.data) return { data: screenshot.data, mimeType: screenshot.mimeType }
+      return null
+    }
   } catch {
-    // Fall through to filesystem
+    // Fall through to filesystem-only fallback (DB unavailable)
   }
-  // Fallback: filesystem
-  const screenshotPath = path.join(featuresDir(appSlug), featureName, 'screenshots', fileName)
   if (!fs.existsSync(screenshotPath)) return null
   const ext = path.extname(fileName).toLowerCase()
   const mimeType = MIME_TYPES[ext] ?? 'application/octet-stream'
   return { data: fs.readFileSync(screenshotPath), mimeType }
 }
 
-/** Still filesystem-based — examples are static template files, not stored in DB. */
-export function listExamples(appSlug: string): string[] {
+/** DB-first (knowledge_files docType='example'), FS fallback for apps not yet migrated. */
+export async function listExamples(appSlug: string): Promise<string[]> {
+  try {
+    const ds = await getDataSource()
+    const rows = await ds
+      .getRepository(KnowledgeFileEntity)
+      .createQueryBuilder('k')
+      .select(['k.filename'])
+      .where('k.appSlug = :appSlug', { appSlug })
+      .andWhere("k.docType = 'example'")
+      .orderBy('k.filename', 'ASC')
+      .getMany()
+    if (rows.length > 0) {
+      return rows.map((r) => r.filename).filter((f) => f.endsWith('-testcases.md'))
+    }
+  } catch {
+    // fall through to FS
+  }
   const dir = examplesDir(appSlug)
   if (!fs.existsSync(dir)) return []
   return fs.readdirSync(dir).filter((f) => f.endsWith('-testcases.md'))
@@ -1106,7 +1011,7 @@ export async function addRequirementRows(
   module?: string | null
 ): Promise<{ added: string[]; skipped: string[] }> {
   const moduleVal = module ?? null
-  let content = (await getRequirements(appSlug, moduleVal)).replace(/\s+$/, '')
+  const content = (await getRequirements(appSlug, moduleVal)).replace(/\s+$/, '')
 
   let allLines = content ? content.split('\n') : []
   let tableLines = allLines

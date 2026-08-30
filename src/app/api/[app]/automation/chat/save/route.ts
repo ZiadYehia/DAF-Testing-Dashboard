@@ -44,7 +44,7 @@ export async function POST(
   const modelId = getSessionModel(sessionId)
   if (!modelId) return NextResponse.json({ error: 'Session expired' }, { status: 400 })
 
-  const apiKey = await getSetting('global', 'ANTHROPIC_API_KEY')
+  const apiKey = await getSetting(`user:${guard.access.user.id}`, 'ANTHROPIC_API_KEY')
   if (!apiKey) return NextResponse.json({ error: 'ANTHROPIC_API_KEY is not configured' }, { status: 400 })
 
   try {

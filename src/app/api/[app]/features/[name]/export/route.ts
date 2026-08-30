@@ -47,7 +47,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   }
 
   const workbook = new ExcelJS.Workbook()
-  workbook.creator = 'Testing Dashboard'
+  workbook.creator = 'zTestGround'
   workbook.created = new Date()
 
   const sheet = workbook.addWorksheet(sheetName)

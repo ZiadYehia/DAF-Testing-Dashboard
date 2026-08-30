@@ -4,6 +4,8 @@ import path from 'path'
 import { fetchStories, loadLocalStories, synthesizeKnowledge } from '@/lib/stories'
 import { writeKnowledgeFile } from '@/lib/knowledge'
 import { extractAcceptanceCriteria } from '@/lib/ai'
+import { getAcs, saveAcs } from '@/lib/acceptance-criteria'
+import { getFeature, saveFeatureKnowledge } from '@/lib/features'
 import { guardApp } from '@/lib/auth'
 import { getDataRoot } from '@/lib/paths'
 
@@ -56,13 +58,11 @@ export async function POST(
     // Save path: write the already-synthesized (and possibly edited) content verbatim.
     if (body.save && body.content?.trim()) {
       if (body.featureSlug) {
-        const featureDir = path.join(getDataRoot(), app, 'features', body.featureSlug)
-        fs.mkdirSync(featureDir, { recursive: true })
-        fs.writeFileSync(path.join(featureDir, 'knowledge.md'), body.content, 'utf-8')
+        await saveFeatureKnowledge(app, body.featureSlug, body.content)
         return NextResponse.json({ content: body.content, featureSlug: body.featureSlug, destination: 'feature' })
       }
       const filename = `${slugify(body.module)}-knowledge.md`
-      writeKnowledgeFile(app, filename, body.content, { allowCreate: true, module: body.moduleSlug ?? null })
+      await writeKnowledgeFile(app, filename, body.content, { allowCreate: true, module: body.moduleSlug ?? null })
       return NextResponse.json({ content: body.content, filename, moduleSlug: body.moduleSlug ?? null, destination: body.moduleSlug ? 'module-knowledge' : 'knowledge' })
     }
 
@@ -74,7 +74,7 @@ export async function POST(
     const stories =
       source === 'local'
         ? await loadLocalStories(app, { module: body.module, keys: body.keys })
-        : await fetchStories({ module: body.module, jql: body.jql })
+        : await fetchStories({ module: body.module, jql: body.jql, appSlug: app }, guard.access.user.id)
 
     if (stories.length === 0) {
       return NextResponse.json(
@@ -87,23 +87,23 @@ export async function POST(
     // (preserving manual edits) rather than regenerating from scratch.
     let priorDoc: string | undefined
     if (body.refresh) {
-      let priorPath: string | null = null
       if (body.featureSlug) {
-        priorPath = path.join(getDataRoot(), app, 'features', body.featureSlug, 'knowledge.md')
+        const existingFeature = await getFeature(app, body.featureSlug)
+        if (existingFeature?.knowledge?.trim()) priorDoc = existingFeature.knowledge.trim()
       } else {
         const filename = `${slugify(body.module)}-knowledge.md`
         const dir = body.moduleSlug
           ? path.join(getDataRoot(), app, 'modules', body.moduleSlug, 'knowledge')
           : path.join(getDataRoot(), app, 'knowledge')
-        priorPath = path.join(dir, filename)
-      }
-      if (priorPath && fs.existsSync(priorPath)) {
-        const existing = fs.readFileSync(priorPath, 'utf-8').trim()
-        if (existing) priorDoc = existing
+        const priorPath = path.join(dir, filename)
+        if (fs.existsSync(priorPath)) {
+          const existing = fs.readFileSync(priorPath, 'utf-8').trim()
+          if (existing) priorDoc = existing
+        }
       }
     }
 
-    const content = await synthesizeKnowledge(app, body.module, stories, body.model, priorDoc)
+    const content = await synthesizeKnowledge(app, body.module, stories, body.model, guard.access.user.id, priorDoc)
 
     let filename: string | null = null
     let featureSlugSaved: string | null = null
@@ -111,18 +111,16 @@ export async function POST(
     let acCount = 0
     if (body.save) {
       if (body.featureSlug) {
-        const featureDir = path.join(getDataRoot(), app, 'features', body.featureSlug)
-        fs.mkdirSync(featureDir, { recursive: true })
-        fs.writeFileSync(path.join(featureDir, 'knowledge.md'), content, 'utf-8')
+        await saveFeatureKnowledge(app, body.featureSlug, content)
         featureSlugSaved = body.featureSlug
         destination = 'feature'
         // Auto-extract ACs from synthesized knowledge — only if none exist yet
-        const acFile = path.join(featureDir, 'acceptance-criteria.json')
-        if (!fs.existsSync(acFile)) {
+        const existingAcs = await getAcs(app, body.featureSlug).catch(() => [])
+        if (existingAcs.length === 0) {
           try {
-            const extracted = await extractAcceptanceCriteria(content, body.model!)
+            const extracted = await extractAcceptanceCriteria(content, body.model!, guard.access.user.id)
             if (extracted.length > 0) {
-              fs.writeFileSync(acFile, JSON.stringify(extracted, null, 2), 'utf-8')
+              await saveAcs(app, body.featureSlug, extracted)
               acCount = extracted.length
             }
           } catch {
@@ -131,7 +129,7 @@ export async function POST(
         }
       } else {
         filename = `${slugify(body.module)}-knowledge.md`
-        writeKnowledgeFile(app, filename, content, { allowCreate: true, module: body.moduleSlug ?? null })
+        await writeKnowledgeFile(app, filename, content, { allowCreate: true, module: body.moduleSlug ?? null })
       }
     }
 

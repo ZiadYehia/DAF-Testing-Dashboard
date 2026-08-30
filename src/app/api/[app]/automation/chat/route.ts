@@ -10,9 +10,10 @@ export const runtime = 'nodejs'
 // An authoring turn drives a real browser across several steps — give it room.
 export const maxDuration = 300
 
-async function guard(app: string): Promise<NextResponse | null> {
+async function guard(app: string): Promise<{ blocked: NextResponse | null; userId: number }> {
   const result = await guardApp(app, 'automation.edit')
-  return result.ok ? null : result.response
+  if (!result.ok) return { blocked: result.response, userId: -1 }
+  return { blocked: null, userId: result.access.user.id }
 }
 
 /**
@@ -25,7 +26,7 @@ export async function POST(
   { params }: { params: Promise<{ app: string }> },
 ) {
   const { app } = await params
-  const blocked = await guard(app)
+  const { blocked, userId } = await guard(app)
   if (blocked) return blocked
   if (!(await isFeatureEnabled(app, 'automationHub'))) {
     return NextResponse.json({ error: 'AI is disabled for this app (Settings → AI & Models)' }, { status: 403 })
@@ -56,7 +57,7 @@ export async function POST(
     if (avdRaw) avd = avdRaw
   }
 
-  const apiKey = await getSetting('global', 'ANTHROPIC_API_KEY')
+  const apiKey = await getSetting(`user:${userId}`, 'ANTHROPIC_API_KEY')
   if (!apiKey && !sessionId) {
     return NextResponse.json({ error: 'ANTHROPIC_API_KEY is not configured. Add it in Settings.' }, { status: 400 })
   }
@@ -95,7 +96,7 @@ export async function DELETE(
   { params }: { params: Promise<{ app: string }> },
 ) {
   const { app } = await params
-  const blocked = await guard(app)
+  const { blocked } = await guard(app)
   if (blocked) return blocked
 
   const sessionId = req.nextUrl.searchParams.get('sessionId')

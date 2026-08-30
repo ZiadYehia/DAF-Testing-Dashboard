@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getBug, saveBug, changeBugFeature } from '@/lib/bugs'
+import path from 'path'
+import { getBug, saveBug, changeBugFeature, softDeleteBug } from '@/lib/bugs'
 import { getJiraIssueUrl } from '@/lib/jira'
 import { guardApp } from '@/lib/auth'
 
@@ -19,15 +20,16 @@ export async function PUT(req: NextRequest, { params }: Params) {
   const { app, feature, slug } = await params
   const guard = await guardApp(app, 'bugs.edit')
   if (!guard.ok) return guard.response
-  const { body, priority, bug_type, parent_key, severity, layer } = await req.json().catch(() => ({})) as {
+  const { body, title, priority, bug_type, parent_key, severity, layer } = await req.json().catch(() => ({})) as {
     body: string
+    title?: string
     priority?: string
     bug_type?: string
     parent_key?: string | null
     severity?: string
     layer?: string
   }
-  await saveBug(app, feature, slug, body, { priority, bug_type, parent_key, severity, layer })
+  await saveBug(app, feature, slug, body, { title, priority, bug_type, parent_key, severity, layer })
   return NextResponse.json({ success: true })
 }
 
@@ -39,4 +41,16 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (!newFeature?.trim()) return NextResponse.json({ error: 'feature is required' }, { status: 400 })
   await changeBugFeature(app, feature, slug, newFeature.trim())
   return NextResponse.json({ feature: newFeature.trim(), slug })
+}
+
+export async function DELETE(_req: NextRequest, { params }: Params) {
+  const { app, feature, slug } = await params
+  const guard = await guardApp(app, 'bugs.delete')
+  if (!guard.ok) return guard.response
+  if (path.basename(feature) !== feature || path.basename(slug) !== slug) {
+    return NextResponse.json({ error: 'Invalid path' }, { status: 400 })
+  }
+  const deleted = await softDeleteBug(app, feature, slug)
+  if (!deleted) return NextResponse.json({ error: 'Bug not found' }, { status: 404 })
+  return NextResponse.json({ deleted: true })
 }

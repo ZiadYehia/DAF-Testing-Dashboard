@@ -9,6 +9,7 @@ export async function POST(_req: NextRequest, { params }: Params) {
   const { app, feature, slug } = await params
   const guard = await guardApp(app, 'bugs.report')
   if (!guard.ok) return guard.response
+  const userId = guard.access.user.id
 
   const bug = await getBug(app, feature, slug)
   if (!bug) return NextResponse.json({ error: 'Bug not found' }, { status: 404 })
@@ -20,12 +21,12 @@ export async function POST(_req: NextRequest, { params }: Params) {
     const imageNames = files.filter((f) => f.mimeType.startsWith('image/')).map((f) => f.fileName)
     const videoNames = files.filter((f) => f.mimeType.startsWith('video/')).map((f) => f.fileName)
 
-    await updateJiraIssue(app, bug.jira_key, bug, imageNames, videoNames)
+    await updateJiraIssue(app, bug.jira_key, bug, imageNames, videoNames, userId)
 
     // Push any new attachments to Jira (additive — dedup by filename avoids duplicates)
     let attachmentWarning: string | undefined
     try {
-      await uploadJiraAttachments(bug.jira_key, files, { skipExisting: true })
+      await uploadJiraAttachments(bug.jira_key, files, { skipExisting: true, userId })
     } catch (err) {
       attachmentWarning = err instanceof Error ? err.message : 'Attachment upload failed'
       console.error('[jira-sync] Jira attachment upload failed:', err)

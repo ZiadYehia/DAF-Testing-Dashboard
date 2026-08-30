@@ -18,6 +18,7 @@ export async function GET() {
         name: u.name,
         role: u.role,
         createdAt: u.createdAt,
+        deletedAt: u.deletedAt,
         memberships: memberships.filter(m => m.userId === u.id),
       })),
     })

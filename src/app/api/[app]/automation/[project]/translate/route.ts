@@ -35,7 +35,7 @@ export async function POST(
 
   try {
     const targetApp = detail.app ?? app
-    const artifacts = await translateSpecToPython(detail.spec, targetApp)
+    const artifacts = await translateSpecToPython(detail.spec, targetApp, guard.access.user.id)
     const { touchedPages } = await applyPyArtifacts(project, artifacts)
     return NextResponse.json({
       pySpec: artifacts.test,

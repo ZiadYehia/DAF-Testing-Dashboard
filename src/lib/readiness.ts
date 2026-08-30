@@ -10,6 +10,8 @@ import path from 'path'
 import { intakeFileExists, readIntake } from './intake'
 import { APP_INTAKE_GROUPS, MODULE_INTAKE_GROUPS, FEATURE_INTAKE_GROUPS, type IntakeGroup, type IntakeValue } from './intake-types'
 import { getDataRoot } from './paths'
+import { getDataSource } from './db'
+import { KnowledgeFileEntity, IKnowledgeFile, AutomationConfigEntity, IAutomationConfig } from './entities'
 
 export interface GroupReadiness {
   id: string
@@ -88,20 +90,80 @@ function missingLabels(g: GroupReadiness | undefined): string[] {
 
 // ─── App tier ───────────────────────────────────────────────────────────────────
 
-function heuristicAppGroups(appSlug: string): GroupReadiness[] {
+/**
+ * DB-first, per-bucket fallback: the app-level knowledge_files rows (docType
+ * 'knowledge'/'bug-format') and the automation_configs row are queried directly
+ * here via getDataSource (knowledge.ts is owned by a concurrently-running phase
+ * of this migration and must not be imported into). Each of the three buckets
+ * (app knowledge, bug-format, automation) falls back to its own FS heuristic
+ * independently — an app can have e.g. an automation_configs row (saved anew
+ * through the intake UI) while its domain/testing knowledge still lives only
+ * in knowledge/*.md files that predate this migration.
+ */
+async function heuristicAppGroups(appSlug: string): Promise<GroupReadiness[]> {
   const root = getDataRoot()
   const knowledgeDir = path.join(root, appSlug, 'knowledge')
-  const mdFiles = fs.existsSync(knowledgeDir) ? fs.readdirSync(knowledgeDir).filter((f) => f.endsWith('.md')) : []
   const isRulesFile = (f: string) => /rule|format|writing|generation-process|standard/i.test(f)
   const isGlossaryFile = (f: string) => /glossary|terminolog/i.test(f)
 
-  const domainFile = mdFiles.find((f) => !isRulesFile(f) && !isGlossaryFile(f))
-  const domainReady = !!domainFile && nonEmptyFile(path.join(knowledgeDir, domainFile))
-  const testingReady = nonEmptyFile(path.join(knowledgeDir, 'testcase-writing-rules.md'))
-  const bugsReady =
+  const domainReadyFs = (): boolean => {
+    const mdFiles = fs.existsSync(knowledgeDir) ? fs.readdirSync(knowledgeDir).filter((f) => f.endsWith('.md')) : []
+    const domainFile = mdFiles.find((f) => !isRulesFile(f) && !isGlossaryFile(f))
+    return !!domainFile && nonEmptyFile(path.join(knowledgeDir, domainFile))
+  }
+  const testingReadyFs = (): boolean => nonEmptyFile(path.join(knowledgeDir, 'testcase-writing-rules.md'))
+  const bugsReadyFs = (): boolean =>
     nonEmptyFile(path.join(root, appSlug, 'bug-format.md')) ||
     nonEmptyFile(path.join(process.cwd(), '.github', 'instructions', appSlug, 'bug-report-format.instructions.md'))
-  const automationReady = nonEmptyFile(path.join(root, appSlug, 'automation.json'))
+  const automationReadyFs = (): boolean => nonEmptyFile(path.join(root, appSlug, 'automation.json'))
+
+  let appKnowledgeRows: IKnowledgeFile[] | null = null
+  let bugFormatRows: IKnowledgeFile[] | null = null
+  let automationRow: IAutomationConfig | null = null
+  try {
+    const ds = await getDataSource()
+    const knowledgeRepo = ds.getRepository<IKnowledgeFile>(KnowledgeFileEntity)
+    ;[appKnowledgeRows, bugFormatRows, automationRow] = await Promise.all([
+      knowledgeRepo
+        .createQueryBuilder('k')
+        .where('k.appSlug = :appSlug', { appSlug })
+        .andWhere('k.module IS NULL')
+        .andWhere("k.docType = 'knowledge'")
+        .getMany(),
+      knowledgeRepo
+        .createQueryBuilder('k')
+        .where('k.appSlug = :appSlug', { appSlug })
+        .andWhere('k.module IS NULL')
+        .andWhere("k.docType = 'bug-format'")
+        .getMany(),
+      ds.getRepository<IAutomationConfig>(AutomationConfigEntity).findOne({ where: { appSlug } }),
+    ])
+  } catch (err) {
+    console.warn(`[readiness] DB read failed for heuristicAppGroups("${appSlug}") — falling back to FS scans (${err})`)
+  }
+
+  const domainReady =
+    appKnowledgeRows && appKnowledgeRows.length > 0
+      ? (() => {
+          const row = appKnowledgeRows!.find((r) => !isRulesFile(r.filename) && !isGlossaryFile(r.filename))
+          return !!row && row.content.trim().length > 0
+        })()
+      : domainReadyFs()
+
+  const testingReady =
+    appKnowledgeRows && appKnowledgeRows.length > 0
+      ? (() => {
+          const row = appKnowledgeRows!.find((r) => r.filename === 'testcase-writing-rules.md')
+          return !!row && row.content.trim().length > 0
+        })()
+      : testingReadyFs()
+
+  const bugsReady =
+    bugFormatRows && bugFormatRows.length > 0 ? bugFormatRows.some((r) => r.content.trim().length > 0) : bugsReadyFs()
+
+  const automationReady = automationRow
+    ? !!automationRow.baseUrlEnv.trim() || automationRow.login.trim() !== '[]'
+    : automationReadyFs()
 
   const byId = (id: string) => APP_INTAKE_GROUPS.find((g) => g.id === id)!
   return [
@@ -112,9 +174,11 @@ function heuristicAppGroups(appSlug: string): GroupReadiness[] {
   ]
 }
 
-export function appReadiness(appSlug: string): Readiness {
+export async function appReadiness(appSlug: string): Promise<Readiness> {
   const scope = { app: appSlug }
-  const groups = intakeFileExists(scope) ? scoreGroups(APP_INTAKE_GROUPS, readIntake(scope).answers) : heuristicAppGroups(appSlug)
+  const groups = (await intakeFileExists(scope))
+    ? scoreGroups(APP_INTAKE_GROUPS, (await readIntake(scope)).answers)
+    : await heuristicAppGroups(appSlug)
 
   const byId = (id: string) => groups.find((g) => g.id === id)
 
@@ -131,20 +195,38 @@ export function appReadiness(appSlug: string): Readiness {
 
 // ─── Module tier ────────────────────────────────────────────────────────────────
 
-export function moduleReadiness(appSlug: string, moduleSlug: string): Readiness {
+async function moduleKnowledgeReadyFs(appSlug: string, moduleSlug: string): Promise<boolean> {
+  const dir = path.join(getDataRoot(), appSlug, 'modules', moduleSlug, 'knowledge')
+  return fs.existsSync(dir) && fs.readdirSync(dir).some((f) => f.endsWith('.md') && nonEmptyFile(path.join(dir, f)))
+}
+
+export async function moduleReadiness(appSlug: string, moduleSlug: string): Promise<Readiness> {
   const scope = { app: appSlug, module: moduleSlug }
   const group = MODULE_INTAKE_GROUPS[0]
 
   let groups: GroupReadiness[]
-  if (intakeFileExists(scope)) {
-    groups = scoreGroups(MODULE_INTAKE_GROUPS, readIntake(scope).answers)
+  if (await intakeFileExists(scope)) {
+    groups = scoreGroups(MODULE_INTAKE_GROUPS, (await readIntake(scope)).answers)
   } else {
-    const dir = path.join(getDataRoot(), appSlug, 'modules', moduleSlug, 'knowledge')
-    const hasAny = fs.existsSync(dir) && fs.readdirSync(dir).some((f) => f.endsWith('.md') && nonEmptyFile(path.join(dir, f)))
+    let hasAny: boolean
+    try {
+      const ds = await getDataSource()
+      const rows = await ds
+        .getRepository<IKnowledgeFile>(KnowledgeFileEntity)
+        .createQueryBuilder('k')
+        .where('k.appSlug = :appSlug', { appSlug })
+        .andWhere('k.module = :module', { module: moduleSlug })
+        .andWhere("k.docType = 'knowledge'")
+        .getMany()
+      hasAny = rows.length > 0 ? rows.some((r) => r.content.trim().length > 0) : await moduleKnowledgeReadyFs(appSlug, moduleSlug)
+    } catch (err) {
+      console.warn(`[readiness] DB read failed for moduleReadiness("${appSlug}/${moduleSlug}") — falling back to FS scan (${err})`)
+      hasAny = await moduleKnowledgeReadyFs(appSlug, moduleSlug)
+    }
     groups = [heuristicGroup(group, hasAny)]
   }
 
-  const app = appReadiness(appSlug)
+  const app = await appReadiness(appSlug)
   const ownMissing = groups.flatMap((g) => missingLabels(g))
 
   return {
@@ -160,10 +242,12 @@ export function moduleReadiness(appSlug: string, moduleSlug: string): Readiness 
 
 // ─── Feature tier ───────────────────────────────────────────────────────────────
 
-export function featureReadiness(appSlug: string, featureSlug: string): Readiness {
+export async function featureReadiness(appSlug: string, featureSlug: string): Promise<Readiness> {
   const scope = { app: appSlug, feature: featureSlug }
   const group = FEATURE_INTAKE_GROUPS[0]
 
+  // Workflow/screenshot checks stay FS-based this phase — the features domain
+  // (src/lib/features.ts) isn't part of this migration pass.
   const workflowPath = path.join(getDataRoot(), appSlug, 'features', featureSlug, 'workflow.md')
   const screenshotsDir = path.join(getDataRoot(), appSlug, 'features', featureSlug, 'screenshots')
   const hasWorkflow = nonEmptyFile(workflowPath)
@@ -171,13 +255,13 @@ export function featureReadiness(appSlug: string, featureSlug: string): Readines
     fs.existsSync(screenshotsDir) && fs.readdirSync(screenshotsDir).some((f) => /\.(png|jpg|jpeg|gif|webp)$/i.test(f))
 
   let groups: GroupReadiness[]
-  if (intakeFileExists(scope)) {
-    groups = scoreGroups(FEATURE_INTAKE_GROUPS, readIntake(scope).answers)
+  if (await intakeFileExists(scope)) {
+    groups = scoreGroups(FEATURE_INTAKE_GROUPS, (await readIntake(scope)).answers)
   } else {
     groups = [heuristicGroup(group, hasWorkflow && hasScreenshot)]
   }
 
-  const app = appReadiness(appSlug)
+  const app = await appReadiness(appSlug)
   const ownMissing = groups.flatMap((g) => missingLabels(g))
   const extra: string[] = []
   if (!hasWorkflow) extra.push('Feature workflow (workflow.md)')

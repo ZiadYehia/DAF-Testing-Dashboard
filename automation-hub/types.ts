@@ -173,10 +173,23 @@ export interface RunResult {
   durationMs: number
   ts: string
   error?: string
+  /** The Playwright child process's exit code. Present for Playwright runs; the
+   *  decisive clue when a run fails without producing any output or artifacts. */
+  exitCode?: number | null
   hasVideo: boolean
   hasTrace: boolean
   /** Raw stdout tail from the playwright run, for surfacing in the UI on failure. */
   log: string
+  /**
+   * True when at least one test in the spec actually ran (Playwright's
+   * expected + unexpected + flaky counts sum > 0). False when every test was
+   * skipped (e.g. a `test.fixme`d spec) — a `pass` status in that case is an
+   * artifact of nothing having failed, not a verified behaviour, so callers
+   * must not mirror status/notes onto a linked dashboard test case when this
+   * is false. Always true for the Appium engine, which has no per-test skip
+   * concept in its single-result harness protocol.
+   */
+  executed: boolean
 }
 
 /** Keep the last N runs per project; older run folders are pruned after each run. */

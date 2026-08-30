@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth } from '@/lib/auth'
+import { requireAuth, requireAdmin } from '@/lib/auth'
 import {
   getCustomProviders,
   saveCustomProviders,
@@ -27,12 +27,13 @@ export async function GET(_req: NextRequest) {
 
 const SLUG_RE = /^[a-z0-9][a-z0-9-]*$/
 
-/** PUT /api/settings/providers — replace the custom provider list. Body: { providers }. */
+/** PUT /api/settings/providers — replace the custom provider list. Body: { providers }.
+ *  Admin-only: providers are global configuration shared by every app. */
 export async function PUT(req: NextRequest) {
   try {
-    await requireAuth()
+    await requireAdmin()
   } catch (err: any) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: err.status ?? 401 })
+    return NextResponse.json({ error: 'Forbidden' }, { status: err.status ?? 401 })
   }
   const body = await req.json().catch(() => ({}))
   const raw = Array.isArray(body?.providers) ? body.providers : null

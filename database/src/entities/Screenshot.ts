@@ -27,8 +27,11 @@ export class Screenshot {
   @Column({ type: 'varchar', length: 100 })
   mimeType!: string
 
-  @Column({ type: 'varbinary', length: 'max' })
-  data!: Buffer
+  @Column({ type: 'varbinary', length: 'max', nullable: true })
+  data!: Buffer | null
+
+  @Column({ type: 'int', nullable: true })
+  byteSize!: number | null
 
   @CreateDateColumn({ type: 'datetime2' })
   uploadedAt!: Date

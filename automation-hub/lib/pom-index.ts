@@ -129,7 +129,7 @@ function firstDocstringLine(lines: string[], defLineIdx: number): string | undef
   const m = /^\s*("""|''')(.*)$/.exec(lines[j])
   if (!m) return undefined
   const quote = m[1]
-  let rest = m[2]
+  const rest = m[2]
 
   const closeIdx = rest.indexOf(quote)
   if (closeIdx !== -1) {

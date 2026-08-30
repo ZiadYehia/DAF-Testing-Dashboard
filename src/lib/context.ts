@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import matter from 'gray-matter'
 import { getDataRoot } from './paths'
+import { fetchKnowledgeRows } from './knowledge'
 
 /**
  * Knowledge context assembler.
@@ -126,20 +127,45 @@ function moduleKnowledgeDir(appSlug: string, module: string): string {
   return canonical
 }
 
+/**
+ * DB-first tier loader: knowledge_files rows for the scope, parsed via parseDoc
+ * so front-matter type/priority still apply; falls back to the FS directory on
+ * DB error or when no rows exist yet for that scope.
+ */
+async function loadTierDocs(
+  appSlug: string,
+  module: string | null,
+  tier: 'app' | 'module',
+  fsDir: string
+): Promise<KnowledgeDoc[]> {
+  try {
+    const rows = await fetchKnowledgeRows(appSlug, module)
+    if (rows.length > 0) {
+      return rows.map((row) => parseDoc(row.filename, tier, row.content)).filter((d) => d.content.length > 0)
+    }
+  } catch {
+    // fall through to FS
+  }
+  return readMarkdownDir(fsDir, tier)
+}
+
 /** Collect every candidate knowledge doc across the app → module → feature tiers. */
-export function loadKnowledgeDocs(
+export async function loadKnowledgeDocs(
   appSlug: string,
   module: string | null,
   featureName?: string | null
-): KnowledgeDoc[] {
+): Promise<KnowledgeDoc[]> {
   const docs: KnowledgeDoc[] = []
 
-  docs.push(...readMarkdownDir(path.join(getDataRoot(), appSlug, 'knowledge'), 'app'))
+  docs.push(...(await loadTierDocs(appSlug, null, 'app', path.join(getDataRoot(), appSlug, 'knowledge'))))
 
   if (module) {
-    docs.push(...readMarkdownDir(moduleKnowledgeDir(appSlug, module), 'module'))
+    docs.push(...(await loadTierDocs(appSlug, module, 'module', moduleKnowledgeDir(appSlug, module))))
   }
 
+  // Feature tier keeps reading directly from fs — feature knowledge.md is a
+  // synthesized-from-story doc that features.ts (not this phase) owns the
+  // concept of; no knowledge_files DB row exists for it.
   if (featureName) {
     const featureKnowledge = path.join(getDataRoot(), appSlug, 'features', featureName, 'knowledge.md')
     if (fs.existsSync(featureKnowledge)) {

@@ -24,4 +24,7 @@ export class User {
 
   @UpdateDateColumn({ type: 'datetime2', nullable: true })
   updatedAt!: Date | null
+
+  @Column({ type: 'datetime2', nullable: true })
+  deletedAt!: Date | null
 }

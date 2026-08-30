@@ -158,11 +158,27 @@ export default function RequirementsPage() {
       .then((r) => r.json())
       .then((d) => { if (Array.isArray(d.stories)) setStoryOptions(d.stories) })
       .catch(() => {})
-    fetch(`/api/${app}/features`)
-      .then((r) => r.json())
-      .then((d) => { if (Array.isArray(d)) setFeatures(d.map((f: { name: string; storyKey?: string }) => ({ name: f.name, storyKey: f.storyKey }))) })
-      .catch(() => {})
-  }, [load, loadLinks, app])
+    const loadFeatures = async () => {
+      // Resolve the module whose pathPrefix matches the URL segment so the
+      // feature chips only show this module's features.
+      let moduleParam: string | undefined
+      if (moduleSlug) {
+        try {
+          const res = await fetch(`/api/${app}/modules`)
+          if (res.ok) {
+            const modules = await res.json() as { slug: string; pathPrefix: string }[]
+            moduleParam = modules.find((m) => m.pathPrefix === moduleSlug)?.slug
+          }
+        } catch {}
+      }
+      try {
+        const res = await fetch(`/api/${app}/features${moduleParam ? `?module=${encodeURIComponent(moduleParam)}` : ''}`)
+        const d = await res.json()
+        if (Array.isArray(d)) setFeatures(d.map((f: { name: string; storyKey?: string }) => ({ name: f.name, storyKey: f.storyKey })))
+      } catch {}
+    }
+    loadFeatures()
+  }, [load, loadLinks, app, moduleSlug])
 
   useEffect(() => {
     const firstEnabled = models.find((m) => m.enabled)
@@ -577,7 +593,7 @@ export default function RequirementsPage() {
                                 {childFeatures.map((slug) => (
                                   <Link
                                     key={slug}
-                                    href={`/${app}/features/${slug}`}
+                                    href={`/${app}${moduleSlug ? `/${moduleSlug}` : ''}/features/${slug}`}
                                     onClick={(e) => e.stopPropagation()}
                                     className="inline-flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-2.5 py-0.5 text-[11px] font-medium text-violet-700 hover:bg-violet-100 transition-colors dark:border-violet-800 dark:bg-violet-950/30 dark:text-violet-400 dark:hover:bg-violet-900/30"
                                   >

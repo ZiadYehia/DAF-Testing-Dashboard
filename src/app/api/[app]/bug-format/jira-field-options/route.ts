@@ -25,7 +25,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ app:
   }
 
   try {
-    const options = await getJiraFieldOptions(app, variant, fieldId)
+    const options = await getJiraFieldOptions(app, variant, fieldId, guard.access.user.id)
     return NextResponse.json({ options })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to fetch Jira field options'

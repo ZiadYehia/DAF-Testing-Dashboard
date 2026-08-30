@@ -21,6 +21,13 @@ import type { RunResult } from '../types'
 const CONFIG = path.join(HUB_ROOT, 'playwright.config.ts')
 
 /**
+ * The login-bootstrap project in playwright.config.ts. Its test always passes,
+ * so it must be excluded when deciding whether a replay actually executed
+ * anything (see parseReport).
+ */
+const SETUP_PROJECT = 'setup'
+
+/**
  * Hard wall-clock cap on a replay child process. Playwright's own test timeout
  * (60s) covers a slow test; this covers a hung runner/browser that never reports —
  * without it one stuck child blocks the project (and a regression run) forever.
@@ -55,8 +62,22 @@ async function findFile(dir: string, match: (f: string) => boolean): Promise<str
   return null
 }
 
-/** Parse the playwright JSON reporter output; tolerant of extra log noise. */
-function parseReport(stdout: string): { durationMs?: number; error?: string } {
+/**
+ * Parse the playwright JSON reporter output; tolerant of extra log noise.
+ *
+ * `executed` is false only when every test of the SPEC ran skipped (e.g. a
+ * `test.fixme`d file), which Playwright still exits 0 for — so callers can
+ * avoid mirroring a bogus "pass" onto a linked test case.
+ *
+ * It deliberately does NOT use the reporter's top-level `stats`: those counts
+ * include the `setup` project's login bootstrap, which always passes, so a
+ * fully-skipped spec still reported `expected: 1` and looked executed. Walk the
+ * suite tree instead and only count test results whose projectName isn't the
+ * setup project. `undefined` means the report couldn't be read at all
+ * (malformed/absent JSON) — callers should treat that as "assume executed" so a
+ * genuine parse failure doesn't also swallow a real pass/fail.
+ */
+function parseReport(stdout: string): { durationMs?: number; error?: string; executed?: boolean } {
   // The JSON reporter prints one big JSON object. Find the outermost braces.
   const start = stdout.indexOf('{')
   const end = stdout.lastIndexOf('}')
@@ -64,25 +85,75 @@ function parseReport(stdout: string): { durationMs?: number; error?: string } {
   try {
     const report = JSON.parse(stdout.slice(start, end + 1))
     const durationMs = report?.stats?.duration
-    // Dig out the first error message from the suite tree, if any.
+    // Dig out the first error message from the suite tree, and count how many
+    // non-setup tests actually ran (anything but a 'skipped' result).
     let error: string | undefined
+    let ranCount = 0
     const visit = (node: any) => {
-      if (error) return
       for (const t of node?.specs ?? []) {
         for (const test of t?.tests ?? []) {
+          if (test?.projectName !== SETUP_PROJECT) {
+            for (const r of test?.results ?? []) {
+              if (r?.status && r.status !== 'skipped') ranCount++
+            }
+          }
           for (const r of test?.results ?? []) {
+            if (error) continue
             const msg = r?.errors?.[0]?.message ?? r?.error?.message
-            if (msg) { error = String(msg).split('\n')[0]; return }
+            if (msg) error = String(msg).split('\n')[0]
           }
         }
       }
       for (const s of node?.suites ?? []) visit(s)
     }
     for (const s of report?.suites ?? []) visit(s)
-    return { durationMs: typeof durationMs === 'number' ? durationMs : undefined, error }
+    return { durationMs: typeof durationMs === 'number' ? durationMs : undefined, error, executed: ranCount > 0 }
   } catch {
     return {}
   }
+}
+
+/**
+ * Environment for the Playwright child.
+ *
+ * Inheriting the Next dev server's entire environment made the child die instantly on
+ * Windows with exit code 3221225794 (0xC0000142, STATUS_DLL_INIT_FAILED) — before
+ * printing anything, so the run surfaced in the dashboard as a bare "fail" with no
+ * error, no log and no video, while the very same Playwright command succeeded when run
+ * from a normal shell.
+ *
+ * So the child gets a curated environment instead: the OS variables a process needs to
+ * start, plus the variables the hub itself relies on (DATA_ROOT propagates to
+ * lib/apps.ts, and the PLAYWRIGHT_ and AUTOMATION_ prefixes tune the run). It does NOT inherit
+ * NODE_OPTIONS or Next/Turbopack's internal `__NEXT_PRIVATE_*` variables, which a test
+ * runner has no business receiving and which are the plausible source of the failed
+ * initialization.
+ *
+ * The app's own secrets are NOT needed here: playwright.config.ts calls loadHubEnv() to
+ * read automation-hub/.env in the child itself.
+ */
+function childEnv(): Record<string, string> {
+  const passThroughExact = [
+    // Windows/OS essentials — omitting SystemRoot or PATH is itself a cause of 0xC0000142.
+    'SystemRoot', 'windir', 'SystemDrive', 'COMSPEC', 'PATH', 'Path', 'PATHEXT',
+    'TEMP', 'TMP', 'HOME', 'HOMEDRIVE', 'HOMEPATH', 'USERPROFILE', 'USERNAME', 'USERDOMAIN',
+    'APPDATA', 'LOCALAPPDATA', 'PROGRAMDATA', 'ProgramData', 'ProgramFiles',
+    'ProgramFiles(x86)', 'ProgramW6432', 'CommonProgramFiles', 'NUMBER_OF_PROCESSORS',
+    'PROCESSOR_ARCHITECTURE', 'OS', 'LANG', 'LC_ALL', 'TZ', 'DISPLAY', 'SHELL', 'TERM',
+    // What the hub and its specs actually need.
+    'DATA_ROOT', 'AUTOTEST_FRAMEWORK_ROOT', 'CI', 'NODE_ENV',
+  ]
+  const passThroughPrefixes = ['PLAYWRIGHT_', 'AUTOMATION_']
+
+  const env: Record<string, string> = { FORCE_COLOR: '0' }
+  for (const key of passThroughExact) {
+    const value = process.env[key]
+    if (value !== undefined) env[key] = value
+  }
+  for (const [key, value] of Object.entries(process.env)) {
+    if (value !== undefined && passThroughPrefixes.some((p) => key.startsWith(p))) env[key] = value
+  }
+  return env
 }
 
 /**
@@ -121,7 +192,10 @@ export async function runProject(name: string, now: string): Promise<RunResult> 
     const { code, stdout, timedOut } = await new Promise<{ code: number; stdout: string; timedOut: boolean }>((resolve) => {
       const child = spawn(process.execPath, args, {
         cwd: HUB_ROOT,
-        env: { ...process.env, FORCE_COLOR: '0' },
+        // Cast: this repo augments ProcessEnv with required keys, but a child only
+        // needs the curated set childEnv() builds.
+        env: childEnv() as NodeJS.ProcessEnv,
+        windowsHide: true,
       })
       let out = ''
       let killed = false
@@ -149,6 +223,20 @@ export async function runProject(name: string, now: string): Promise<RunResult> 
     if (timedOut && !parsed.error) {
       parsed.error = `Run exceeded ${Math.round(RUN_TIMEOUT_MS / 1000)}s and was killed (AUTOMATION_RUN_TIMEOUT_MS)`
     }
+    // A child that fails while printing NOTHING used to surface in the UI as a bare
+    // "fail" with no error, no log and no artifacts — indistinguishable from a broken
+    // spec, and impossible to debug from the dashboard. Report the exit code instead:
+    // an empty stdout means Playwright never got far enough to write its JSON report,
+    // so the fault is in launching it, not in the test.
+    if (!parsed.error && stdout.trim() === '') {
+      parsed.error =
+        `Playwright produced no output (exit code ${code}) — it never started, so the spec never ran. ` +
+        `Check that node_modules/@playwright/test exists and that the server process can spawn it.`
+    }
+    // A parse failure (malformed/absent JSON, e.g. the process was killed before
+    // the reporter could print) can't tell us whether tests ran — default to
+    // true so it doesn't ALSO suppress a genuine timeout/fail from being synced.
+    const executed = parsed.executed ?? true
 
     // Lift video + trace out of the nested raw output into the run folder.
     const video = await findFile(rawOut, (f) => f.endsWith('.webm'))
@@ -163,7 +251,7 @@ export async function runProject(name: string, now: string): Promise<RunResult> 
 
     await fs.writeFile(
       path.join(dir, 'result.json'),
-      JSON.stringify({ status, durationMs, error: parsed.error, hasVideo, hasTrace, log }, null, 2),
+      JSON.stringify({ status, exitCode: code, durationMs, error: parsed.error, hasVideo, hasTrace, log, executed }, null, 2),
       'utf8',
     )
     // The raw playwright output is bulky and already mined — drop it.
@@ -171,7 +259,7 @@ export async function runProject(name: string, now: string): Promise<RunResult> 
 
     await recordRun(name, { ts, status, durationMs, hasVideo, hasTrace, error: parsed.error })
 
-    return { status, durationMs, ts, error: parsed.error, hasVideo, hasTrace, log }
+    return { status, exitCode: code, durationMs, ts, error: parsed.error, hasVideo, hasTrace, log, executed }
   } finally {
     running.delete(name)
   }

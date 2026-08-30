@@ -12,8 +12,10 @@
 import { listProjects } from '@automation-hub/store'
 import { runProject as runPlaywright, isRunning as isRunningPlaywright } from '@automation-hub/engine/runner'
 import { runProject as runAppium, isRunning as isRunningAppium } from '@automation-hub/engine/appium-runner'
-import { setExecutionStatus } from './execution'
+import { setExecutionStatus, appendExecutionNoteLine } from './execution'
 import { getSetting } from './settings'
+import { writeAllAutomationCaches } from './automation-cache'
+import { buildAutomationFailureNote, AUTOMATION_NOTE_PREFIX } from './automation-run-note'
 
 export interface RegressionFailure {
   name: string
@@ -57,6 +59,15 @@ export async function runRegression(opts: {
         (!opts.tag || (p.tags ?? []).includes(opts.tag)),
     )
 
+    // Refresh automation.json from automation_configs before spawning any child
+    // process — never blocks the run: the file already on disk is a valid
+    // fallback if this fails (down DB, no rows yet, etc).
+    try {
+      await writeAllAutomationCaches()
+    } catch (err) {
+      console.warn('[automation] writeAllAutomationCaches failed — proceeding with existing automation.json files:', err)
+    }
+
     let passed = 0
     let failed = 0
     let skipped = 0
@@ -78,9 +89,20 @@ export async function runRegression(opts: {
           failures.push({ name: p.name, title: p.title, error: result.error })
         }
         // Mirror pass/fail onto the linked dashboard test case (same as the run route).
+        // Skip entirely when every test in the run was skipped (result.executed
+        // === false, e.g. a test.fixme'd spec) — Playwright reports that as
+        // `pass` for lack of a failure, but nothing was actually verified.
         const link = p.linkedTestcase
-        if (link) {
+        if (link && result.executed) {
           await setExecutionStatus(link.app, link.feature, link.testcaseId, result.status).catch(() => {})
+          // A human observation must survive a green run — only failures write a
+          // note — and even then it is merged in, never allowed to overwrite the
+          // tester's own text.
+          if (result.status === 'fail') {
+            await appendExecutionNoteLine(link.app, link.feature, link.testcaseId, buildAutomationFailureNote(result), {
+              replacePrefix: AUTOMATION_NOTE_PREFIX,
+            }).catch(() => {})
+          }
         }
       } catch (err: any) {
         failed++

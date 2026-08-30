@@ -50,6 +50,9 @@ export class Feature {
   @Column({ type: 'datetime2', nullable: true })
   archivedAt!: Date | null
 
+  @Column({ type: 'nvarchar', length: 'max', nullable: true })
+  lastAddition!: string | null
+
   @OneToMany(() => Screenshot, (s) => s.feature, { cascade: true })
   screenshots!: Screenshot[]
 }

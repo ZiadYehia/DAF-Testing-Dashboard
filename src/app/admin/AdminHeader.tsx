@@ -30,7 +30,7 @@ export function AdminHeader() {
           className="flex items-center gap-2 text-foreground hover:opacity-80 transition-opacity"
         >
           <Beaker className="h-5 w-5 text-primary" />
-          <span className="font-semibold text-sm">Testing Dashboard</span>
+          <span className="font-semibold text-sm">zTestGround</span>
         </Link>
         <span className="text-muted-foreground/40">/</span>
         <span className="text-sm text-muted-foreground">Admin</span>

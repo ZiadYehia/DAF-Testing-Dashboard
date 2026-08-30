@@ -17,7 +17,7 @@ export async function GET(
   if (!key) return NextResponse.json({ error: 'key is required' }, { status: 400 })
 
   try {
-    const transitions = await getIssueTransitions(key)
+    const transitions = await getIssueTransitions(key, guard.access.user.id)
     return NextResponse.json({ transitions })
   } catch (err: any) {
     return NextResponse.json({ error: err?.message ?? 'Jira request failed' }, { status: 502 })

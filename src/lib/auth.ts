@@ -2,15 +2,25 @@ import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { SignJWT, jwtVerify } from 'jose'
 import { hash, verify as bcryptVerify } from '@node-rs/bcrypt'
-import { randomUUID } from 'crypto'
+import { randomUUID, randomBytes } from 'crypto'
 import { getDataSource } from './db'
 import { getApp } from './apps'
 import type { IUser, ISession, IAppMembership } from './entities'
-import { resolvePermissions, ALL_PERMISSIONS, type PermissionKey } from './permissions'
+import { ALL_PERMISSIONS, type PermissionKey } from './permissions'
+import { resolveAppPermissions } from './role-permissions-server'
 
 const COOKIE_NAME = 'sid'
 const SESSION_DAYS = 30
 const BCRYPT_ROUNDS = 12
+
+// Precomputed bcrypt hash of an arbitrary password (12 rounds, matching
+// BCRYPT_ROUNDS), generated once via:
+//   node -e "require('@node-rs/bcrypt').hash('timing-equalizer', 12).then(console.log)"
+// Used so the unknown-email path in loginUser pays the same bcrypt-verify
+// cost as the known-email path, closing a user-enumeration timing oracle
+// (an unknown email would otherwise return near-instantly, while a known
+// email always takes as long as a bcrypt compare).
+const DUMMY_PASSWORD_HASH = '$2y$12$Q3F1iWsj6WHsV7gtjmkN3.HZn9G/DKg1uID0U3zg/F23prQiSF5Am'
 
 // DB failures inside auth must surface as 503, never be conflated with a 401/404 auth failure.
 function dbUnavailable(err: unknown) {
@@ -29,6 +39,19 @@ export async function hashPassword(password: string): Promise<string> {
 
 export async function verifyPassword(password: string, passwordHash: string): Promise<boolean> {
   return bcryptVerify(password, passwordHash)
+}
+
+// Generates a strong random password (>=16 chars) suitable for admin-created
+// accounts. Uses crypto.randomBytes (never Math.random) for CSPRNG output,
+// base64url-encoded, with visually-ambiguous characters (0/O, 1/l/I, -/_)
+// stripped so the result is easy to transcribe.
+export function generatePassword(): string {
+  const AMBIGUOUS = /[0O1lI\-_]/g
+  let password = ''
+  while (password.length < 20) {
+    password += randomBytes(24).toString('base64url').replace(AMBIGUOUS, '')
+  }
+  return password.slice(0, 20)
 }
 
 export type SessionUser = Pick<IUser, 'id' | 'email' | 'name' | 'role'>
@@ -101,7 +124,7 @@ export async function getSession(): Promise<SessionUser | null> {
   } catch (err) {
     throw dbUnavailable(err)
   }
-  if (!user) return null
+  if (!user || user.deletedAt) return null
 
   return { id: user.id, email: user.email, name: user.name, role: user.role }
 }
@@ -110,9 +133,18 @@ export async function getSession(): Promise<SessionUser | null> {
 export async function loginUser(email: string, password: string): Promise<SessionUser | null> {
   const ds = await getDataSource()
   const user = await ds.getRepository<IUser>('User').findOne({ where: { email } })
-  if (!user) return null
+  if (!user) {
+    // Pay the same bcrypt-verify cost as the known-email path below, so
+    // response timing doesn't reveal whether the email exists.
+    await verifyPassword(password, DUMMY_PASSWORD_HASH)
+    return null
+  }
   const valid = await verifyPassword(password, user.passwordHash)
-  if (!valid) return null
+  // Retired users must be rejected exactly like an invalid password: the
+  // bcrypt verify above already ran (regardless of deletedAt), so this
+  // check adds no timing signal that would distinguish a retired account
+  // from a wrong-password attempt on an active one.
+  if (!valid || user.deletedAt) return null
   return { id: user.id, email: user.email, name: user.name, role: user.role }
 }
 
@@ -155,7 +187,7 @@ export async function requireAppMember(appSlug: string): Promise<AppAccess> {
   return {
     user,
     appRole: membership.role,
-    permissions: resolvePermissions(membership.role, membership.permissions),
+    permissions: await resolveAppPermissions(membership.role, membership.permissions),
   }
 }
 
@@ -181,7 +213,7 @@ export type AppGuardResult =
 async function guardAppWith(appSlug: string, check: () => Promise<AppAccess>): Promise<AppGuardResult> {
   try {
     const access = await check()
-    if (!getApp(appSlug)) {
+    if (!(await getApp(appSlug))) {
       return { ok: false, response: NextResponse.json({ error: 'App not found' }, { status: 404 }) }
     }
     return { ok: true, access }

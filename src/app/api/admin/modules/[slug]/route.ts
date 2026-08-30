@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth'
 import { getEnabledApps } from '@/lib/apps'
-import { getModule, writeModule, deleteModule, removeModuleRoutes, scaffoldModuleRoutes, slugIsValid } from '@/lib/modules'
+import { getModule, writeModule, deleteModule, slugIsValid } from '@/lib/modules'
 import type { ModuleManifest } from '@/lib/modules'
 
 type Params = { params: Promise<{ slug: string }> }
@@ -12,11 +12,11 @@ export async function PUT(req: NextRequest, { params }: Params) {
     const { slug } = await params
     const appSlug = req.nextUrl.searchParams.get('app') ?? ''
 
-    if (!appSlug || !getEnabledApps().some((a) => a.slug === appSlug)) {
+    if (!appSlug || !(await getEnabledApps()).some((a) => a.slug === appSlug)) {
       return NextResponse.json({ error: 'Invalid or disabled app' }, { status: 400 })
     }
 
-    const existing = getModule(appSlug, slug)
+    const existing = await getModule(appSlug, slug)
     if (!existing) return NextResponse.json({ error: 'Module not found' }, { status: 404 })
 
     const body = await req.json().catch(() => null) as {
@@ -36,11 +36,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
     }
 
     const updated: ModuleManifest = { slug, name, icon, order, pathPrefix, description }
-    writeModule(appSlug, updated)
-
-    if (pathPrefix && pathPrefix !== existing.pathPrefix) {
-      scaffoldModuleRoutes(appSlug, slug, pathPrefix, name)
-    }
+    await writeModule(appSlug, updated)
 
     return NextResponse.json({ ok: true, module: updated })
   } catch (e: unknown) {
@@ -55,11 +51,11 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     const { slug } = await params
     const appSlug = req.nextUrl.searchParams.get('app') ?? ''
 
-    if (!appSlug || !getEnabledApps().some((a) => a.slug === appSlug)) {
+    if (!appSlug || !(await getEnabledApps()).some((a) => a.slug === appSlug)) {
       return NextResponse.json({ error: 'Invalid or disabled app' }, { status: 400 })
     }
 
-    const existing = getModule(appSlug, slug)
+    const existing = await getModule(appSlug, slug)
     if (!existing) return NextResponse.json({ error: 'Module not found' }, { status: 404 })
 
     if (existing.pathPrefix === '') {
@@ -69,8 +65,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
       )
     }
 
-    removeModuleRoutes(existing.pathPrefix)
-    deleteModule(appSlug, slug)
+    await deleteModule(appSlug, slug)
 
     return NextResponse.json({ ok: true })
   } catch (e: unknown) {

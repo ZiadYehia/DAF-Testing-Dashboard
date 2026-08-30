@@ -1,11 +1,8 @@
-import fs from 'fs'
-import path from 'path'
-import matter from 'gray-matter'
 import { getFeature } from './features'
-import { getExecutions, getExecutionBugs, DEFAULT_EXECUTION_STATUS } from './execution'
+import { getExecutions, getExecutionBugs, getExecutionNotes, DEFAULT_EXECUTION_STATUS } from './execution'
 import { getJiraIssueUrl } from './jira'
+import { listBugsWithBodies } from './bugs'
 import { EXECUTION_STATUSES, type ExecutionStatus } from './execution-types'
-import { getDataRoot } from './paths'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -19,6 +16,7 @@ export interface ExecutionExportRow {
   status: ExecutionStatus
   linkedBug: string
   linkedBugUrl: string | null
+  notes: string
 }
 
 export interface ExecutionExportData {
@@ -54,8 +52,8 @@ export const EXECUTION_STATUS_FILLS: Record<ExecutionStatus, { fill: string; tex
 /** Parses the full test case markdown table, returning all export-relevant columns. */
 function parseTestcaseTableFull(
   markdown: string,
-): Omit<ExecutionExportRow, 'status' | 'linkedBug' | 'linkedBugUrl'>[] {
-  const rows: Omit<ExecutionExportRow, 'status' | 'linkedBug' | 'linkedBugUrl'>[] = []
+): Omit<ExecutionExportRow, 'status' | 'linkedBug' | 'linkedBugUrl' | 'notes'>[] {
+  const rows: Omit<ExecutionExportRow, 'status' | 'linkedBug' | 'linkedBugUrl' | 'notes'>[] = []
   const lines = markdown.split('\n')
   let headerFound = false
   let separatorPassed = false
@@ -97,6 +95,12 @@ interface BugLink {
  * to the legacy heuristic of matching a bug whose body mentions the testcase ID
  * so bugs created before explicit linking still appear. Reported bugs show their
  * Jira key + a clickable issue URL; drafts show the slug tagged "(draft)".
+ *
+ * Uses bugs.ts's listBugsWithBodies() (DB-only) rather than listBugs()/getBug():
+ * the heuristic fallback needs every bug body for this feature to scan for a
+ * testcase-ID mention, and neither of the other two is shaped for that —
+ * listBugs() filters by module (not feature) and its BugSummary omits body;
+ * getBug() needs an already-known slug.
  */
 async function buildBugLinks(
   appSlug: string,
@@ -104,17 +108,7 @@ async function buildBugLinks(
   testcaseIds: string[],
   version?: string,
 ): Promise<Record<string, BugLink>> {
-  const dir = path.join(getDataRoot(), appSlug, 'bugs', feature)
-  const bugs = !fs.existsSync(dir)
-    ? []
-    : fs
-        .readdirSync(dir)
-        .filter((f) => f.endsWith('.md') && f !== '_template.md')
-        .map((f) => {
-          const raw = fs.readFileSync(path.join(dir, f), 'utf-8')
-          const { data, content } = matter(raw)
-          return { slug: f.replace(/\.md$/, ''), jiraKey: (data.jira_key as string | null) ?? null, body: content }
-        })
+  const bugs = await listBugsWithBodies(appSlug, feature)
   const bugBySlug = new Map(bugs.map((b) => [b.slug, b]))
 
   const explicit = await getExecutionBugs(appSlug, feature, version)
@@ -156,6 +150,7 @@ export async function buildExecutionExport(
   const parsed = parseTestcaseTableFull(content)
   const statuses = await getExecutions(appSlug, name, effectiveVersion)
   const bugMap = await buildBugLinks(appSlug, name, parsed.map((r) => r.testcaseId), effectiveVersion)
+  const notesMap = await getExecutionNotes(appSlug, name, effectiveVersion)
 
   const summary = Object.fromEntries(
     EXECUTION_STATUSES.map((s) => [s, 0]),
@@ -165,7 +160,13 @@ export async function buildExecutionExport(
     const status = statuses[r.testcaseId] ?? DEFAULT_EXECUTION_STATUS
     summary[status]++
     const link = bugMap[r.testcaseId]
-    return { ...r, status, linkedBug: link?.label ?? '', linkedBugUrl: link?.url ?? null }
+    return {
+      ...r,
+      status,
+      linkedBug: link?.label ?? '',
+      linkedBugUrl: link?.url ?? null,
+      notes: notesMap[r.testcaseId] ?? '',
+    }
   })
 
   return {

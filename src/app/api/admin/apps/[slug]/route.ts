@@ -28,7 +28,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
   try {
     await requireAdmin()
     const { slug } = await params
-    if (!getApp(slug)) {
+    if (!(await getApp(slug))) {
       return NextResponse.json({ error: 'App not found' }, { status: 404 })
     }
 
@@ -71,7 +71,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
       }
     }
 
-    const updated = updateApp(slug, patch)
+    const updated = await updateApp(slug, patch)
     return NextResponse.json({ ok: true, app: updated })
   } catch (e: unknown) {
     const err = e as { status?: number; message?: string }
@@ -85,10 +85,10 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   try {
     await requireAdmin()
     const { slug } = await params
-    if (!getApp(slug)) {
+    if (!(await getApp(slug))) {
       return NextResponse.json({ error: 'App not found' }, { status: 404 })
     }
-    const updated = setAppEnabled(slug, false)
+    const updated = await setAppEnabled(slug, false)
     return NextResponse.json({ ok: true, app: updated })
   } catch (e: unknown) {
     const err = e as { status?: number; message?: string }

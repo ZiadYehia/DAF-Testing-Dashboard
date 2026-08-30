@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { Network, Sparkles, Save, Search, ChevronLeft, Eye, Pencil, Database, FlaskConical, Layers } from 'lucide-react'
+import { Network, Sparkles, Save, Search, ChevronLeft, Eye, Pencil, Database, FlaskConical, Layers, Split, BookOpen, GitPullRequestArrow } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -18,8 +18,10 @@ import type { AIModel } from '@/lib/ai'
 import type { FeatureSummary } from '@/lib/features'
 import type { ModuleManifest } from '@/lib/modules'
 import { useModels } from '@/hooks/useModels'
+import { usePermissions } from '@/lib/use-permissions'
+import { StoryBreakdownFlow } from '@/components/knowledge/StoryBreakdownFlow'
 
-interface Story {
+export interface Story {
   key: string
   summary: string
   description: string
@@ -31,11 +33,20 @@ interface Story {
 
 export default function ModuleKnowledgePage() {
   const params = useParams()
+  const router = useRouter()
   const app = params?.app as string
 
   const { models, selectedModel, setSelectedModel } = useModels()
+  const { can, loading: permsLoading } = usePermissions(app)
   const [module, setModule] = useState('')
   const [source, setSource] = useState<'local' | 'jira'>('local')
+
+  // "New CR" entry point — filed against whichever story row the button was clicked on.
+  // The parent story is threaded through as query params to the full-page CR create flow.
+  const goToNewCr = (s: Story) => {
+    const qs = new URLSearchParams({ parentKey: s.key, parentType: 'story', parentSummary: s.summary })
+    router.push(`/${app}/change-requests/new?${qs.toString()}`)
+  }
 
   const activeModels = models.length === 0
     ? [
@@ -48,6 +59,9 @@ export default function ModuleKnowledgePage() {
 
   const [fetching, setFetching] = useState(false)
   const [stories, setStories] = useState<Story[] | null>(null)
+  const [search, setSearch] = useState('')
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [mode, setMode] = useState<'knowledge' | 'breakdown'>('knowledge')
 
   const [synthesizing, setSynthesizing] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -87,9 +101,11 @@ export default function ModuleKnowledgePage() {
   const handleFetch = async () => {
     setFetching(true)
     setStories(null)
+    setSelected(new Set())
     try {
       const params = new URLSearchParams({ source })
       if (module.trim()) params.set('module', module.trim())
+      if (search.trim()) params.set('search', search.trim())
       const res = await fetch(`/api/${app}/stories?${params}`)
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Failed to fetch stories')
@@ -166,6 +182,22 @@ export default function ModuleKnowledgePage() {
     save ? setSaving(false) : setSynthesizing(false)
   }
 
+  const toggleSelected = (key: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (!stories) return
+    setSelected((prev) => (prev.size === stories.length ? new Set() : new Set(stories.map((s) => s.key))))
+  }
+
+  const selectedStories = (stories ?? []).filter((s) => selected.has(s.key))
+
   return (
     <div className="space-y-6 fade-in max-w-4xl mx-auto">
       {/* Header */}
@@ -239,11 +271,19 @@ export default function ModuleKnowledgePage() {
             <Input
               value={module}
               onChange={(e) => setModule(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleFetch() }}
               placeholder={
                 source === 'local'
                   ? 'Filter by key/text (e.g. items-list, ABC-123, bulk import)'
                   : 'Module / Jira component (e.g. Orders Module)'
               }
+              className="flex-1"
+            />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleFetch() }}
+              placeholder="Search text or story key (DT-1234)"
               className="flex-1"
             />
             <Button onClick={handleFetch} disabled={fetching} variant="outline" className="gap-2">
@@ -260,9 +300,10 @@ export default function ModuleKnowledgePage() {
               </>
             ) : (
               <>
-                Stories are read from the configured Jira board (project{' '}
-                <code>JIRA_PROJECT_KEY</code>). Leave the module blank to fetch all stories;
-                otherwise it filters by Jira component.
+                Stories are read from the Jira board configured for this app in{' '}
+                <strong>Settings → Board → Jira Source</strong> (board ID or project key); falls
+                back to the global <code>JIRA_PROJECT_KEY</code> if unset. Leave the module blank
+                to fetch all stories; otherwise it filters by Jira component.
               </>
             )}
           </p>
@@ -270,21 +311,95 @@ export default function ModuleKnowledgePage() {
           {fetching && <Skeleton className="h-24 w-full" />}
 
           {stories && stories.length > 0 && (
-            <div className="rounded-lg border border-input divide-y max-h-72 overflow-auto">
-              {stories.map((s) => (
-                <div key={s.key} className="px-3 py-2 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="text-xs">{s.key}</Badge>
-                    <span className="font-medium">{s.summary}</span>
-                    {s.status && <span className="text-xs text-muted-foreground ml-auto">{s.status}</span>}
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2 px-1">
+                <input
+                  type="checkbox"
+                  checked={selected.size === stories.length}
+                  onChange={toggleSelectAll}
+                  className="h-4 w-4 accent-primary shrink-0"
+                  aria-label="Select all stories"
+                />
+                <span className="text-xs text-muted-foreground">
+                  Select all ({selected.size} of {stories.length} selected)
+                </span>
+              </div>
+              <div className="rounded-lg border border-input divide-y max-h-72 overflow-auto">
+                {stories.map((s) => (
+                  <div key={s.key} className="px-3 py-2 text-sm">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={selected.has(s.key)}
+                        onChange={() => toggleSelected(s.key)}
+                        className="h-4 w-4 accent-primary shrink-0"
+                        aria-label={`Select ${s.key}`}
+                      />
+                      <Badge variant="secondary" className="text-xs">{s.key}</Badge>
+                      <span className="font-medium">{s.summary}</span>
+                      <div className="ml-auto flex items-center gap-2 shrink-0">
+                        {s.status && <span className="text-xs text-muted-foreground">{s.status}</span>}
+                        {!permsLoading && can('changerequests.create') && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="xs"
+                            className="gap-1"
+                            onClick={(e) => { e.stopPropagation(); goToNewCr(s) }}
+                          >
+                            <GitPullRequestArrow className="h-3 w-3" />
+                            New CR
+                          </Button>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
         </CardContent>
       </Card>
 
+      {/* Mode toggle */}
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-muted-foreground">Mode:</span>
+        <div className="inline-flex rounded-lg border border-input p-0.5 text-xs">
+          <button
+            type="button"
+            onClick={() => setMode('knowledge')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors ${
+              mode === 'knowledge'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <BookOpen className="h-3 w-3" /> Knowledge Doc
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode('breakdown')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors ${
+              mode === 'breakdown'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Split className="h-3 w-3" /> Feature Breakdown
+          </button>
+        </div>
+      </div>
+
+      {mode === 'breakdown' ? (
+        <StoryBreakdownFlow
+          app={app}
+          selectedStories={selectedStories}
+          model={selectedModel}
+          knownModules={knownModules}
+          existingFeatures={features.map((f) => f.name)}
+        />
+      ) : (
+      <>
       {/* Step 2 — synthesize */}
       <Card>
         <CardHeader className="pb-3">
@@ -434,6 +549,8 @@ export default function ModuleKnowledgePage() {
           )}
         </CardContent>
       </Card>
+      </>
+      )}
     </div>
   )
 }

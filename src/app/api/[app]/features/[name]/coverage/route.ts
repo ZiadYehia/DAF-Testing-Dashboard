@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import fs from 'fs'
-import path from 'path'
 import { analyzeAcceptanceCoverage, analyzeAcceptanceCoverageDeep, AcceptanceCriterion } from '@/lib/ai'
 import { getAcs, saveAcs } from '@/lib/acceptance-criteria'
-import { parseTestcaseRows } from '@/lib/features'
+import { getFeature, parseTestcaseRows } from '@/lib/features'
 import { guardApp } from '@/lib/auth'
-import { getDataRoot } from '@/lib/paths'
+import { withDbRetry } from '@/lib/db'
 
 type Params = { params: Promise<{ app: string; name: string }> }
 
@@ -13,7 +11,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const { app, name } = await params
   const guard = await guardApp(app, 'features.view')
   if (!guard.ok) return guard.response
-  return NextResponse.json(await getAcs(app, name))
+  return NextResponse.json(await withDbRetry(() => getAcs(app, name)))
 }
 
 export async function PUT(req: NextRequest, { params }: Params) {
@@ -41,15 +39,10 @@ export async function POST(req: NextRequest, { params }: Params) {
     return NextResponse.json({ acs: reset })
   }
 
-  const dataRoot = getDataRoot()
-  const featureDir = path.join(dataRoot, app, 'features', name)
-  const tcFile = path.join(featureDir, `${name}-testcases.md`)
-  if (!fs.existsSync(tcFile)) {
-    return NextResponse.json({ error: 'No test cases found for this feature' }, { status: 400 })
-  }
-  const testcases = fs.readFileSync(tcFile, 'utf-8')
+  const feature = await getFeature(app, name)
+  const testcases = feature?.testcases ?? ''
   if (!testcases.trim()) {
-    return NextResponse.json({ error: 'Test cases file is empty' }, { status: 400 })
+    return NextResponse.json({ error: 'No test cases found for this feature' }, { status: 400 })
   }
 
   try {
@@ -62,7 +55,8 @@ export async function POST(req: NextRequest, { params }: Params) {
     const result = await analyze(
       leaves.map(ac => ({ id: ac.id, text: ac.text })),
       testcases,
-      modelId
+      modelId,
+      guard.access.user.id
     )
 
     const now = new Date().toISOString()

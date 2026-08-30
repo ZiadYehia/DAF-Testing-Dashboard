@@ -60,7 +60,7 @@ export default function LoginForm({ from }: { from?: string }) {
             ? <img src={dashboardLogo} alt="Logo" className="h-full w-full object-contain" />
             : <Beaker className="h-12 w-12" />}
         </div>
-        <span className="text-lg font-semibold tracking-tight">Testing Dashboard</span>
+        <span className="text-lg font-semibold tracking-tight">zTestGround</span>
       </div>
 
       <Card className="w-full max-w-sm">

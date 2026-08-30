@@ -1,6 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { getDataRoot } from './paths'
+import { fetchAllKnowledgeRows } from './knowledge'
 
 /**
  * Aggregates the "Open Questions / Ambiguities" that knowledge synthesis records
@@ -62,8 +63,31 @@ function readGapsFromDir(dir: string, label: (file: string) => string, tier: Kno
   return out
 }
 
-/** Collect open questions across feature, module, and app knowledge for an app. */
-export function collectKnowledgeGaps(appSlug: string): KnowledgeGap[] {
+/** Full FS scan for the app + module tiers — used as a fallback when the DB is unavailable. */
+function collectAppModuleGapsFs(appSlug: string): KnowledgeGap[] {
+  const root = getDataRoot()
+  const gaps: KnowledgeGap[] = []
+
+  const modulesDir = path.join(root, appSlug, 'modules')
+  if (fs.existsSync(modulesDir)) {
+    for (const mod of fs.readdirSync(modulesDir)) {
+      gaps.push(...readGapsFromDir(path.join(modulesDir, mod, 'knowledge'), (file) => `${mod}/${file}`, 'module'))
+    }
+  }
+
+  gaps.push(...readGapsFromDir(path.join(root, appSlug, 'knowledge'), (file) => file, 'app'))
+
+  return gaps
+}
+
+/**
+ * Collect open questions across feature, module, and app knowledge for an app.
+ * App + module tiers are DB-first (knowledge_files rows), falling back to a
+ * full FS scan on DB error. Feature tier keeps reading knowledge.md straight
+ * from FS, as today — feature knowledge is a concept features.ts owns, not a
+ * knowledge_files row.
+ */
+export async function collectKnowledgeGaps(appSlug: string): Promise<KnowledgeGap[]> {
   const root = getDataRoot()
   const gaps: KnowledgeGap[] = []
 
@@ -79,16 +103,18 @@ export function collectKnowledgeGaps(appSlug: string): KnowledgeGap[] {
     }
   }
 
-  // Module tier
-  const modulesDir = path.join(root, appSlug, 'modules')
-  if (fs.existsSync(modulesDir)) {
-    for (const mod of fs.readdirSync(modulesDir)) {
-      gaps.push(...readGapsFromDir(path.join(modulesDir, mod, 'knowledge'), (file) => `${mod}/${file}`, 'module'))
+  // App + module tiers
+  try {
+    const rows = await fetchAllKnowledgeRows(appSlug)
+    for (const row of rows) {
+      const items = extractOpenQuestions(row.content)
+      if (items.length === 0) continue
+      if (row.module) gaps.push({ source: `${row.module}/${row.filename}`, tier: 'module', items })
+      else gaps.push({ source: row.filename, tier: 'app', items })
     }
+  } catch {
+    gaps.push(...collectAppModuleGapsFs(appSlug))
   }
-
-  // App tier
-  gaps.push(...readGapsFromDir(path.join(root, appSlug, 'knowledge'), (file) => file, 'app'))
 
   return gaps
 }
