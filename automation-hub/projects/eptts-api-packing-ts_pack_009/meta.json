@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-packing-ts_pack_009",
   "title": "TS_PACK_009 — packing with duplicate child EPCs is refused",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TS_PACK_009",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-packing",
     "testcaseId": "TS_PACK_009"
   },
@@ -17,5 +17,5 @@
     "write"
   ],
   "folder": "EPTTS APIs / api-packing",
-  "engine": "playwright"
+  "engine": "api"
 }

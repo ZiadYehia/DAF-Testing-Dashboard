@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-return-receiving-ts_rtrv_040",
   "title": "TS_RTRV_040 — return receiving with a malformed SBDH receiver identifier is refused",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TS_RTRV_040",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-return-receiving",
     "testcaseId": "TS_RTRV_040"
   },
@@ -17,5 +17,5 @@
     "write"
   ],
   "folder": "EPTTS APIs / api-return-receiving",
-  "engine": "playwright"
+  "engine": "api"
 }

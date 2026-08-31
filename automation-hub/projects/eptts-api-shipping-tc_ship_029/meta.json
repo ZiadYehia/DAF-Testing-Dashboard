@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-shipping-tc_ship_029",
   "title": "TC_SHIP_029 — shipping with a disposition outside the CBV vocabulary is refused",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TC_SHIP_029",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-shipping",
     "testcaseId": "TC_SHIP_029"
   },
@@ -18,5 +18,5 @@
     "known-gap"
   ],
   "folder": "EPTTS APIs / api-shipping",
-  "engine": "playwright"
+  "engine": "api"
 }

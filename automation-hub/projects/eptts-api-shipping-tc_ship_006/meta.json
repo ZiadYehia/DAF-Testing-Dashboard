@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-shipping-tc_ship_006",
   "title": "TC_SHIP_006 — shipping manufacturer directly to pharmacy is refused",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TC_SHIP_006",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-shipping",
     "testcaseId": "TC_SHIP_006"
   },
@@ -17,5 +17,5 @@
     "write"
   ],
   "folder": "EPTTS APIs / api-shipping",
-  "engine": "playwright"
+  "engine": "api"
 }

@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-receiving-ts_recv_034",
   "title": "TS_RECV_034 — receiving with a malformed bizLocation SGLN is refused",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TS_RECV_034",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-receiving",
     "testcaseId": "TS_RECV_034"
   },
@@ -17,5 +17,5 @@
     "write"
   ],
   "folder": "EPTTS APIs / api-receiving",
-  "engine": "playwright"
+  "engine": "api"
 }

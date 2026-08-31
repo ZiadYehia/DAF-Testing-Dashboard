@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-shipping-tc_ship_012",
   "title": "TC_SHIP_012 — shipping with a source GLN that is not the authenticated entity is refused",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TC_SHIP_012",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-shipping",
     "testcaseId": "TC_SHIP_012"
   },
@@ -17,5 +17,5 @@
     "write"
   ],
   "folder": "EPTTS APIs / api-shipping",
-  "engine": "playwright"
+  "engine": "api"
 }

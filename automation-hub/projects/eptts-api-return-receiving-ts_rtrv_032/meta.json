@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-return-receiving-ts_rtrv_032",
   "title": "TS_RTRV_032 — return receiving with an empty readPoint is refused",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TS_RTRV_032",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-return-receiving",
     "testcaseId": "TS_RTRV_032"
   },
@@ -17,5 +17,5 @@
     "write"
   ],
   "folder": "EPTTS APIs / api-return-receiving",
-  "engine": "playwright"
+  "engine": "api"
 }

@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-return-receiving-ts_rtrv_029",
   "title": "TS_RTRV_029 — return receiving with a disposition outside the CBV vocabulary is refused",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TS_RTRV_029",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-return-receiving",
     "testcaseId": "TS_RTRV_029"
   },
@@ -18,5 +18,5 @@
     "known-gap"
   ],
   "folder": "EPTTS APIs / api-return-receiving",
-  "engine": "playwright"
+  "engine": "api"
 }

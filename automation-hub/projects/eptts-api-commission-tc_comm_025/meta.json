@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-commission-tc_comm_025",
   "title": "TC_COMM_025 — commissioning with an empty eventTime is refused",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TC_COMM_025",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-commission",
     "testcaseId": "TC_COMM_025"
   },
@@ -18,5 +18,5 @@
     "known-gap"
   ],
   "folder": "EPTTS APIs / api-commission",
-  "engine": "playwright"
+  "engine": "api"
 }

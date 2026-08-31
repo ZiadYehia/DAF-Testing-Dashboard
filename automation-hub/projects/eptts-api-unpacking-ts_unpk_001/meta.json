@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-unpacking-ts_unpk_001",
   "title": "TS_UNPK_001 — unpack a single SGTIN from an SSCC",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TS_UNPK_001",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-unpacking",
     "testcaseId": "TS_UNPK_001"
   },
@@ -17,5 +17,5 @@
     "write"
   ],
   "folder": "EPTTS APIs / api-unpacking",
-  "engine": "playwright"
+  "engine": "api"
 }

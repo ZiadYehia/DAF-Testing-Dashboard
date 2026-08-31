@@ -1,5 +1,5 @@
 /**
- * TC_AUTH_010 — a missing password field is ignored rather than rejected
+ * TC_AUTH_010 — a missing password field is rejected rather than ignored
  *
  * Feature: api-authentication
  *

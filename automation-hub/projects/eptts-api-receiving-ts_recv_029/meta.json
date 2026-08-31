@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-receiving-ts_recv_029",
   "title": "TS_RECV_029 — receiving with a non-ISO-8601 eventTime is refused",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TS_RECV_029",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-receiving",
     "testcaseId": "TS_RECV_029"
   },
@@ -18,5 +18,5 @@
     "known-gap"
   ],
   "folder": "EPTTS APIs / api-receiving",
-  "engine": "playwright"
+  "engine": "api"
 }

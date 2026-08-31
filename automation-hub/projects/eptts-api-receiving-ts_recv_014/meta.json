@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-receiving-ts_recv_014",
   "title": "TS_RECV_014 — receiving with a malformed SGTIN URN is refused",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TS_RECV_014",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-receiving",
     "testcaseId": "TS_RECV_014"
   },
@@ -17,5 +17,5 @@
     "write"
   ],
   "folder": "EPTTS APIs / api-receiving",
-  "engine": "playwright"
+  "engine": "api"
 }

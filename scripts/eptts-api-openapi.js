@@ -3,8 +3,8 @@
  * Generate an OpenAPI 3.1 description of the Masar B2B API.
  *
  * Usage:
- *   node scripts/eptts-web-openapi.js            # dry run (prints a summary)
- *   node scripts/eptts-web-openapi.js --write
+ *   node scripts/eptts-api-openapi.js            # dry run (prints a summary)
+ *   node scripts/eptts-api-openapi.js --write
  *
  * Output:
  *   automation-hub/exports/eptts-apis.openapi.json
@@ -16,7 +16,7 @@
  * `200` too, so those responses prove nothing. There is no Swagger to read.
  *
  * So this file is hand-derived from behaviour VERIFIED against production on 2026-08-31,
- * recorded in data/eptts-web/modules/eptts-apis/knowledge/verified-live-contract.md. Where
+ * recorded in data/eptts-api/modules/eptts-apis/knowledge/verified-live-contract.md. Where
  * the vendor's documentation and the live platform disagree, this describes the LIVE
  * platform and says so in the description — an accurate spec of what is deployed is more
  * useful than a faithful copy of a document that does not match it.
@@ -695,7 +695,7 @@ const spec = {
       'credential pair authenticates with `200`.',
       '',
       'Full reasoning and evidence:',
-      '`data/eptts-web/modules/eptts-apis/knowledge/verified-live-contract.md`.',
+      '`data/eptts-api/modules/eptts-apis/knowledge/verified-live-contract.md`.',
     ].join('\n'),
   },
   servers: [

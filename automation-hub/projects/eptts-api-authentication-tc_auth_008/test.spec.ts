@@ -1,5 +1,5 @@
 /**
- * TC_AUTH_008 — an empty password is ignored rather than rejected
+ * TC_AUTH_008 — an empty password is rejected rather than ignored
  *
  * Feature: api-authentication
  *

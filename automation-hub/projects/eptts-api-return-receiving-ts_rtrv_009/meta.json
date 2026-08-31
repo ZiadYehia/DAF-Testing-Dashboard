@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-return-receiving-ts_rtrv_009",
   "title": "TS_RTRV_009 — return receiving by a manufacturer other than the original owner is refused",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TS_RTRV_009",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-return-receiving",
     "testcaseId": "TS_RTRV_009"
   },
@@ -18,5 +18,5 @@
     "blocked"
   ],
   "folder": "EPTTS APIs / api-return-receiving",
-  "engine": "playwright"
+  "engine": "api"
 }

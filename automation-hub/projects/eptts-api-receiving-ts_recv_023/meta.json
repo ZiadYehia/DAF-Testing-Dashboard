@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-receiving-ts_recv_023",
   "title": "TS_RECV_023 — receiving an SSCC belonging to another shipment is refused",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TS_RECV_023",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-receiving",
     "testcaseId": "TS_RECV_023"
   },
@@ -18,5 +18,5 @@
     "blocked"
   ],
   "folder": "EPTTS APIs / api-receiving",
-  "engine": "playwright"
+  "engine": "api"
 }

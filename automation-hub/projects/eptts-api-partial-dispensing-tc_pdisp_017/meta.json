@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-partial-dispensing-tc_pdisp_017",
   "title": "TC_PDISP_017 — partially dispensing with an empty quantity is refused",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TC_PDISP_017",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-partial-dispensing",
     "testcaseId": "TC_PDISP_017"
   },
@@ -18,5 +18,5 @@
     "blocked"
   ],
   "folder": "EPTTS APIs / api-partial-dispensing",
-  "engine": "playwright"
+  "engine": "api"
 }

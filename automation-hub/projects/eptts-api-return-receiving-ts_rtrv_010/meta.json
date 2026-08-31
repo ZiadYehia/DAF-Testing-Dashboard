@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-return-receiving-ts_rtrv_010",
   "title": "TS_RTRV_010 — return receiving with an empty epcList is refused",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TS_RTRV_010",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-return-receiving",
     "testcaseId": "TS_RTRV_010"
   },
@@ -18,5 +18,5 @@
     "known-gap"
   ],
   "folder": "EPTTS APIs / api-return-receiving",
-  "engine": "playwright"
+  "engine": "api"
 }

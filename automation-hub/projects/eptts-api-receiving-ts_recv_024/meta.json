@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-receiving-ts_recv_024",
   "title": "TS_RECV_024 — receiving an SGTIN belonging to another shipment is refused",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TS_RECV_024",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-receiving",
     "testcaseId": "TS_RECV_024"
   },
@@ -18,5 +18,5 @@
     "blocked"
   ],
   "folder": "EPTTS APIs / api-receiving",
-  "engine": "playwright"
+  "engine": "api"
 }

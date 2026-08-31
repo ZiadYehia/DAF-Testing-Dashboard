@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-commission-tc_comm_032",
   "title": "TC_COMM_032 — commissioning with an invalid bizStep is refused",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TC_COMM_032",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-commission",
     "testcaseId": "TC_COMM_032"
   },
@@ -17,5 +17,5 @@
     "write"
   ],
   "folder": "EPTTS APIs / api-commission",
-  "engine": "playwright"
+  "engine": "api"
 }

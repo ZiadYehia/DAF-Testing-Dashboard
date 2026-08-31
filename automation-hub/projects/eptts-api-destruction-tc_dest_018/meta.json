@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-destruction-tc_dest_018",
   "title": "TC_DEST_018 — destroying with a disposition outside the CBV vocabulary is refused",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TC_DEST_018",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-destruction",
     "testcaseId": "TC_DEST_018"
   },
@@ -18,5 +18,5 @@
     "known-gap"
   ],
   "folder": "EPTTS APIs / api-destruction",
-  "engine": "playwright"
+  "engine": "api"
 }

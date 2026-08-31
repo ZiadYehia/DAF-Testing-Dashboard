@@ -1,5 +1,17 @@
 # EPTTS Web — Platform & Domain Knowledge
 
+> **Scope: the dashboard only.** The B2B API coverage that used to live here — 11 features,
+> 351 test cases and their Automation Hub projects — now lives in its own app, **`eptts-api`**
+> (type `api`). It moved because an HTTP surface is not a dashboard: it has no screens, so
+> every feature was permanently marked not-ready for having no screenshot, and every replay
+> booted a browser and ran a login bootstrap before making a single HTTP call. Nothing was
+> deleted — look under `eptts-api` for the API work, including the verified live contract at
+> `data/eptts-api/modules/eptts-apis/knowledge/verified-live-contract.md`.
+>
+> The two are still one system, and the link matters when testing: a dashboard page's XHR
+> calls hit the same endpoints the API features cover, so a defect found on one side is worth
+> checking on the other.
+
 ## What this product is
 
 EPTTS Web is the **Masar Platform** web surface: a browser dashboard plus a B2B REST API that together

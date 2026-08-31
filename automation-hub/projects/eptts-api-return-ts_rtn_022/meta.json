@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-return-ts_rtn_022",
   "title": "TS_RTN_022 — a request mixing valid and invalid EPCs is refused as a whole",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TS_RTN_022",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-return",
     "testcaseId": "TS_RTN_022"
   },
@@ -18,5 +18,5 @@
     "blocked"
   ],
   "folder": "EPTTS APIs / api-return",
-  "engine": "playwright"
+  "engine": "api"
 }

@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-return-ts_rtn_013",
   "title": "TS_RTN_013 — returning a non-existent SSCC is refused",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TS_RTN_013",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-return",
     "testcaseId": "TS_RTN_013"
   },
@@ -17,5 +17,5 @@
     "write"
   ],
   "folder": "EPTTS APIs / api-return",
-  "engine": "playwright"
+  "engine": "api"
 }

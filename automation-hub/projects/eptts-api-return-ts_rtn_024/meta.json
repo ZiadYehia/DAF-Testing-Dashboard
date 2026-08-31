@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-return-ts_rtn_024",
   "title": "TS_RTN_024 — all EPCs valid except one invalid SGTIN",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TS_RTN_024",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-return",
     "testcaseId": "TS_RTN_024"
   },
@@ -18,5 +18,5 @@
     "blocked"
   ],
   "folder": "EPTTS APIs / api-return",
-  "engine": "playwright"
+  "engine": "api"
 }

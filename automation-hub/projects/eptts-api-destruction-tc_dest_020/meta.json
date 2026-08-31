@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-destruction-tc_dest_020",
   "title": "TC_DEST_020 — destroying with an impossible eventTimeZoneOffset is refused",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TC_DEST_020",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-destruction",
     "testcaseId": "TC_DEST_020"
   },
@@ -18,5 +18,5 @@
     "known-gap"
   ],
   "folder": "EPTTS APIs / api-destruction",
-  "engine": "playwright"
+  "engine": "api"
 }

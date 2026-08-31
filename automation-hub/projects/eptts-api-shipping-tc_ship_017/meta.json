@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-shipping-tc_ship_017",
   "title": "TC_SHIP_017 — shipping an expired SGTIN is refused",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TC_SHIP_017",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-shipping",
     "testcaseId": "TC_SHIP_017"
   },
@@ -18,5 +18,5 @@
     "blocked"
   ],
   "folder": "EPTTS APIs / api-shipping",
-  "engine": "playwright"
+  "engine": "api"
 }

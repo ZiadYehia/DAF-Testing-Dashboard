@@ -1,9 +1,15 @@
 #!/usr/bin/env node
 /**
- * Validate every eptts-web test-case file against
- * data/eptts-web/knowledge/testcase-writing-rules.md.
+ * Validate every EPTTS test-case file against that app's
+ * knowledge/testcase-writing-rules.md.
  *
- * Usage: node scripts/eptts-web-validate-testcases.js [--verbose]
+ * Covers BOTH apps: `eptts-web` (the dashboard) and `eptts-api` (the B2B API). They were one
+ * app until the API split, and scoping this to a single app silently dropped 351 API test
+ * cases out of validation — the check still passed, just over less. Apps are listed
+ * explicitly rather than discovered so a new app cannot be validated by accident against
+ * rules written for a different one.
+ *
+ * Usage: node scripts/eptts-validate-testcases.js [--verbose]
  * Exit code 1 when any rule is violated, so this can gate a commit.
  *
  * Checks, in the order the rules doc states them:
@@ -22,7 +28,8 @@ const fs = require('fs')
 const path = require('path')
 
 const REPO = path.join(__dirname, '..')
-const FEATURES = path.join(REPO, 'data', 'eptts-web', 'features')
+const APPS = ['eptts-web', 'eptts-api']
+const featuresDir = (app) => path.join(REPO, 'data', app, 'features')
 const VERBOSE = process.argv.includes('--verbose')
 
 const COLUMNS = [
@@ -91,12 +98,14 @@ const PREFIX = {
 /** Gaps inherited from the source spreadsheet that must NOT be closed. */
 const ALLOWED_GAPS = new Set(['api-commission:21-23'])
 
-/** Bug slugs filed under data/eptts-web/bugs/, so a draft: reference can be verified. */
-const BUGS_DIR = path.join(REPO, 'data', 'eptts-web', 'bugs')
+/** Bug slugs filed under either app's bugs/, so a draft: reference can be verified. */
+const bugsDir = (app) => path.join(REPO, 'data', app, 'bugs')
 const DRAFT_BUGS = new Set()
-if (fs.existsSync(BUGS_DIR)) {
-  for (const feat of fs.readdirSync(BUGS_DIR)) {
-    const d = path.join(BUGS_DIR, feat)
+for (const app of APPS) {
+  const root = bugsDir(app)
+  if (!fs.existsSync(root)) continue
+  for (const feat of fs.readdirSync(root)) {
+    const d = path.join(root, feat)
     if (!fs.statSync(d).isDirectory()) continue
     for (const f of fs.readdirSync(d)) {
       if (f.endsWith('.md')) DRAFT_BUGS.add(f.slice(0, -3))
@@ -121,13 +130,20 @@ function parseTable(md) {
   return { header, rows }
 }
 
-const featureDirs = fs.readdirSync(FEATURES).filter((f) =>
-  fs.existsSync(path.join(FEATURES, f, `${f}-testcases.md`)))
+// [{ app, feature }] across every listed app, so one pass validates them all.
+const featureDirs = APPS.flatMap((app) => {
+  const dir = featuresDir(app)
+  if (!fs.existsSync(dir)) return []
+  return fs.readdirSync(dir)
+    .filter((f) => fs.existsSync(path.join(dir, f, `${f}-testcases.md`)))
+    .map((feature) => ({ app, feature }))
+})
 
 let totalRows = 0
 const perFeature = []
 
-for (const feature of featureDirs) {
+for (const { app, feature } of featureDirs) {
+  const FEATURES = featuresDir(app)
   const file = `${feature}-testcases.md`
   const md = fs.readFileSync(path.join(FEATURES, feature, file), 'utf8')
   const { header, rows } = parseTable(md)

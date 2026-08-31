@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-commission-tc_comm_043",
   "title": "TC_COMM_043 — SQL injection in the lot number is refused safely",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TC_COMM_043",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-commission",
     "testcaseId": "TC_COMM_043"
   },
@@ -17,5 +17,5 @@
     "write"
   ],
   "folder": "EPTTS APIs / api-commission",
-  "engine": "playwright"
+  "engine": "api"
 }

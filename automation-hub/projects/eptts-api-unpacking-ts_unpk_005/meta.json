@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-unpacking-ts_unpk_005",
   "title": "TS_UNPK_005 — unpacking a child that is not in the SSCC is refused",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TS_UNPK_005",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-unpacking",
     "testcaseId": "TS_UNPK_005"
   },
@@ -17,5 +17,5 @@
     "write"
   ],
   "folder": "EPTTS APIs / api-unpacking",
-  "engine": "playwright"
+  "engine": "api"
 }

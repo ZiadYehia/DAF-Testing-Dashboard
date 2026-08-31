@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-dispensing-tc_disp_024",
   "title": "TC_DISP_024 — dispensing with an impossible eventTimeZoneOffset is refused",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TC_DISP_024",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-dispensing",
     "testcaseId": "TC_DISP_024"
   },
@@ -18,5 +18,5 @@
     "known-gap"
   ],
   "folder": "EPTTS APIs / api-dispensing",
-  "engine": "playwright"
+  "engine": "api"
 }

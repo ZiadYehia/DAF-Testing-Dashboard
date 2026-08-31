@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-packing-ts_pack_012",
   "title": "TS_PACK_012 — pack mixed products (different GTINs) into the same SSCC",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TS_PACK_012",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-packing",
     "testcaseId": "TS_PACK_012"
   },
@@ -17,5 +17,5 @@
     "write"
   ],
   "folder": "EPTTS APIs / api-packing",
-  "engine": "playwright"
+  "engine": "api"
 }

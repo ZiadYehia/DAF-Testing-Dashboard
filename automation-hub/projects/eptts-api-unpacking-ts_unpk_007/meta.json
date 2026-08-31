@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-unpacking-ts_unpk_007",
   "title": "TS_UNPK_007 — unpacking with a malformed SSCC (wrong digit count) is refused",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TS_UNPK_007",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-unpacking",
     "testcaseId": "TS_UNPK_007"
   },
@@ -17,5 +17,5 @@
     "write"
   ],
   "folder": "EPTTS APIs / api-unpacking",
-  "engine": "playwright"
+  "engine": "api"
 }

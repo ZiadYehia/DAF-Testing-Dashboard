@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-partial-dispensing-tc_pdisp_005",
   "title": "TC_PDISP_005 — a manufacturer cannot partially dispense",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TC_PDISP_005",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-partial-dispensing",
     "testcaseId": "TC_PDISP_005"
   },
@@ -17,5 +17,5 @@
     "destructive"
   ],
   "folder": "EPTTS APIs / api-partial-dispensing",
-  "engine": "playwright"
+  "engine": "api"
 }

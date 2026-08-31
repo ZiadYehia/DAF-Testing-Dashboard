@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-dispensing-tc_disp_015",
   "title": "TC_DISP_015 — dispensing with duplicate SGTINs in the EPC list is refused",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TC_DISP_015",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-dispensing",
     "testcaseId": "TC_DISP_015"
   },
@@ -17,5 +17,5 @@
     "destructive"
   ],
   "folder": "EPTTS APIs / api-dispensing",
-  "engine": "playwright"
+  "engine": "api"
 }

@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-commission-tc_comm_004",
   "title": "TC_COMM_004 — commissioning with an empty epcList is refused",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TC_COMM_004",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-commission",
     "testcaseId": "TC_COMM_004"
   },
@@ -18,5 +18,5 @@
     "known-gap"
   ],
   "folder": "EPTTS APIs / api-commission",
-  "engine": "playwright"
+  "engine": "api"
 }

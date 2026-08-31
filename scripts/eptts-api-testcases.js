@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 /**
  * Extract the EPTTS API test cases from the source spreadsheet into zTestGround's
- * on-disk feature format under data/eptts-web/features/.
+ * on-disk feature format under data/eptts-api/features/.
  *
  * Usage:
- *   node scripts/eptts-web-api-testcases.js            # dry run (prints the summary only)
- *   node scripts/eptts-web-api-testcases.js --write     # write the files
+ *   node scripts/eptts-api-testcases.js            # dry run (prints the summary only)
+ *   node scripts/eptts-api-testcases.js --write     # write the files
  *
  * Source: EPTTS - API TEST CASES.xlsx — 11 sheets / 348 rows. Override path is
- * scripts/eptts-web-api-overrides.json (see its _readme for why 24 rows need one).
+ * scripts/eptts-api-overrides.json (see its _readme for why 24 rows need one).
  *
- * Per sheet it writes data/eptts-web/features/<slug>/:
+ * Per sheet it writes data/eptts-api/features/<slug>/:
  *   <slug>-testcases.md        canonical 13-column table + Notes & Known Defects
  *   <slug>-testcases-v1.md     identical; the versioned file is what execution reads
  *                              (src/lib/execution.ts, features.ts getTestcaseVersions)
@@ -29,8 +29,8 @@ const path = require('path')
 
 const REPO = path.join(__dirname, '..')
 const SRC = process.env.EPTTS_API_XLSX || 'C:/Users/ziadm/Downloads/EPTTS - API TEST CASES.xlsx'
-const OVERRIDES_PATH = path.join(__dirname, 'eptts-web-api-overrides.json')
-const FEATURES = path.join(REPO, 'data', 'eptts-web', 'features')
+const OVERRIDES_PATH = path.join(__dirname, 'eptts-api-overrides.json')
+const FEATURES = path.join(REPO, 'data', 'eptts-api', 'features')
 const WRITE = process.argv.includes('--write')
 
 const ENVIRONMENT = 'Masar Platform · https://192.168.225.195:8444 · tenant devsim'
@@ -259,7 +259,7 @@ async function main() {
 
     // Notes deliberately NOT written here: a test-case file is one H1 and one table.
     // Provenance goes to the feature's knowledge.md instead — see
-    // scripts/eptts-web-feature-knowledge.js and testcase-writing-rules.md.
+    // data/eptts-api/knowledge/testcase-writing-rules.md.
     if (notes.length > 0) {
       fs.mkdirSync(path.join(FEATURES, cfg.slug), { recursive: true })
       if (WRITE) {

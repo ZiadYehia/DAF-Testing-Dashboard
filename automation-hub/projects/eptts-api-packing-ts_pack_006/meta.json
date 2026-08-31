@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-packing-ts_pack_006",
   "title": "TS_PACK_006 — packing with a malformed SSCC (wrong digit count) is refused",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TS_PACK_006",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-packing",
     "testcaseId": "TS_PACK_006"
   },
@@ -17,5 +17,5 @@
     "write"
   ],
   "folder": "EPTTS APIs / api-packing",
-  "engine": "playwright"
+  "engine": "api"
 }

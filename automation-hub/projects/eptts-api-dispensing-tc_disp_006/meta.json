@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-dispensing-tc_disp_006",
   "title": "TC_DISP_006 — dispensing with a malformed SGTIN URN is refused",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TC_DISP_006",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-dispensing",
     "testcaseId": "TC_DISP_006"
   },
@@ -17,5 +17,5 @@
     "destructive"
   ],
   "folder": "EPTTS APIs / api-dispensing",
-  "engine": "playwright"
+  "engine": "api"
 }

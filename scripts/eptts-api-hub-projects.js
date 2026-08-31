@@ -3,9 +3,9 @@
  * Create one Automation Hub project per registered EPTTS test case.
  *
  * Usage:
- *   node scripts/eptts-web-hub-projects.js            # dry run
- *   node scripts/eptts-web-hub-projects.js --write
- *   node scripts/eptts-web-hub-projects.js --write --prune   # also remove stale projects
+ *   node scripts/eptts-api-hub-projects.js            # dry run
+ *   node scripts/eptts-api-hub-projects.js --write
+ *   node scripts/eptts-api-hub-projects.js --write --prune   # also remove stale projects
  *
  * WHY ONE PROJECT PER CASE
  *
@@ -15,8 +15,9 @@
  * case. So each case gets its own project, whose `test.spec.ts` is a two-line shim onto
  * the shared registry in `automation-hub/lib/eptts-cases/`.
  *
- * The spec filename must stay `test.spec.ts` — `engine/runner.ts` hardcodes the filter
- * `projects/<name>/test.spec.ts`.
+ * The spec filename comes from `specFileName(meta.engine)` in automation-hub/store.ts, which
+ * maps the `api` engine to `test.spec.ts` — same as browser Playwright. An API project is
+ * distinguished by the config project it runs under (`--project=api`), not by its filename.
  *
  * Deliberately NOT converted: `eptts-api-smoke` and `eptts-api-supply-chain`. Those verify
  * that steps compose (a property no single case describes) and the journey's steps share
@@ -106,19 +107,28 @@ import { defineCase } from '../../lib/eptts-cases'
 defineCase('${c.id}')
 `
 
+const APP = 'eptts-api'
+
 const META = (c) => JSON.stringify({
   name: projectName(c),
   title: `${c.id} — ${c.title}`,
-  app: 'eptts-web',
+  app: APP,
   createdVia: 'testcase',
   linkedTestcaseId: c.id,
-  linkedTestcase: { app: 'eptts-web', feature: c.feature, testcaseId: c.id },
+  // Both app fields matter, and different things read them: `app` filters the project list
+  // per app, while `linkedTestcase.app` is what syncs a replay's result back onto the
+  // dashboard test case. A mismatch shows the project under one app and writes its results
+  // to another.
+  linkedTestcase: { app: APP, feature: c.feature, testcaseId: c.id },
   createdAt: '2026-08-31T10:30:00.000Z',
   lastStatus: 'never_run',
   runs: [],
   tags: tagsFor(c),
   folder: `EPTTS APIs / ${c.feature}`,
-  engine: 'playwright',
+  // The browserless engine: still @playwright/test, but run in the config's `api` project —
+  // no browser launched, login bootstrap skipped, no video or trace recorded. See
+  // playwrightProjectFor in automation-hub/types.ts.
+  engine: 'api',
 }, null, 2) + '\n'
 
 // ─── write ───────────────────────────────────────────────────────────────────
@@ -152,20 +162,36 @@ for (const c of cases) {
   fs.writeFileSync(metaPath, META(c), 'utf8')
 }
 
-// ─── journeys must stay unlinked ─────────────────────────────────────
+// ─── journeys: keep their specs, but keep app/engine in step ─────────────────
 
-// A journey spec runs many tests. If one carries `linkedTestcase`, a replay stamps that
-// single case's status from a whole-journey verdict AND overwrites the per-case project
+// The journeys are excluded from the generation loop above (their specs are hand-written),
+// which means nothing else would ever update their `app` or `engine`. Left behind, they
+// would keep pointing at the old app and would run under the browser project.
+//
+// They must also stay UNLINKED. A journey spec runs many tests, so a `linkedTestcase` would
+// stamp one case's status from a whole-journey verdict AND overwrite the per-case project
 // that legitimately owns it. Caught exactly that on eptts-api-supply-chain, so it is
 // asserted here rather than remembered.
 const wronglyLinked = []
+const journeysUpdated = []
 for (const name of KEEP_MULTI) {
   const metaPath = path.join(PROJECTS, name, 'meta.json')
   if (!fs.existsSync(metaPath)) continue
   const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'))
-  if (!meta.linkedTestcase) continue
-  wronglyLinked.push(`${name} -> ${meta.linkedTestcase.testcaseId}`)
+
+  const drift = []
+  if (meta.app !== APP) drift.push(`app ${meta.app} -> ${APP}`)
+  if (meta.engine !== 'api') drift.push(`engine ${meta.engine ?? '(absent)'} -> api`)
+  if (meta.linkedTestcase) {
+    wronglyLinked.push(`${name} -> ${meta.linkedTestcase.testcaseId}`)
+    drift.push('unlink')
+  }
+  if (drift.length === 0) continue
+  journeysUpdated.push(`${name} (${drift.join(', ')})`)
+
   if (WRITE) {
+    meta.app = APP
+    meta.engine = 'api'
     meta.linkedTestcase = null
     fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2) + '\n')
   }
@@ -201,6 +227,9 @@ for (const [feature, list] of Object.entries(byFeature)) {
 }
 console.log(`\ntotal: ${cases.length} per-case projects`)
 console.log(`kept as multi-test journeys: ${[...KEEP_MULTI].join(', ')}`)
+if (journeysUpdated.length) {
+  console.log(`${WRITE ? 'updated' : 'WOULD update'} journey project(s): ${journeysUpdated.join(', ')}`)
+}
 if (wronglyLinked.length) {
   console.log(`${WRITE ? 'unlinked' : 'WOULD unlink'} journey project(s) wrongly bound to a ` +
     `single test case: ${wronglyLinked.join(', ')}`)

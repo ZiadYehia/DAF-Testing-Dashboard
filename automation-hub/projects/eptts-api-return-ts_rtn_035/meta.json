@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-return-ts_rtn_035",
   "title": "TS_RTN_035 — return shipping with an empty bizLocation is refused",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TS_RTN_035",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-return",
     "testcaseId": "TS_RTN_035"
   },
@@ -17,5 +17,5 @@
     "write"
   ],
   "folder": "EPTTS APIs / api-return",
-  "engine": "playwright"
+  "engine": "api"
 }

@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * Generate workflow.md for each EPTTS API feature under data/eptts-web/features/.
+ * Generate workflow.md for each EPTTS API feature under data/eptts-api/features/.
  *
  * Usage:
- *   node scripts/eptts-web-api-workflows.js            # dry run
- *   node scripts/eptts-web-api-workflows.js --write
+ *   node scripts/eptts-api-workflows.js            # dry run
+ *   node scripts/eptts-api-workflows.js --write
  *
  * The 11 API features share one document structure (Feature Details, Business Purpose,
  * Request Contract, Happy Path, Edge Cases, Notes) and differ only in their EPCIS event
@@ -18,7 +18,7 @@ const fs = require('fs')
 const path = require('path')
 
 const REPO = path.join(__dirname, '..')
-const FEATURES_DIR = path.join(REPO, 'data', 'eptts-web', 'features')
+const FEATURES_DIR = path.join(REPO, 'data', 'eptts-api', 'features')
 const WRITE = process.argv.includes('--write')
 
 const ASYNC_HAPPY = [
@@ -197,7 +197,7 @@ const FEATURES = {
       'Shipping Cancel / Void (`bizStep: void_shipping`) reverses an in-transit shipment — covered in the collection, not yet in these 44 cases.',
     ],
     notes: [
-      '**`TC_SHIP_025`–`TC_SHIP_044` were 20 entirely empty reserved ID slots in the source spreadsheet** (an ID and `Validity: Negative`, nothing else). They have been authored to continue the mandatory-field sequence the sheet began at `TC_SHIP_020`, plus format, ownership, role, idempotency, content-type, and injection negatives. See `## Notes & Known Defects` in the test-case file and `scripts/eptts-web-api-overrides.json`.',
+      '**`TC_SHIP_025`–`TC_SHIP_044` were 20 entirely empty reserved ID slots in the source spreadsheet** (an ID and `Validity: Negative`, nothing else). They have been authored to continue the mandatory-field sequence the sheet began at `TC_SHIP_020`, plus format, ownership, role, idempotency, content-type, and injection negatives. See `## Notes & Known Defects` in the test-case file and `scripts/eptts-api-overrides.json`.',
       '8 of the 24 originally-authored cases are recorded `Fail` from staging.',
     ],
   },
@@ -430,7 +430,7 @@ let written = 0
 for (const [slug, f] of Object.entries(FEATURES)) {
   const dir = path.join(FEATURES_DIR, slug)
   if (!fs.existsSync(dir)) {
-    console.error(`!! missing feature dir ${slug} — run scripts/eptts-web-api-testcases.js --write first`)
+    console.error(`!! missing feature dir ${slug} — run scripts/eptts-api-testcases.js --write first`)
     process.exitCode = 1
     continue
   }

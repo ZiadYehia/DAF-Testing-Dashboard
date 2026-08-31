@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-packing-ts_pack_007",
   "title": "TS_PACK_007 — packing with an empty SSCC is refused",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TS_PACK_007",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-packing",
     "testcaseId": "TS_PACK_007"
   },
@@ -17,5 +17,5 @@
     "write"
   ],
   "folder": "EPTTS APIs / api-packing",
-  "engine": "playwright"
+  "engine": "api"
 }

@@ -54,5 +54,19 @@
       "featureWizard": true,
       "moduleKnowledge": true
     }
+  },
+  {
+    "slug": "eptts-api",
+    "name": "EPTTS API",
+    "description": "Masar B2B API — EPCIS event submission, dispensation and query endpoints (production, via Citrix VPN).",
+    "icon": "🔌",
+    "enabled": true,
+    "type": "api",
+    "platform": "REST over HTTPS",
+    "capabilities": {
+      "testCaseWriter": true,
+      "featureWizard": true,
+      "moduleKnowledge": true
+    }
   }
 ]

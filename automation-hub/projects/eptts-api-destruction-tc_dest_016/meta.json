@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-destruction-tc_dest_016",
   "title": "TC_DEST_016 — destroying with an invalid action is refused",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TC_DEST_016",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-destruction",
     "testcaseId": "TC_DEST_016"
   },
@@ -17,5 +17,5 @@
     "destructive"
   ],
   "folder": "EPTTS APIs / api-destruction",
-  "engine": "playwright"
+  "engine": "api"
 }

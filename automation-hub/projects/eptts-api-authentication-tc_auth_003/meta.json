@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-authentication-tc_auth_003",
   "title": "TC_AUTH_003 — authenticate with a valid Pharmacy API key",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TC_AUTH_003",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-authentication",
     "testcaseId": "TC_AUTH_003"
   },
@@ -26,5 +26,5 @@
     "readonly"
   ],
   "folder": "EPTTS APIs / api-authentication",
-  "engine": "playwright"
+  "engine": "api"
 }

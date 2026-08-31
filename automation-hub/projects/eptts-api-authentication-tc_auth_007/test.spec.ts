@@ -1,5 +1,5 @@
 /**
- * TC_AUTH_007 — an empty username is ignored rather than rejected
+ * TC_AUTH_007 — an empty username is rejected rather than ignored
  *
  * Feature: api-authentication
  *

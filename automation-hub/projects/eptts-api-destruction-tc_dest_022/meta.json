@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-destruction-tc_dest_022",
   "title": "TC_DEST_022 — destroying with an empty bizLocation is refused",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TC_DEST_022",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-destruction",
     "testcaseId": "TC_DEST_022"
   },
@@ -17,5 +17,5 @@
     "destructive"
   ],
   "folder": "EPTTS APIs / api-destruction",
-  "engine": "playwright"
+  "engine": "api"
 }

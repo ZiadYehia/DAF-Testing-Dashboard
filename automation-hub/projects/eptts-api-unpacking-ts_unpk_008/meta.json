@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-unpacking-ts_unpk_008",
   "title": "TS_UNPK_008 — unpacking from a sealed SSCC",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TS_UNPK_008",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-unpacking",
     "testcaseId": "TS_UNPK_008"
   },
@@ -18,5 +18,5 @@
     "blocked"
   ],
   "folder": "EPTTS APIs / api-unpacking",
-  "engine": "playwright"
+  "engine": "api"
 }

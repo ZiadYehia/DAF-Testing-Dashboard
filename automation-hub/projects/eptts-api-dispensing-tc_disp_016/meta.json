@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-dispensing-tc_disp_016",
   "title": "TC_DISP_016 — a request mixing valid and invalid SGTINs is refused as a whole",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TC_DISP_016",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-dispensing",
     "testcaseId": "TC_DISP_016"
   },
@@ -17,5 +17,5 @@
     "destructive"
   ],
   "folder": "EPTTS APIs / api-dispensing",
-  "engine": "playwright"
+  "engine": "api"
 }

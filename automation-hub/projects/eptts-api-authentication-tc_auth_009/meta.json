@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-authentication-tc_auth_009",
-  "title": "TC_AUTH_009 — a missing username field is ignored rather than rejected",
-  "app": "eptts-web",
+  "title": "TC_AUTH_009 — a missing username field is rejected rather than ignored",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TC_AUTH_009",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-authentication",
     "testcaseId": "TC_AUTH_009"
   },
@@ -18,5 +18,5 @@
     "known-gap"
   ],
   "folder": "EPTTS APIs / api-authentication",
-  "engine": "playwright"
+  "engine": "api"
 }

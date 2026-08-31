@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-destruction-tc_dest_027",
   "title": "TC_DEST_027 — destroying with an unsupported schemaVersion is refused",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TC_DEST_027",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-destruction",
     "testcaseId": "TC_DEST_027"
   },
@@ -17,5 +17,5 @@
     "destructive"
   ],
   "folder": "EPTTS APIs / api-destruction",
-  "engine": "playwright"
+  "engine": "api"
 }

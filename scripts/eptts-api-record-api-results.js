@@ -3,8 +3,8 @@
  * Turn a Playwright JSON report from the API suite into execution status + notes.
  *
  * Usage:
- *   node scripts/eptts-web-record-api-results.js <report.json>            # dry run
- *   node scripts/eptts-web-record-api-results.js <report.json> --write
+ *   node scripts/eptts-api-record-api-results.js <report.json>            # dry run
+ *   node scripts/eptts-api-record-api-results.js <report.json> --write
  *
  * WHY THIS IS NOT A ONE-LINER
  *
@@ -29,12 +29,12 @@ const fs = require('fs')
 const path = require('path')
 
 const REPO = path.join(__dirname, '..')
-const FEATURES = path.join(REPO, 'data', 'eptts-web', 'features')
+const FEATURES = path.join(REPO, 'data', 'eptts-api', 'features')
 const WRITE = process.argv.includes('--write')
 const reportPath = process.argv.slice(2).find((a) => !a.startsWith('--'))
 
 if (!reportPath || !fs.existsSync(reportPath)) {
-  console.error('usage: node scripts/eptts-web-record-api-results.js <report.json> [--write]')
+  console.error('usage: node scripts/eptts-api-record-api-results.js <report.json> [--write]')
   process.exit(1)
 }
 

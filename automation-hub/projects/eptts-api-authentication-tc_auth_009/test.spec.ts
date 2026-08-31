@@ -1,5 +1,5 @@
 /**
- * TC_AUTH_009 — a missing username field is ignored rather than rejected
+ * TC_AUTH_009 — a missing username field is rejected rather than ignored
  *
  * Feature: api-authentication
  *

@@ -3,7 +3,7 @@
  *
  * The single place the API contract lives, so the eleven `eptts-api-*` projects stay
  * thin. Everything here was verified against production on 2026-08-31; see
- * data/eptts-web/modules/eptts-apis/knowledge/verified-live-contract.md for the
+ * data/eptts-api/modules/eptts-apis/knowledge/verified-live-contract.md for the
  * evidence behind each decision. Where the Postman collection or the source
  * spreadsheet disagree with this file, this file is right.
  *

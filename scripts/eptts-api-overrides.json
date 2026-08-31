@@ -1,6 +1,6 @@
 {
   "_readme": [
-    "Overrides merged into the extracted EPTTS API test cases by scripts/eptts-web-api-testcases.js.",
+    "Overrides merged into the extracted EPTTS API test cases by scripts/eptts-api-testcases.js.",
     "",
     "The source spreadsheet (EPTTS - API TEST CASES.xlsx) contains 348 rows, of which 24 are",
     "incomplete: TC_SHIP_025..044 are entirely empty reserved ID slots (only an ID and",

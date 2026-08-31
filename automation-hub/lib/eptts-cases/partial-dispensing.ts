@@ -9,7 +9,7 @@
  * Every one of the devsim manufacturer's 30 registered products has
  * `dispenseType: "full"`. None supports partial dispensing, so the platform has nothing
  * to partially dispense and no amount of test code can create the precondition. Filed as
- * a bug (see data/eptts-web/bugs/api-partial-dispensing/).
+ * a bug (see data/eptts-api/bugs/api-partial-dispensing/).
  *
  * How that is handled here, deliberately:
  *

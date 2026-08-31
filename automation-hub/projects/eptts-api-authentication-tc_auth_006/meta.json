@@ -1,11 +1,11 @@
 {
   "name": "eptts-api-authentication-tc_auth_006",
   "title": "TC_AUTH_006 — valid API key with invalid credentials is rejected",
-  "app": "eptts-web",
+  "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TC_AUTH_006",
   "linkedTestcase": {
-    "app": "eptts-web",
+    "app": "eptts-api",
     "feature": "api-authentication",
     "testcaseId": "TC_AUTH_006"
   },
@@ -17,5 +17,5 @@
     "readonly"
   ],
   "folder": "EPTTS APIs / api-authentication",
-  "engine": "playwright"
+  "engine": "api"
 }
