@@ -179,6 +179,47 @@ a test case, and mixing the two makes the table harder to read and to diff.
 The one exception is a per-case failure reason, which goes in `execution-notes-v1.json` keyed by
 TestCase ID — it belongs to the *execution*, not to the case definition.
 
+## Everything is written in English
+
+Test cases, workflows, knowledge and bug reports are written in English — including when the
+thing being described is not.
+
+The dashboard is **bilingual and defaults to Arabic (RTL)**, with an EN/AR toggle in the
+header. Discovery captures whatever the page rendered, so Arabic reaches the data unless the
+UI is switched to English first. Any Arabic surviving into a document is therefore a capture
+artefact, not content, and the validator rejects it.
+
+Where the UI genuinely is bilingual — a governorate list reading `Alexandria — الإسكندرية` —
+keep the English half only. The option stays identifiable, and the fact that the UI has two
+languages is recorded once in the workflow's Notes rather than repeated in every row. That the
+UI is RTL in one of them is a test dimension in its own right, recorded, not captured twice.
+
+## Status must match the recorded execution
+
+The `Status` column and `execution-status-v1.json` are two records of the same fact, written
+by different tools: the generators author the table, the run recorder writes the JSON. They
+must agree, and the validator enforces it.
+
+`execution-status-v1.json` is the source of truth — it is written from an actual run report,
+whereas the table's value is only ever a default until something is executed. Repair drift
+with:
+
+```
+node scripts/eptts-sync-testcase-status.js --write
+```
+
+which also fills the `Attachment` column for every `Fail` from the bug reports themselves.
+
+**A bug states the cases it covers**, either in a table row or on a `**Covers test cases:**`
+line. That is what puts a reference into a failing row's Attachment. A bug that merely
+*mentions* a case in prose ("related, already filed for `TC_COMM_003`") is not claiming to
+cover it — treating a mention as coverage attaches the wrong bug to a failing row, which is
+worse than attaching none.
+
+This rule exists because the two records silently diverged across 299 rows: the tables read
+`Under Testing` for cases that had real verdicts, so the file a person actually opens was the
+one telling them nothing had been tested.
+
 ## Style rules
 
 **Steps** are a numbered list on a single line inside the cell:

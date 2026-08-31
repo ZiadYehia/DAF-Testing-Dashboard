@@ -36,7 +36,7 @@ The authoritative product catalogue: GTIN, name, manufacturer, MAH GLN, unit pri
 | ✏️ | Button / action | — |
 | 🚫 | Button / action | — |
 | 📜 | Button / action | — |
-| lang-switch | select | options: English, العربية |
+| lang-switch | select | options: English, Arabic |
 | f-search | input | Search GTIN, name, manufacturer |
 | f-status | select | options: All statuses, Active, Suspended, Expired, Revoked, Pending approval |
 | f-disp | select | options: Any dispense, Full pack, Partial |

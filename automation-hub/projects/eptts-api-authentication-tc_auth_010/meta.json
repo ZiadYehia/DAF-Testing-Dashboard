@@ -10,8 +10,18 @@
     "testcaseId": "TC_AUTH_010"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "never_run",
-  "runs": [],
+  "lastStatus": "pass",
+  "runs": [
+    {
+      "ts": "2026-08-31T22-30-35-141Z",
+      "status": "pass",
+      "durationMs": 813.177,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: no password field: a half-supplied credential should be rejected, not ignored"
+    }
+  ],
   "tags": [
     "api",
     "readonly",

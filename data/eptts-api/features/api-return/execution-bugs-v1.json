@@ -1,0 +1,9 @@
+{
+  "TS_RTN_007": "empty-required-lists-are-accepted-across-shipping-receiving-and-both-return-legs",
+  "TS_RTN_009": "empty-required-lists-are-accepted-across-shipping-receiving-and-both-return-legs",
+  "TS_RTN_012": "custody-rules-not-enforced-return-to-a-non-supplier-and-shipping-to-an-unregistered",
+  "TS_RTN_021": "duplicate-and-cross-container-epc-references-are-accepted-across-packing-unpacking",
+  "TS_RTN_025": "empty-required-lists-are-accepted-across-shipping-receiving-and-both-return-legs",
+  "TS_RTN_032": "event-timestamps-are-not-validated-empty-and-malformed-eventtime-and-eventtimezo",
+  "TS_RTN_033": "event-timestamps-are-not-validated-empty-and-malformed-eventtime-and-eventtimezo"
+}

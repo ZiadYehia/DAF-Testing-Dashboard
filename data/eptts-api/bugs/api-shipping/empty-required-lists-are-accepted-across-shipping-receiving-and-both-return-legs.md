@@ -21,13 +21,14 @@ An EPCIS event whose required list is present but **empty** is accepted and repo
 `S - Successful`. It is not rejected synchronously, and `MsgStatusQuery` reports the message
 and every event inside it as processed.
 
-Confirmed on 8 cases across 4 features in a single clean run (no infrastructure failures):
+Confirmed on 9 cases across 5 features in a single clean run (no infrastructure failures):
 
 | Case | Feature | Empty list |
 |---|---|---|
 | `TC_SHIP_007` | Shipping | `sourceList` |
 | `TC_SHIP_021` | Shipping | `bizTransactionList` |
 | `TS_RECV_007` | Receiving | `sourceList` |
+| `TC_DEST_005` | Destruction | `epcList` |
 | `TS_RTRV_006` | Return Receiving | `sourceList` |
 | `TS_RTRV_010` | Return Receiving | `epcList` |
 | `TS_RTN_007` | Return Shipping | `sourceList` |
@@ -53,6 +54,8 @@ Each produces a record that looks valid, reports success, and is unusable for tr
 which is the one thing this system exists to provide. A silent accept is worse than a reject
 here, because nothing downstream ever learns the data is meaningless.
 ---
+**Covers test cases:** `TC_SHIP_007`, `TC_SHIP_021`, `TS_RECV_007`, `TS_RTRV_006`, `TS_RTRV_010`, `TS_RTN_007`, `TS_RTN_009`, `TS_RTN_025`, `TC_DEST_005`
+
 **Steps to Reproduce:**
 1. Connect the Citrix VPN and authenticate as the manufacturer against
    `POST :8445/registry-service/api/v1/auth`.

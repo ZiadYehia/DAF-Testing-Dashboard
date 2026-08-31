@@ -1,0 +1,7 @@
+{
+  "TS_RTRV_006": "empty-required-lists-are-accepted-across-shipping-receiving-and-both-return-legs",
+  "TS_RTRV_010": "empty-required-lists-are-accepted-across-shipping-receiving-and-both-return-legs",
+  "TS_RTRV_029": "disposition-is-checked-for-presence-but-not-validated-against-the-cbv-vocabulary",
+  "TS_RTRV_030": "event-timestamps-are-not-validated-empty-and-malformed-eventtime-and-eventtimezo",
+  "TS_RTRV_031": "event-timestamps-are-not-validated-empty-and-malformed-eventtime-and-eventtimezo"
+}

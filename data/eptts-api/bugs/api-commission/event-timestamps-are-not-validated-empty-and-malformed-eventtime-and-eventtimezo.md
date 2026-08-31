@@ -29,6 +29,8 @@ For a track-and-trace platform this is the most consequential of the validation 
 
 Contrast with the fields that ARE validated well: `readPoint.id` and `bizLocation.id` are checked for presence and for canonical SGLN form, `schemaVersion` is pinned to "2.0", and lot numbers are allow-listed.
 ---
+**Covers test cases:** `TC_COMM_025`, `TC_COMM_026`, `TC_COMM_027`, `TC_COMM_028`, `TC_DEST_019`, `TC_DEST_020`, `TS_RECV_029`, `TS_RECV_030`, `TS_RTN_032`, `TS_RTN_033`, `TS_RTRV_030`, `TS_RTRV_031`, `TC_SHIP_025`, `TC_SHIP_026`, `TC_SHIP_039`
+
 **Steps to Reproduce:**
 1. Authenticate as the manufacturer.
 2. Build a valid commissioning document for a fresh SGTIN.

@@ -34,6 +34,8 @@ guessing at an unlabelled control on the shipping screen is a real risk, not a p
 Found during a systematic sidebar discovery pass, not while testing this page specifically —
 so it is worth checking whether other recently-added controls have the same gap.
 ---
+**Covers test case:** `WEB_SHP_001`
+
 **Steps to Reproduce:**
 1. Connect the Citrix VPN and open https://192.168.225.195:8444.
 2. Log in as admin@devsim.local.

@@ -29,7 +29,7 @@ Lists a MAH's packing operations that have not yet been invoiced, loaded by MAH 
 | ⚙️ Configuration | Button / action | — |
 | Logout | Button / action | — |
 | Load dues | Button / action | — |
-| lang-switch | select | options: English, العربية |
+| lang-switch | select | options: English, Arabic |
 | dues-gln | input | MAH GLN (13 digits) |
 
 ## Happy Path

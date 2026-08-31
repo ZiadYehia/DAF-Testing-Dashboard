@@ -44,6 +44,8 @@ Worth checking as part of a fix whether the receiving side has the mirror gap: i
 unregistered or unrelated GLN can also *accept* stock, the chain can be closed in both
 directions without either party being entitled to the goods.
 ---
+**Covers test cases:** `TC_SHIP_036`, `TS_RTN_012`
+
 **Steps to Reproduce:**
 
 *TC_SHIP_036 — unregistered destination*

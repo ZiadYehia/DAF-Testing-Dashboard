@@ -38,7 +38,7 @@ Price-band table driving per-unit fees (from-price, to-price, fee per unit). Cha
 | Save bands | Button / action | — |
 | ↻ Re-sync product catalog | Button / action | — |
 | Save | Button / action | — |
-| lang-switch | select | options: English, العربية |
+| lang-switch | select | options: English, Arabic |
 | c-mode | select | options: Off — no billing interaction, Shadow — record only (no invoices, no block), Advisory — invoices visible, no block, Enforce — block shipping on unpaid clearance |
 | (unlabelled) | input[number] | — |
 | e.g. 10 | input[number] | e.g. 10 |

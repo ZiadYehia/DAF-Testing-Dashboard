@@ -48,6 +48,8 @@ about whether one or two units left the supply chain.
 Like the empty-list defect, the spread across five unrelated features points at the shared
 EPCIS event validator rather than any single handler.
 ---
+**Covers test cases:** `TS_PACK_009`, `TS_PACK_011`, `TS_UNPK_005`, `TC_DEST_008`, `TS_RECV_015`, `TS_RTN_021`
+
 **Steps to Reproduce:**
 1. Connect the Citrix VPN and authenticate as the manufacturer.
 2. Commission two packs and pack them into an SSCC so a valid aggregation exists.

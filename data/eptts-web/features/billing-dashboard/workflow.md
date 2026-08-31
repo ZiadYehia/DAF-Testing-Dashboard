@@ -29,7 +29,7 @@ Billing portal landing view - loads a MAH's outstanding dues by GLN.
 | ⚙️ Configuration | Button / action | — |
 | Logout | Button / action | — |
 | Load dues | Button / action | — |
-| lang-switch | select | options: English, العربية |
+| lang-switch | select | options: English, Arabic |
 | dues-gln | input | MAH GLN (13 digits) |
 
 ## Happy Path

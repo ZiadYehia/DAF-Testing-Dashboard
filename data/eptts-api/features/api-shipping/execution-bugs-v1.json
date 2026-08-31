@@ -1,0 +1,8 @@
+{
+  "TC_SHIP_007": "empty-required-lists-are-accepted-across-shipping-receiving-and-both-return-legs",
+  "TC_SHIP_021": "empty-required-lists-are-accepted-across-shipping-receiving-and-both-return-legs",
+  "TC_SHIP_025": "event-timestamps-are-not-validated-empty-and-malformed-eventtime-and-eventtimezo",
+  "TC_SHIP_026": "event-timestamps-are-not-validated-empty-and-malformed-eventtime-and-eventtimezo",
+  "TC_SHIP_036": "custody-rules-not-enforced-return-to-a-non-supplier-and-shipping-to-an-unregistered",
+  "TC_SHIP_039": "event-timestamps-are-not-validated-empty-and-malformed-eventtime-and-eventtimezo"
+}

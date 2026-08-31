@@ -34,7 +34,7 @@ Issued invoices with piece counts, billing charge, e-service fee, total and paym
 | CSV | Button / action | — |
 | PDF | Button / action | — |
 | No more results | Button / action | — |
-| lang-switch | select | options: English, العربية |
+| lang-switch | select | options: English, Arabic |
 | f-search | input | Invoice #, idempotency key, external ref |
 | f-status | select | options: All statuses, Pending, Paid, Cancelled, Overdue |
 | f-gln | input | MAH GLN |

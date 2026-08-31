@@ -10,8 +10,17 @@
     "testcaseId": "TC_DEST_009"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "never_run",
-  "runs": [],
+  "lastStatus": "pass",
+  "runs": [
+    {
+      "ts": "2026-08-31T22-43-04-373Z",
+      "status": "pass",
+      "durationMs": 22485.217,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true
+    }
+  ],
   "tags": [
     "api",
     "destructive"

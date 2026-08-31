@@ -36,15 +36,15 @@ Pharmacy onboarding form - the widest input surface in the product (25 fields), 
 | 📍 Use my current location | Button / action | — |
 | Cancel | Button / action | — |
 | Register pharmacy | Button / action | — |
-| lang-switch | select | options: English, العربية |
+| lang-switch | select | options: English, Arabic |
 | rp-gln | input | 13 digits |
 | rp-prefix | input | 4–12 digits |
 | rp-name | input | — |
 | rp-name-ar | input | — |
 | rp-popular | input | signboard name (optional) |
-| rp-popular-ar | input | اسم اللافتة (اختياري) |
+| rp-popular-ar | input | Signage name in Arabic (optional) |
 | rp-area | select | options: — select — |
-| rp-governorate | select | options: — select —, Alexandria — الإسكندرية, Aswan — أسوان, Asyut — أسيوط, Beheira — البحيرة, Beni Suef — بني سويف, Cairo — القاهرة, Dakahlia — الدقهلية |
+| rp-governorate | select | options: — select —, Alexandria, Aswan, Asyut, Beheira, Beni Suef, Cairo, Dakahlia|
 | rp-district | select | options: — select — |
 | rp-phone | input | — |
 | rp-address | textarea | — |

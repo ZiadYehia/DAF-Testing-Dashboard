@@ -1,0 +1,6 @@
+{
+  "TC_DEST_005": "empty-required-lists-are-accepted-across-shipping-receiving-and-both-return-legs",
+  "TC_DEST_008": "duplicate-and-cross-container-epc-references-are-accepted-across-packing-unpacking",
+  "TC_DEST_019": "event-timestamps-are-not-validated-empty-and-malformed-eventtime-and-eventtimezo",
+  "TC_DEST_020": "event-timestamps-are-not-validated-empty-and-malformed-eventtime-and-eventtimezo"
+}

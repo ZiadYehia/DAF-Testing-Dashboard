@@ -32,7 +32,7 @@ Revenue and billing reporting across MAHs and periods.
 | ⬇ Excel | Button / action | — |
 | ⬇ CSV | Button / action | — |
 | ⬇ PDF | Button / action | — |
-| lang-switch | select | options: English, العربية |
+| lang-switch | select | options: English, Arabic |
 | r-report | select | options: Invoice Register, Revenue Summary (by status), Revenue by Period, AR — Outstanding by MAH, Outstanding & Aging, Reconciliation (Invoices ↔ Payments), Payments, Billing Sheet Export |
 | r-status | input | Status (comma-sep: PENDING,PAID) |
 | r-gln | input | MAH GLN |

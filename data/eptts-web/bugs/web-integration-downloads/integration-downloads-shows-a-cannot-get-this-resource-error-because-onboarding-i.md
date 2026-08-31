@@ -44,6 +44,8 @@ a page calling an endpoint that does not exist — but a different page and a di
 path, so they need separate fixes. Worth checking whether other pages call endpoints from a
 stale API map; two instances of one pattern suggests more.
 ---
+**Covers test case:** `WEB_IDL_001`
+
 **Steps to Reproduce:**
 1. Connect the Citrix VPN and open https://192.168.225.195:8444.
 2. Log in as admin@devsim.local.

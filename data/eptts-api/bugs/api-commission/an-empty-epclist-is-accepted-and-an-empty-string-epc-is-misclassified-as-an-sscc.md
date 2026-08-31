@@ -24,6 +24,8 @@ Two related EPC-list defects:
 
 Note the same empty-eventList behaviour also exists one level up: a well-formed envelope whose `epcisBody.eventList` is `[]` is likewise accepted with 202 / I001.
 ---
+**Covers test cases:** `TC_COMM_004`
+
 **Steps to Reproduce:**
 1. Authenticate as the manufacturer.
 2. Build a valid commissioning document, then set the event's `epcList` to an empty array.

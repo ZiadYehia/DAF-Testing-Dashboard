@@ -142,11 +142,34 @@ const featureDirs = APPS.flatMap((app) => {
 let totalRows = 0
 const perFeature = []
 
+/**
+ * The Status column and execution-status-v1.json are two records of one fact, written by
+ * different tools — the generators author the table, the run recorder writes the JSON.
+ * Nothing kept them in step, and they silently diverged for 299 rows: the tables read
+ * `Under Testing` for cases that had real verdicts, so the file a human opens was the one
+ * saying nothing had been tested.
+ *
+ * Checked here so that can never be true again. `node scripts/eptts-sync-testcase-status.js
+ * --write` repairs it.
+ */
+const EXEC_TO_STATUS = {
+  pass: 'Pass',
+  fail: 'Fail',
+  blocked: 'Blocked/Skipped',
+  new_added: 'Under Testing',
+}
+
+/** Arabic (and any Arabic-Supplement) codepoints. */
+const NON_ENGLISH = /[؀-ۿݐ-ݿ]/
+
 for (const { app, feature } of featureDirs) {
   const FEATURES = featuresDir(app)
   const file = `${feature}-testcases.md`
   const md = fs.readFileSync(path.join(FEATURES, feature, file), 'utf8')
   const { header, rows } = parseTable(md)
+
+  const execPath = path.join(FEATURES, feature, 'execution-status-v1.json')
+  const exec = fs.existsSync(execPath) ? JSON.parse(fs.readFileSync(execPath, 'utf8')) : {}
 
   if (!header) { add(file, '-', 'no table found'); continue }
   if (header.length !== 13) add(file, '-', `header has ${header.length} columns, expected 13`)
@@ -193,8 +216,27 @@ for (const { app, feature } of featureDirs) {
     }
 
     if (!STATUS.includes(status)) add(file, tc, `Status "${status}" is not one of ${STATUS.join(' / ')}`)
+
+    // The table must agree with what was actually recorded for this case.
+    const recorded = exec[tc]
+    if (recorded && EXEC_TO_STATUS[recorded] && EXEC_TO_STATUS[recorded] !== status) {
+      add(file, tc,
+        `Status "${status}" disagrees with the recorded execution "${recorded}" ` +
+        `(expected "${EXEC_TO_STATUS[recorded]}") — run scripts/eptts-sync-testcase-status.js --write`)
+    }
+
+    // Documentation is written in English. The dashboard is bilingual and defaults to
+    // Arabic, so any Arabic here is a capture artefact from discovery, not content.
+    for (const [colName, cell] of [
+      ['Title', title], ['Pre-condition', pre], ['Test Data', data],
+      ['Steps', steps], ['Expected Results', expected],
+    ]) {
+      if (NON_ENGLISH.test(cell)) add(file, tc, `${colName} contains non-English text — test cases are written in English`)
+    }
     // A failing case must name its cause: a Jira key, or a draft bug filed in-repo.
-    const isDraftRef = /^draft:[a-z0-9-]+$/.test(attachment)
+    // One or more space-separated refs — the rules allow several (a case can be covered
+    // by more than one filed bug), exactly as they do for DW-### keys.
+    const isDraftRef = /^draft:[a-z0-9-]+( draft:[a-z0-9-]+)*$/.test(attachment)
     if (status === 'Fail' && !/DW-\d+/.test(attachment) && !isDraftRef) {
       add(file, tc, 'Status is Fail but Attachment carries no DW-### key and no draft:<bug-slug> reference')
     }

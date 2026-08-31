@@ -1,0 +1,7 @@
+{
+  "TS_RECV_007": "empty-required-lists-are-accepted-across-shipping-receiving-and-both-return-legs",
+  "TS_RECV_015": "duplicate-and-cross-container-epc-references-are-accepted-across-packing-unpacking",
+  "TS_RECV_028": "disposition-is-checked-for-presence-but-not-validated-against-the-cbv-vocabulary",
+  "TS_RECV_029": "event-timestamps-are-not-validated-empty-and-malformed-eventtime-and-eventtimezo",
+  "TS_RECV_030": "event-timestamps-are-not-validated-empty-and-malformed-eventtime-and-eventtimezo"
+}

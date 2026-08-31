@@ -42,6 +42,8 @@ re-commissioned, and re-commissioning with a different expiry is accepted"* (`TC
 `TC_COMM_012`). That is the same missing already-in-this-state check on a third feature, which
 suggests the guard is absent generally rather than in the aggregation handler specifically.
 ---
+**Covers test cases:** `TS_PACK_016`, `TS_UNPK_011`
+
 **Steps to Reproduce:**
 1. Connect the Citrix VPN and authenticate as the manufacturer.
 2. Commission a pack and aggregate it into a fresh SSCC. Poll to `S - Successful`.

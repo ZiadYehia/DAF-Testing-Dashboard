@@ -1,8 +1,3 @@
 {
-  "TC_DISP_002": "Passes against the platform's real behaviour, which DISAGREES with the source sheet. The sheet marks multi-EPC dispensing positive; the platform refuses it — \"Dispense event must contain exactly 1 EPC, got 3\". That is defensible: a dispense is recorded against one prescription line, so one event per pack keeps it attributable. The case now asserts the refusal, that the refused batch did not partially apply, and that one-per-request still works. Worth confirming with the PO that one-per-request is intended rather than a limit.",
-  "TC_DISP_009": "needs expired stock at the pharmacy; commissioning with a past expiry is itself refused, so the state cannot be built through the API",
-  "TC_DISP_018": "Previously a known platform gap; the platform now behaves correctly. Remove the expected-failure marker for this case in automation-hub/lib/eptts-cases/.",
-  "TC_DISP_022": "Previously a known platform gap; the platform now behaves correctly. Remove the expected-failure marker for this case in automation-hub/lib/eptts-cases/.",
-  "TC_DISP_023": "Previously a known platform gap; the platform now behaves correctly. Remove the expected-failure marker for this case in automation-hub/lib/eptts-cases/.",
-  "TC_DISP_024": "Previously a known platform gap; the platform now behaves correctly. Remove the expected-failure marker for this case in automation-hub/lib/eptts-cases/."
+  "TC_DISP_009": "needs expired stock at the pharmacy; commissioning with a past expiry is itself refused, so the state cannot be built through the API"
 }

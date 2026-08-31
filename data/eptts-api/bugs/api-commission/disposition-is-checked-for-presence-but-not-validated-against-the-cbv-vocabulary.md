@@ -22,6 +22,8 @@ A commissioning event with `disposition: "teleported"` is accepted and processed
 
 The same gap should be checked for `bizStep`, which is also a CBV-controlled field.
 ---
+**Covers test cases:** `TC_COMM_034`, `TS_RECV_028`, `TS_RTRV_029`
+
 **Steps to Reproduce:**
 1. Authenticate as the manufacturer.
 2. Build a valid commissioning document for a fresh SGTIN.

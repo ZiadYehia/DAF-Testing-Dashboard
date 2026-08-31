@@ -1,0 +1,5 @@
+{
+  "TS_PACK_009": "duplicate-and-cross-container-epc-references-are-accepted-across-packing-unpacking",
+  "TS_PACK_011": "duplicate-and-cross-container-epc-references-are-accepted-across-packing-unpacking",
+  "TS_PACK_016": "identical-packing-and-unpacking-requests-are-accepted-twice-with-no-idempotency"
+}

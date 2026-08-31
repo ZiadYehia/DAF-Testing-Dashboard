@@ -24,6 +24,8 @@ Worse, re-commissioning the same SGTIN with a **different expiry date** also suc
 
 The source test suite recorded TC_COMM_003 as a *Positive* case expecting the pack to "stay Commissioned". A reviewer had already flagged that as wrong in the spreadsheet — *"How is that positive? system should reject an already commissioned pack"* — and that reviewer is correct.
 ---
+**Covers test cases:** `TC_COMM_003`, `TC_COMM_012`
+
 **Steps to Reproduce:**
 1. Authenticate as the manufacturer (POST /registry-service/api/v1/auth with a valid apikey).
 2. POST /masar-service/api/v1/scp/SendEPCIS with a valid commissioning event for a fresh SGTIN, lot ZTG-TEST, expiry 2030-12-31.

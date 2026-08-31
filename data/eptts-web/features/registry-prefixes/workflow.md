@@ -33,7 +33,7 @@ GS1 Company Prefixes and their owning GLN. The GCP length here determines how ev
 | ⬆️ Bulk upload (JSON) | Button / action | — |
 | ✅ Activate All | Button / action | — |
 | Load more | Button / action | — |
-| lang-switch | select | options: English, العربية |
+| lang-switch | select | options: English, Arabic |
 | f-search | input | Search prefix, owner GLN |
 | f-owner | input | Filter by owner GLN (exact) |
 | Table 1 | Table | columns: PREFIX, OWNER GLN, GCP LENGTH, STATUS, SYNCED |

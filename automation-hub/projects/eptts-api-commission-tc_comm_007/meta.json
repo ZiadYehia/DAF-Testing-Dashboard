@@ -10,8 +10,17 @@
     "testcaseId": "TC_COMM_007"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "never_run",
-  "runs": [],
+  "lastStatus": "pass",
+  "runs": [
+    {
+      "ts": "2026-08-31T22-32-09-490Z",
+      "status": "pass",
+      "durationMs": 11677.283000000001,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true
+    }
+  ],
   "tags": [
     "api",
     "write"

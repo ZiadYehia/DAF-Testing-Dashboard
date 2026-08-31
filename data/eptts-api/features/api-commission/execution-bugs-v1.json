@@ -1,0 +1,10 @@
+{
+  "TC_COMM_003": "an-already-commissioned-sgtin-can-be-re-commissioned-and-re-commissioning-with-a",
+  "TC_COMM_004": "an-empty-epclist-is-accepted-and-an-empty-string-epc-is-misclassified-as-an-sscc",
+  "TC_COMM_012": "an-already-commissioned-sgtin-can-be-re-commissioned-and-re-commissioning-with-a",
+  "TC_COMM_025": "event-timestamps-are-not-validated-empty-and-malformed-eventtime-and-eventtimezo",
+  "TC_COMM_026": "event-timestamps-are-not-validated-empty-and-malformed-eventtime-and-eventtimezo",
+  "TC_COMM_027": "event-timestamps-are-not-validated-empty-and-malformed-eventtime-and-eventtimezo",
+  "TC_COMM_028": "event-timestamps-are-not-validated-empty-and-malformed-eventtime-and-eventtimezo",
+  "TC_COMM_034": "disposition-is-checked-for-presence-but-not-validated-against-the-cbv-vocabulary"
+}

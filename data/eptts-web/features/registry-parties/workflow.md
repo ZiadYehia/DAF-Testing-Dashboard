@@ -36,7 +36,7 @@ The authoritative trade-party register - every manufacturer, distributor, branch
 | ✏️ | Button / action | — |
 | 👥 Accounts | Button / action | — |
 | 🔑 B2B Key | Button / action | — |
-| lang-switch | select | options: English, العربية |
+| lang-switch | select | options: English, Arabic |
 | f-search | input | Search GLN, name |
 | f-status | select | options: All statuses, Active, Suspended, Expired, Revoked, Pending approval, Blocked |
 | f-type | select | options: All types, Manufacturer, Distributor, Branch, Pharmacy |

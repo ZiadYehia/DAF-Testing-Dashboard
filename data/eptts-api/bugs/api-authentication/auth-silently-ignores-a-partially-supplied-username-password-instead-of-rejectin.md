@@ -30,6 +30,8 @@ This is a validation gap, not an authorization hole: a valid API key remains man
 
 The source suite expected 400 for these four cases (TC_AUTH_007–TC_AUTH_010).
 ---
+**Covers test cases:** `TC_AUTH_007`, `TC_AUTH_008`, `TC_AUTH_009`, `TC_AUTH_010`
+
 **Steps to Reproduce:**
 1. POST https://192.168.225.195:8445/registry-service/api/v1/auth with header apikey: <valid manufacturer key> and body {"username":"x@y.invalid","password":"wrong"}. Observe 401.
 2. Repeat with body {"username":"","password":"x"}. Observe the status.
