@@ -1,0 +1,99 @@
+{
+  "slug": "eptts-web",
+  "baseUrlEnv": "EPTTS_WEB_BASE_URL",
+  "credentialEnvs": [
+    "EPTTS_WEB_ADMIN_USERNAME",
+    "EPTTS_WEB_ADMIN_PASSWORD"
+  ],
+  "_notes": [
+    "Keycloak OIDC (realm masar, client masar-dashboard, Authorization Code + PKCE). The direct",
+    "password grant is disabled, so the real form has to be driven.",
+    "",
+    "Step 2 settles the race between 'the login form appeared' and 'we were already signed in",
+    "via the SSO cookie'. `goto` resolves on domcontentloaded, before Keycloak renders, so",
+    "without it every onlyIfVisible step below sees nothing, skips, and the flow finishes still",
+    "sitting on the auth page having done nothing. The selector lists both outcomes and the",
+    "runner takes the first match.",
+    "",
+    "THE LAST TWO STEPS SWITCH THE UI TO ENGLISH, AND THEY MATTER.",
+    "The dashboard is bilingual and DEFAULTS TO ARABIC (dir=rtl, lang=ar). The choice is kept in",
+    "localStorage under `lang`, which Playwright's storageState captures - so switching here, once,",
+    "in the cached login state, means every spec that reuses that state starts in English. Verified:",
+    "a fresh context built from the saved state opens /shipments with dir=ltr and lang=en.",
+    "",
+    "Doing it per-spec instead would be both slower and unreliable, since a spec that forgot would",
+    "silently look for English text on an Arabic page and fail somewhere unrelated to its subject.",
+    "",
+    "Every step is onlyIfVisible so the flow is idempotent: run against an already-authenticated",
+    "session, or one already in English, and it becomes a no-op rather than an error.",
+    "",
+    "The final waitForVisible is the assertion. Once English is active the toggle reads AR, so",
+    "seeing an AR button is proof the switch actually happened rather than a hope that it did."
+  ],
+  "login": [
+    {
+      "action": "goto",
+      "url": "{base}/"
+    },
+    {
+      "action": "waitForVisible",
+      "locator": {
+        "kind": "css",
+        "value": "#username, nav, aside, [class*=\"layout-menu\"]"
+      },
+      "timeoutMs": 45000
+    },
+    {
+      "action": "fill",
+      "locator": {
+        "kind": "id",
+        "value": "username"
+      },
+      "value": "{env:EPTTS_WEB_ADMIN_USERNAME}",
+      "onlyIfVisible": true
+    },
+    {
+      "action": "fill",
+      "locator": {
+        "kind": "id",
+        "value": "password"
+      },
+      "value": "{env:EPTTS_WEB_ADMIN_PASSWORD}",
+      "onlyIfVisible": true
+    },
+    {
+      "action": "click",
+      "locator": {
+        "kind": "id",
+        "value": "kc-login"
+      },
+      "onlyIfVisible": true
+    },
+    {
+      "action": "waitForVisible",
+      "locator": {
+        "kind": "css",
+        "value": "nav, aside, [class*=\"layout-menu\"]"
+      },
+      "timeoutMs": 45000
+    },
+    {
+      "action": "click",
+      "locator": {
+        "kind": "role",
+        "value": "button",
+        "name": "EN"
+      },
+      "onlyIfVisible": true
+    },
+    {
+      "action": "waitForVisible",
+      "locator": {
+        "kind": "role",
+        "value": "button",
+        "name": "AR"
+      },
+      "timeoutMs": 20000
+    }
+  ]
+}

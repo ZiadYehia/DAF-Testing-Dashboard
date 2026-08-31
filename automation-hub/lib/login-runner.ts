@@ -60,7 +60,7 @@ async function runStep(page: Page, step: LoginStep, ctx: RunCtx): Promise<void> 
     }
 
     case 'click': {
-      const locator = resolveLocator(page, step.locator, ctx)
+      const locator = resolveLocator(page, step.locator, ctx).first()
       if (step.onlyIfVisible && !(await locator.isVisible())) return
 
       if (step.retryOnFlake && step.expectAnyVisible && step.expectAnyVisible.length > 0) {
@@ -82,7 +82,7 @@ async function runStep(page: Page, step: LoginStep, ctx: RunCtx): Promise<void> 
     }
 
     case 'fill': {
-      const locator = resolveLocator(page, step.locator, ctx)
+      const locator = resolveLocator(page, step.locator, ctx).first()
       if (step.onlyIfVisible && !(await locator.isVisible())) return
       await locator.fill(resolveText(step.value, ctx))
       return
@@ -95,7 +95,11 @@ async function runStep(page: Page, step: LoginStep, ctx: RunCtx): Promise<void> 
     }
 
     case 'waitForVisible': {
-      const locator = resolveLocator(page, step.locator, ctx)
+      // `.first()` so a step can wait for ANY of several alternatives — e.g. a CSS selector
+      // listing both the login form and the app shell, to settle "are we already signed in?"
+      // without knowing the answer in advance. Without it a multi-match locator is a strict-
+      // mode violation, and a login flow cannot express "whichever of these appears".
+      const locator = resolveLocator(page, step.locator, ctx).first()
       await locator.waitFor({ state: 'visible', timeout: step.timeoutMs ?? 15_000 })
       return
     }

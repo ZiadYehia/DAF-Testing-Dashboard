@@ -3,8 +3,13 @@
  * Turn a Playwright JSON report from the API suite into execution status + notes.
  *
  * Usage:
- *   node scripts/eptts-api-record-api-results.js <report.json>            # dry run
- *   node scripts/eptts-api-record-api-results.js <report.json> --write
+ *   node scripts/eptts-record-run.js <report.json> --app eptts-api            # dry run
+ *   node scripts/eptts-record-run.js <report.json> --app eptts-web --write
+ *
+ * Works for either app: the API suite and the dashboard specs produce the same Playwright
+ * report shape, and both link a test title back to a case id the same way. `--app` is
+ * required rather than inferred — recording one app's results against another's features
+ * would silently write nothing and report success.
  *
  * WHY THIS IS NOT A ONE-LINER
  *
@@ -29,12 +34,26 @@ const fs = require('fs')
 const path = require('path')
 
 const REPO = path.join(__dirname, '..')
-const FEATURES = path.join(REPO, 'data', 'eptts-api', 'features')
+function argValue(flag) {
+  const i = process.argv.indexOf(flag)
+  if (i !== -1 && process.argv[i + 1] && !process.argv[i + 1].startsWith('--')) return process.argv[i + 1]
+  const inline = process.argv.find((a) => a.startsWith(`${flag}=`))
+  return inline ? inline.slice(flag.length + 1) : null
+}
+
+const APP = argValue('--app')
+if (!APP) {
+  console.error('required: --app <eptts-api|eptts-web>')
+  process.exit(1)
+}
+const FEATURES = path.join(REPO, 'data', APP, 'features')
 const WRITE = process.argv.includes('--write')
-const reportPath = process.argv.slice(2).find((a) => !a.startsWith('--'))
+// slice(3) skips the node/script argv and the --app value, which is also non-flag-shaped.
+const positional = process.argv.slice(2).filter((a, i, all) => !a.startsWith('--') && all[i - 1] !== '--app')
+const reportPath = positional[0]
 
 if (!reportPath || !fs.existsSync(reportPath)) {
-  console.error('usage: node scripts/eptts-api-record-api-results.js <report.json> [--write]')
+  console.error('usage: node scripts/eptts-record-run.js <report.json> --app <slug> [--write]')
   process.exit(1)
 }
 
@@ -108,11 +127,12 @@ const results = flatten(JSON.parse(fs.readFileSync(reportPath, 'utf8')))
 
 const featureOf = new Map()
 for (const dir of fs.readdirSync(FEATURES)) {
-  if (!dir.startsWith('api-')) continue
+  // Every feature dir, not just api-*: this recorder serves both apps now, and an app
+  // filter here would silently map nothing and still report success.
   const p = path.join(FEATURES, dir, `${dir}-testcases.md`)
   if (!fs.existsSync(p)) continue
   for (const line of fs.readFileSync(p, 'utf8').split('\n')) {
-    if (!line.startsWith('| EPTTS_API')) continue
+    if (!line.startsWith('| EPTTS_')) continue
     const id = line.split('|')[2].trim()
     if (id) featureOf.set(id, dir)
   }
@@ -216,7 +236,7 @@ if (infra.length) {
     `(5xx / connection / auth), which is not a verdict on the endpoint. Re-run these:`)
   console.log(`   ${infra.join(' ')}`)
   // Written where a re-run can consume it directly rather than being retyped.
-  const listPath = path.join(REPO, 'automation-hub', 'rerun-cases.txt')
+  const listPath = path.join(REPO, 'automation-hub', `rerun-cases-${APP}.txt`)
   if (WRITE) {
     fs.writeFileSync(listPath, infra.join('\n') + '\n')
     console.log(`\n   list written to ${path.relative(REPO, listPath)}`)
