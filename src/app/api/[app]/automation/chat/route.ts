@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getApp } from '@/lib/apps'
 import { guardApp } from '@/lib/auth'
 import { getSetting } from '@/lib/settings'
 import { isFeatureEnabled } from '@/lib/ai-config'
@@ -38,6 +39,17 @@ export async function POST(
   const sessionId: string | undefined = body?.sessionId || undefined
 
   if (!message) return NextResponse.json({ error: 'A message is required' }, { status: 400 })
+
+  // MCP chat authoring drives a REAL browser session (engine/mcp-client.ts spawns
+  // playwright-mcp). An API app has no UI to drive, so refuse here rather than let a
+  // stale client spin up a browser. Gated on the APP, not body.engine, so a hand-crafted
+  // request cannot bypass it.
+  if ((await getApp(app))?.type === 'api') {
+    return NextResponse.json(
+      { error: 'Chat authoring drives a live browser and is not available for API apps. Create the project and edit its spec directly.' },
+      { status: 400 },
+    )
+  }
   // Authoring needs Claude's tool-use loop — reject non-Claude models up front.
   if (!sessionId && !model.startsWith('claude')) {
     return NextResponse.json({ error: 'Authoring requires a Claude model' }, { status: 400 })

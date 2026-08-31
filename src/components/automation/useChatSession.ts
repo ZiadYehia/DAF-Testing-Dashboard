@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import type { AutomationEngine } from '@automation-hub/types'
 
 export interface ChatTool { tool: string; ok: boolean }
 export interface ChatMsg {
@@ -10,7 +11,7 @@ export interface ChatMsg {
 interface UseChatSessionParams {
   base: string
   chatModel: string
-  lockedEngine: 'playwright' | 'appium' | null
+  lockedEngine: AutomationEngine | null
   /** Called once a chat session has been generated & saved as a replayable automation. */
   onSaved: (name: string, pyWarning?: string) => void | Promise<void>
 }
@@ -39,8 +40,13 @@ export function useChatSession({ base, chatModel, lockedEngine, onSaved }: UseCh
   const chatScrollRef = useRef<HTMLDivElement>(null)
 
   // Force chat authoring onto the app's locked engine (registry loads async).
+  //
+  // Only the two BROWSER/DEVICE engines are chat-authorable — there is no api authoring
+  // client, and `chatEngine` is deliberately kept to that narrower pair so the request body
+  // built in sendChat cannot claim an engine the MCP layer has no session type for. An API
+  // app never reaches here anyway: AutomationHub hides the chat tab for it.
   useEffect(() => {
-    if (lockedEngine) setChatEngine(lockedEngine)
+    if (lockedEngine === 'playwright' || lockedEngine === 'appium') setChatEngine(lockedEngine)
   }, [lockedEngine])
 
   useEffect(() => {

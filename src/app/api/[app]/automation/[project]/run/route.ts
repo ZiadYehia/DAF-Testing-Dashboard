@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { engineFamily } from '@automation-hub/types'
 import { guardApp } from '@/lib/auth'
 import { getProject } from '@automation-hub/store'
 import { runProject as runPlaywright, isRunning as isRunningPlaywright } from '@automation-hub/engine/runner'
@@ -25,7 +26,9 @@ export async function POST(
   if (!detail) {
     return NextResponse.json({ error: 'Project not found' }, { status: 404 })
   }
-  const isAppiumProject = detail.engine === 'appium'
+  // engineFamily, not `=== 'appium'`: the 'api' engine is Playwright-family (it runs on
+  // the Playwright runner, browserless), so it must dispatch to runPlaywright.
+  const isAppiumProject = engineFamily(detail.engine) === 'appium'
   if ((isAppiumProject ? isRunningAppium : isRunningPlaywright)(project)) {
     return NextResponse.json({ error: 'A run is already in progress' }, { status: 409 })
   }

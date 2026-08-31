@@ -1,0 +1,22 @@
+{
+  "name": "eptts-api-commission-tc_comm_026",
+  "title": "TC_COMM_026 — commissioning with a non-ISO-8601 eventTime is refused",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TC_COMM_026",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "api-commission",
+    "testcaseId": "TC_COMM_026"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "write",
+    "known-gap"
+  ],
+  "folder": "EPTTS APIs / api-commission",
+  "engine": "playwright"
+}

@@ -12,6 +12,7 @@ import { getApprovedExamplesForPrompt } from './approved-examples'
 import { getModule } from './modules'
 import { getBugFormat } from './bug-format-server'
 import { BUG_TYPE_OPTIONS, type BugLayer, type BugVariant, type BugVariantConfig, type BugFormatConfig } from './bug-format'
+import { normalizeBugBody } from './bug-body'
 import { getCrFormat } from './cr-format-server'
 import type { CrFormatConfig, CrParentType } from './cr-format'
 import { getDataRoot } from './paths'
@@ -376,31 +377,32 @@ async function buildBugSystemPrompt(
   const appName = app ? `${app.name} (${app.description})` : appSlug
   const featureList = features.length > 0 ? features.join(', ') : 'not available'
 
-  // Body section list is assembled from the enabled toggles, in template order.
-  const bodySections: string[] = [
-    'summary paragraph(s)',
-    '---separator',
-    '**Steps to Reproduce:**',
-    '---separator',
-    '**Expected Result:**',
-    '---separator',
-    '**Actual Result:**',
+  // Body blocks are assembled from the enabled toggles, in template order, then
+  // joined by a divider with a blank line on each side. Showing the model the
+  // real layout (rather than a comma-separated list of section names) is what
+  // keeps the blank lines around every '---' — without them CommonMark reads the
+  // divider as a setext heading underline and swallows the line above it.
+  const bodyBlocks: string[] = [
+    '<one to three paragraphs describing what is broken, in what context, and why it matters>',
+    '**Steps to Reproduce:**\n1. <step>\n2. <step>\n3. Observe <what to look at>',
+    '**Expected Result:**\n<one clear sentence describing what should happen>',
+    '**Actual Result:**\n<one clear sentence describing what actually happens>',
   ]
   if (vc.fields.environment) {
-    bodySections.push(
-      '---separator',
-      `**Environment:** (use: ${settings?.bugEnvironment ?? 'Browser: <browser + version> | OS: <OS> | Environment: Design only — not yet implemented'})`
+    bodyBlocks.push(
+      `**Environment:**\n${settings?.bugEnvironment ?? 'Browser: <browser + version> | OS: <OS> | Environment: Design only — not yet implemented'}`
     )
   }
   if (vc.fields.priority) {
-    bodySections.push('---separator', '**Priority:**')
+    bodyBlocks.push(`**Priority:** <one of: ${format.priorityOptions.join(' | ')}>`)
   }
   if (vc.fields.severity) {
-    bodySections.push('---separator', '**Severity:**')
+    bodyBlocks.push(`**Severity:** <one of: ${format.severityOptions.join(' | ')}>`)
   }
   if (vc.fields.bugType) {
-    bodySections.push('---separator', '**Bug Type:**')
+    bodyBlocks.push('**Bug Type:** <the same value as the "bug_type" field>')
   }
+  const bodyTemplate = bodyBlocks.join('\n\n---\n\n')
 
   // JSON contract fields — priority/bug_type/severity are only present when the
   // app's bug format config has that field enabled.
@@ -418,7 +420,7 @@ async function buildBugSystemPrompt(
     jsonLines.push(`  "bug_type": "exactly one of: ${BUG_TYPE_OPTIONS.join(' | ')}"`)
   }
   jsonLines.push(
-    `  "body": "Full bug report body in markdown following the exact template. Body MUST include: ${bodySections.join(', ')}"`
+    `  "body": "Full bug report body in markdown, reproducing the Body Template above EXACTLY — same sections, same order, same bold headings, and every divider written as a line containing only --- with one blank line above it and one blank line below it. As a JSON string that means each section is joined by \\n\\n---\\n\\n (NEVER \\n---\\n)."`
   )
   jsonLines.push(
     `  "layer": "exactly one of: frontend | backend | unknown — frontend = UI rendering/layout/interaction issues; backend = API errors, wrong data, server/DB behavior; unknown = cannot be determined from the notes"`
@@ -437,6 +439,12 @@ ${bugFormatGuide || 'Use standard bug report format with: title, summary, steps 
 ## Available Features / Modules
 ${featureList}
 
+## Body Template
+
+The "body" field must reproduce this exact layout — these sections, in this order, with a \`---\` divider between every section and a blank line above and below each divider:
+
+${bodyTemplate}
+
 ## Output Requirements
 
 You MUST respond with ONLY a valid JSON object — no markdown fences, no explanation, just the JSON.
@@ -452,8 +460,11 @@ ${jsonLines.join(',\n')}
 - NEVER fabricate steps or data not mentioned in the user notes — infer only what is clearly contextual
 - NEVER assign P1 unless there is real data integrity, classification, or access-control risk
 - The "body" field must be valid markdown with all sections filled
+- Every section divider is a line containing ONLY --- , with exactly one blank line before it and one blank line after it — a --- placed directly under a line of text renders as a heading, not a divider, and is WRONG
+- NEVER add a divider before the first section or after the last one, and NEVER put two dividers in a row
+- Each bold section heading starts its own line; content that is not on the heading's own line begins on the line after a blank line
 - If the feature cannot be determined from the existing list, suggest a new short descriptive kebab-case name
-- If the embedded Bug Report Format guide above shows sections that differ from these Output Requirements, the Output Requirements win — the body must contain exactly the listed sections above, nothing more and nothing less
+- If the embedded Bug Report Format guide above shows sections that differ from these Body Template / Output Requirements, the Body Template wins — the body must contain exactly the sections in that template, nothing more and nothing less
 - Respond with ONLY the JSON object, nothing else`
 }
 
@@ -1054,6 +1065,11 @@ export async function generateBugReport(
     validate: makeBugReportValidator(vc),
   }, userId)
   onPhase?.({ label: 'Parsing response', detail: 'Validating AI output…', step: 3, total: 3 })
+  // The validator only checks that the sections are present — models still drop
+  // the blank lines around '---' (which turns the divider into a setext heading
+  // underline when rendered). Re-lay-out the body deterministically instead of
+  // trusting prompt compliance.
+  report.body = normalizeBugBody(report.body)
   // Never fail generation over a bad/missing layer classification — coerce silently.
   report.layer = report.layer === 'frontend' || report.layer === 'backend' ? report.layer : 'unknown'
   report.severity = vc.fields.severity ? (report.severity ?? '') : ''

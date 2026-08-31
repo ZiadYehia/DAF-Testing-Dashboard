@@ -1,0 +1,21 @@
+{
+  "name": "eptts-api-return-ts_rtn_016",
+  "title": "TS_RTN_016 — returning an SGTIN the branch does not hold is refused",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TS_RTN_016",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "api-return",
+    "testcaseId": "TS_RTN_016"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "write"
+  ],
+  "folder": "EPTTS APIs / api-return",
+  "engine": "playwright"
+}

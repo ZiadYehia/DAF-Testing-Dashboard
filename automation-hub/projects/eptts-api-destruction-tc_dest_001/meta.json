@@ -1,0 +1,21 @@
+{
+  "name": "eptts-api-destruction-tc_dest_001",
+  "title": "TC_DEST_001 — destroy a valid active SGTIN",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TC_DEST_001",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "api-destruction",
+    "testcaseId": "TC_DEST_001"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "destructive"
+  ],
+  "folder": "EPTTS APIs / api-destruction",
+  "engine": "playwright"
+}

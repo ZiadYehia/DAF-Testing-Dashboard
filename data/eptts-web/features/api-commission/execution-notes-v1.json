@@ -1,0 +1,10 @@
+{
+  "TC_COMM_003": "platform validation gap: re-commissioning an existing SGTIN succeeds",
+  "TC_COMM_004": "platform validation gap: an event with zero EPCs is accepted; the log even omits the \"Commission (Items)\" line",
+  "TC_COMM_012": "platform validation gap: re-commissioning with a different expiry succeeds",
+  "TC_COMM_025": "platform validation gap: an empty eventTime is accepted and processed successfully",
+  "TC_COMM_026": "platform validation gap: a non-ISO-8601 eventTime is accepted and processed successfully",
+  "TC_COMM_027": "platform validation gap: an empty eventTimeZoneOffset is accepted and processed successfully",
+  "TC_COMM_028": "platform validation gap: eventTimeZoneOffset +99:99 is accepted and processed successfully",
+  "TC_COMM_034": "platform validation gap: a disposition outside the CBV vocabulary is accepted (presence is checked, validity is not)"
+}

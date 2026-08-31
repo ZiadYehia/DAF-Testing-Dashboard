@@ -14,11 +14,12 @@ import {
 import {
   Bot, Play, Plus, Save, Trash2, Film, FileArchive, Loader2, CheckCircle2,
   XCircle, FlaskConical, MessageSquare, Tag, X, Folder, ChevronDown, ChevronRight,
-  Bug, Link2, Search,
+  Bug, Link2, Search, ArrowLeftRight, Download,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useModels } from '@/hooks/useModels'
 import { useApp } from '@/lib/use-apps'
+import { type AutomationEngine, isBrowserEngine } from '@automation-hub/types'
 import { AutomationBugDialog } from './AutomationBugDialog'
 import { SpecEditor } from './SpecEditor'
 import { useArtifactFiles } from './useArtifactFiles'
@@ -47,7 +48,7 @@ interface ProjectMeta {
   runs: RunRecord[]
   tags?: string[]
   folder?: string | null
-  engine?: 'playwright' | 'appium'
+  engine?: AutomationEngine
   appium?: { apkPath?: string; appPackage?: string; appActivity?: string; avd?: string; udid?: string; noReset?: boolean }
 }
 
@@ -95,11 +96,17 @@ export function AutomationHub({ app }: { app: string }) {
   const [folderDraft, setFolderDraft] = useState('')
 
   const base = `/api/${app}/automation`
-  // Web apps automate via Playwright only, mobile apps via Appium only —
-  // other types (desktop, unknown) keep the engine choice visible.
+  // Web apps automate via Playwright, mobile via Appium, API apps via the browserless
+  // `api` engine. Only `desktop`/unknown keeps the engine choice visible — for the rest,
+  // offering a choice invites picking one that cannot work against that app.
   const appConfig = useApp(app)
-  const lockedEngine: 'playwright' | 'appium' | null =
-    appConfig?.type === 'web' ? 'playwright' : appConfig?.type === 'mobile' ? 'appium' : null
+  const lockedEngine: AutomationEngine | null =
+    appConfig?.type === 'web' ? 'playwright'
+      : appConfig?.type === 'mobile' ? 'appium'
+        : appConfig?.type === 'api' ? 'api'
+          : null
+  // MCP chat drives a real browser, so it does not apply to an API app.
+  const chatAvailable = lockedEngine !== 'api'
 
   const loadList = useCallback(async () => {
     const res = await fetch(base)
@@ -658,9 +665,11 @@ export function AutomationHub({ app }: { app: string }) {
           <TabsTrigger value="automations">
             <FlaskConical /> Automations
           </TabsTrigger>
-          <TabsTrigger value="chat">
-            <MessageSquare /> MCP Chat
-          </TabsTrigger>
+          {chatAvailable && (
+            <TabsTrigger value="chat">
+              <MessageSquare /> MCP Chat
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* ── Automations ───────────────────────────────────────────────── */}
@@ -1064,7 +1073,12 @@ export function AutomationHub({ app }: { app: string }) {
                             <Button size="sm" variant="outline" onClick={() => setBugOpen(true)} className="h-7 gap-1.5 text-xs">
                               <Bug className="h-3.5 w-3.5" /> Report bug
                             </Button>
-                            {aiEnabled && detail.engine !== 'appium' && (
+                            {/* isBrowserEngine, not `!== 'appium'`: selfHeal routes to
+                                [project]/improve, whose codegen prompt mandates
+                                storageState + page objects. Applied to an API spec — often a
+                                two-line defineCase() shim onto the test-case registry — it
+                                would rewrite it into a browser test and break the link. */}
+                            {aiEnabled && isBrowserEngine(detail.engine) && (
                               <Button size="sm" variant="outline" onClick={selfHeal} disabled={healing || running} className="h-7 gap-1.5 text-xs">
                                 {healing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Bot className="h-3.5 w-3.5" />}
                                 {healing ? 'Fixing…' : 'Fix with AI'}
@@ -1080,10 +1094,16 @@ export function AutomationHub({ app }: { app: string }) {
                   {/* Spec editor — TypeScript (native) / Python (generated) */}
                   <Card>
                     <CardContent className="p-3">
-                      {detail.engine === 'appium' ? (
+                      {/* Non-browser engines (appium, api) get the flat single-file editor.
+                          The Tabs branch below is the browser POM surface: TS/Python tabs,
+                          page-object chips, framework files, AI revise — none of which
+                          applies without a browser. */}
+                      {!isBrowserEngine(detail.engine) ? (
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
-                            <p className="text-xs font-medium text-muted-foreground">test.appium.mjs</p>
+                            <p className="text-xs font-medium text-muted-foreground">
+                              {detail.engine === 'appium' ? 'test.appium.mjs' : 'test.spec.ts'}
+                            </p>
                             <Button size="sm" variant="outline" onClick={saveSpec} disabled={!dirty || saving} className="gap-1.5">
                               {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
                               {dirty ? 'Save' : 'Saved'}
@@ -1095,9 +1115,10 @@ export function AutomationHub({ app }: { app: string }) {
                             language="typescript"
                             height="260px"
                           />
-                          {/* No AI-assist row here yet — codegen.ts's revise path is
-                              Playwright-only (validates @playwright/test output); an
-                              Appium-aware revise path doesn't exist yet. */}
+                          {/* No AI-assist row: codegen.ts's revise path emits a
+                              Playwright-POM browser spec. There is no Appium-aware revise
+                              path, and for an API spec a revise would replace an
+                              APIRequestContext test with a browser one. */}
                         </div>
                       ) : (
                       <Tabs value={specLang} onValueChange={(v) => setSpecLang(v as 'ts' | 'py')}>
@@ -1179,6 +1200,23 @@ export function AutomationHub({ app }: { app: string }) {
                                      target="_blank" rel="noreferrer">
                                     <FileArchive className="h-3.5 w-3.5" /> View Trace
                                   </a>
+                                )}
+                                {/* API projects: the request/response viewer and the same
+                                    calls as an importable Postman collection. For a
+                                    202-then-poll API this is what a replay is actually for. */}
+                                {r.hasApiLog && (
+                                  <>
+                                    <a className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                                       href={`${base}/${selected}/runs/${r.ts}/api-log.html`}
+                                       target="_blank" rel="noreferrer">
+                                      <ArrowLeftRight className="h-3.5 w-3.5" /> Request / Response
+                                    </a>
+                                    <a className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                                       href={`${base}/${selected}/runs/${r.ts}/api-postman-collection.json`}
+                                       download={`${selected}-${r.ts}.postman_collection.json`}>
+                                      <Download className="h-3.5 w-3.5" /> Postman
+                                    </a>
+                                  </>
                                 )}
                               </span>
                             </div>

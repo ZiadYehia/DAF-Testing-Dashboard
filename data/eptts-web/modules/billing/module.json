@@ -1,0 +1,8 @@
+{
+  "slug": "billing",
+  "name": "Billing Portal",
+  "icon": "Receipt",
+  "order": 4,
+  "pathPrefix": "billing",
+  "description": "Billing portal (:8446) — unbilled operations, invoices, revenue reports, and fee configuration."
+}

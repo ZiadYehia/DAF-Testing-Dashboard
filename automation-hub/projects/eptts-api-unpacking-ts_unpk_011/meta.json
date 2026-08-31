@@ -1,0 +1,21 @@
+{
+  "name": "eptts-api-unpacking-ts_unpk_011",
+  "title": "TS_UNPK_011 — a duplicate unpacking request is refused",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TS_UNPK_011",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "api-unpacking",
+    "testcaseId": "TS_UNPK_011"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "write"
+  ],
+  "folder": "EPTTS APIs / api-unpacking",
+  "engine": "playwright"
+}

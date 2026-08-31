@@ -1,0 +1,8 @@
+{
+  "slug": "eptts-apis",
+  "name": "EPTTS APIs",
+  "icon": "Webhook",
+  "order": 1,
+  "pathPrefix": "eptts-apis",
+  "description": "Masar B2B API — EPCIS event submission, dispensation, and query endpoints."
+}

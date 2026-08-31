@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
+import { getApp } from '@/lib/apps'
 import { NextRequest, NextResponse } from 'next/server'
 import { guardApp } from '@/lib/auth'
 import { getSetting } from '@/lib/settings'
@@ -40,6 +41,11 @@ export async function POST(
   const transcript = getTranscript(sessionId)
   if (!transcript) {
     return NextResponse.json({ error: 'No browser actions to save yet — drive the flow first' }, { status: 400 })
+  }
+  // Unreachable while chat/route.ts blocks API apps at session creation, but asserted
+  // here too so the two guards cannot drift apart.
+  if ((await getApp(app))?.type === 'api') {
+    return NextResponse.json({ error: 'Chat authoring is not available for API apps' }, { status: 400 })
   }
   const modelId = getSessionModel(sessionId)
   if (!modelId) return NextResponse.json({ error: 'Session expired' }, { status: 400 })

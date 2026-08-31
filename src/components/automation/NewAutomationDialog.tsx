@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/select'
 import { Loader2, Plus, FileCode2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import type { AutomationEngine } from '@automation-hub/types'
 
 /** Sentinels for the create dialog's "Starting page" select. */
 const NO_START_PAGE = '__none__'
@@ -27,7 +28,7 @@ interface PomPage { path: string; className: string }
 interface NewAutomationDialogProps {
   base: string
   app: string
-  lockedEngine: 'playwright' | 'appium' | null
+  lockedEngine: AutomationEngine | null
   /** Called after a new project is created — hub: await loadList(); setSelected(name); warning toast. */
   onCreated: (name: string, pyWarning?: string) => void | Promise<void>
 }
@@ -41,7 +42,7 @@ interface NewAutomationDialogProps {
 export function NewAutomationDialog({ base, app, lockedEngine, onCreated }: NewAutomationDialogProps) {
   const [newOpen, setNewOpen] = useState(false)
   const [newTitle, setNewTitle] = useState('')
-  const [newEngine, setNewEngine] = useState<'playwright' | 'appium'>('playwright')
+  const [newEngine, setNewEngine] = useState<AutomationEngine>('playwright')
   const [newApkPath, setNewApkPath] = useState('')
   const [newAvd, setNewAvd] = useState('')
   const [newAppPackage, setNewAppPackage] = useState('')
@@ -82,7 +83,9 @@ export function NewAutomationDialog({ base, app, lockedEngine, onCreated }: NewA
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: newTitle,
-          ...(newEngine === 'appium'
+          ...(newEngine === 'api'
+            ? { engine: 'api' }
+            : newEngine === 'appium'
             ? {
                 engine: 'appium',
                 appium: {
@@ -105,7 +108,11 @@ export function NewAutomationDialog({ base, app, lockedEngine, onCreated }: NewA
       if (!res.ok) { setCreateErr(data?.error ?? 'Failed to create'); return }
       setNewOpen(false)
       setNewTitle('')
-      setNewEngine('playwright')
+      // Reset to the app's locked engine, not unconditionally to playwright. The
+      // lockedEngine effect only fires when lockedEngine itself changes — which it does
+      // not between two creates — so hardcoding 'playwright' here made the SECOND create in
+      // an Appium or API app silently produce a browser project.
+      setNewEngine(lockedEngine ?? 'playwright')
       setNewApkPath('')
       setNewAvd('')
       setNewAppPackage('')
@@ -133,7 +140,9 @@ export function NewAutomationDialog({ base, app, lockedEngine, onCreated }: NewA
               ? 'Creates a Playwright project with a starter spec you can edit and replay.'
               : lockedEngine === 'appium'
                 ? 'Creates an Appium project with a starter spec you can edit and replay against the Android app.'
-                : 'Creates a project with a starter spec you can edit and replay, for a web app (Playwright) or an Android app (Appium).'}
+                : lockedEngine === 'api'
+                  ? 'Creates an API project with a starter request spec — no browser is launched and no login runs. Base URL and credentials come from automation-hub/.env.'
+                  : 'Creates a project with a starter spec you can edit and replay — a web app (Playwright), an Android app (Appium), or an HTTP API.'}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-2">
@@ -164,6 +173,14 @@ export function NewAutomationDialog({ base, app, lockedEngine, onCreated }: NewA
                   newEngine === 'appium' ? 'border-primary bg-primary text-primary-foreground' : 'border-border/60 text-muted-foreground hover:border-primary/50 hover:text-foreground')}
               >
                 Android (Appium)
+              </button>
+              <button
+                type="button"
+                onClick={() => setNewEngine('api')}
+                className={cn('rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
+                  newEngine === 'api' ? 'border-primary bg-primary text-primary-foreground' : 'border-border/60 text-muted-foreground hover:border-primary/50 hover:text-foreground')}
+              >
+                API (no browser)
               </button>
             </div>
           )}

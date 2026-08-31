@@ -8,7 +8,9 @@
 import fs from 'fs'
 import path from 'path'
 import { intakeFileExists, readIntake } from './intake'
-import { APP_INTAKE_GROUPS, MODULE_INTAKE_GROUPS, FEATURE_INTAKE_GROUPS, type IntakeGroup, type IntakeValue } from './intake-types'
+import { APP_INTAKE_GROUPS, appIntakeGroupsFor, MODULE_INTAKE_GROUPS, FEATURE_INTAKE_GROUPS, type IntakeGroup, type IntakeValue } from './intake-types'
+import { getApp } from './apps'
+import type { AppConfig } from './app-types'
 import { getDataRoot } from './paths'
 import { getDataSource } from './db'
 import { KnowledgeFileEntity, IKnowledgeFile, AutomationConfigEntity, IAutomationConfig } from './entities'
@@ -100,7 +102,7 @@ function missingLabels(g: GroupReadiness | undefined): string[] {
  * through the intake UI) while its domain/testing knowledge still lives only
  * in knowledge/*.md files that predate this migration.
  */
-async function heuristicAppGroups(appSlug: string): Promise<GroupReadiness[]> {
+async function heuristicAppGroups(appSlug: string, appType?: AppConfig['type']): Promise<GroupReadiness[]> {
   const root = getDataRoot()
   const knowledgeDir = path.join(root, appSlug, 'knowledge')
   const isRulesFile = (f: string) => /rule|format|writing|generation-process|standard/i.test(f)
@@ -166,19 +168,24 @@ async function heuristicAppGroups(appSlug: string): Promise<GroupReadiness[]> {
     : automationReadyFs()
 
   const byId = (id: string) => APP_INTAKE_GROUPS.find((g) => g.id === id)!
-  return [
+  const groups = [
     heuristicGroup(byId('domain'), domainReady),
     heuristicGroup(byId('testing'), testingReady),
     heuristicGroup(byId('bugs'), bugsReady),
-    heuristicGroup(byId('automation'), automationReady),
   ]
+  // An API app has no browser login, so there is no automation.json to find and the group
+  // is omitted rather than scored 0 — otherwise every API app sits permanently below 100%
+  // on a question that has no answer. See appIntakeGroupsFor.
+  if (appType !== 'api') groups.push(heuristicGroup(byId('automation'), automationReady))
+  return groups
 }
 
 export async function appReadiness(appSlug: string): Promise<Readiness> {
   const scope = { app: appSlug }
+  const appType = (await getApp(appSlug))?.type
   const groups = (await intakeFileExists(scope))
-    ? scoreGroups(APP_INTAKE_GROUPS, (await readIntake(scope)).answers)
-    : await heuristicAppGroups(appSlug)
+    ? scoreGroups(appIntakeGroupsFor(appType), (await readIntake(scope)).answers)
+    : await heuristicAppGroups(appSlug, appType)
 
   const byId = (id: string) => groups.find((g) => g.id === id)
 
@@ -251,8 +258,14 @@ export async function featureReadiness(appSlug: string, featureSlug: string): Pr
   const workflowPath = path.join(getDataRoot(), appSlug, 'features', featureSlug, 'workflow.md')
   const screenshotsDir = path.join(getDataRoot(), appSlug, 'features', featureSlug, 'screenshots')
   const hasWorkflow = nonEmptyFile(workflowPath)
-  const hasScreenshot =
+  const hasScreenshotFile =
     fs.existsSync(screenshotsDir) && fs.readdirSync(screenshotsDir).some((f) => /\.(png|jpg|jpeg|gif|webp)$/i.test(f))
+
+  // An API endpoint has no screen to photograph. Requiring one marks every feature of an
+  // API app not-ready forever and pushes a demand into capabilities.testcaseGen that can
+  // never be satisfied — so for api apps a screenshot is simply not part of readiness.
+  const screenshotApplies = (await getApp(appSlug))?.type !== 'api'
+  const hasScreenshot = screenshotApplies ? hasScreenshotFile : true
 
   let groups: GroupReadiness[]
   if (await intakeFileExists(scope)) {
@@ -265,7 +278,7 @@ export async function featureReadiness(appSlug: string, featureSlug: string): Pr
   const ownMissing = groups.flatMap((g) => missingLabels(g))
   const extra: string[] = []
   if (!hasWorkflow) extra.push('Feature workflow (workflow.md)')
-  if (!hasScreenshot) extra.push('At least one screenshot')
+  if (screenshotApplies && !hasScreenshotFile) extra.push('At least one screenshot')
 
   return {
     score: scoreOf(groups),

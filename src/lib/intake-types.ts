@@ -6,6 +6,8 @@
 // what the wizard/edit forms render and what src/lib/intake.ts compiles, with
 // no other code changes needed.
 
+import type { AppConfig } from './app-types'
+
 export type IntakeFieldType = 'short-text' | 'long-text' | 'list' | 'key-value' | 'login-steps'
 
 /** One column of a `list`/`key-value` question's rows. */
@@ -443,3 +445,23 @@ export const FEATURE_INTAKE_GROUPS: IntakeGroup[] = [
     ],
   },
 ]
+
+/**
+ * The app-tier intake groups that apply to an app of the given type.
+ *
+ * API apps have no browser login flow, so the **Automation Login** group is omitted
+ * entirely. Two reasons it must be omitted rather than left in:
+ *
+ *   1. Left in, it is a question nobody can answer, so `scoreGroups` scores every API app
+ *      permanently short of 100% — a red bucket that can never go green.
+ *   2. Worse, answering it writes an `automation_configs` row, which
+ *      `src/lib/automation-cache.ts` then renders into `data/<slug>/automation.json`. The
+ *      Hub reads that file as "this app has a browser login" and tries to log into an app
+ *      that has no UI. Not asking is what keeps that cache a no-op.
+ *
+ * Omitted, not marked ready: `scoreOf`'s denominator stays honest, and
+ * `capabilities.automation` becomes an empty list on its own.
+ */
+export function appIntakeGroupsFor(type?: AppConfig['type']): IntakeGroup[] {
+  return type === 'api' ? APP_INTAKE_GROUPS.filter((g) => g.id !== 'automation') : APP_INTAKE_GROUPS
+}

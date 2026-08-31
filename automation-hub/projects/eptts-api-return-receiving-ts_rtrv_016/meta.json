@@ -1,0 +1,22 @@
+{
+  "name": "eptts-api-return-receiving-ts_rtrv_016",
+  "title": "TS_RTRV_016 — a request mixing valid and invalid EPCs is refused as a whole",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TS_RTRV_016",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "api-return-receiving",
+    "testcaseId": "TS_RTRV_016"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "write",
+    "blocked"
+  ],
+  "folder": "EPTTS APIs / api-return-receiving",
+  "engine": "playwright"
+}

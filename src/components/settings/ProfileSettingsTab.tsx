@@ -5,10 +5,14 @@ import { toast } from 'sonner'
 import { Card, CardContent } from '@/components/ui/card'
 import { IntakeGroupForm } from '@/components/shared/IntakeGroupForm'
 import { ReadinessBadge } from '@/components/shared/ReadinessBadge'
-import { APP_INTAKE_GROUPS, type IntakeValue } from '@/lib/intake-types'
+import { appIntakeGroupsFor, type IntakeValue } from '@/lib/intake-types'
+import { useApp } from '@/lib/use-apps'
 import { fetchWithRetry } from '@/components/settings/fetchWithRetry'
 
 export function ProfileSettingsTab({ app }: { app: string }) {
+  // Type-aware: an API app is not asked for browser login steps (see appIntakeGroupsFor).
+  const appConfig = useApp(app)
+  const intakeGroups = appIntakeGroupsFor(appConfig?.type)
   // App Profile (intake) tab
   const [intakeAnswers, setIntakeAnswers] = useState<Record<string, Record<string, IntakeValue>>>({})
   const [loadingIntake, setLoadingIntake] = useState(true)
@@ -43,12 +47,12 @@ export function ProfileSettingsTab({ app }: { app: string }) {
       </div>
       {loadingIntake ? (
         <div className="space-y-3">
-          {APP_INTAKE_GROUPS.map((g) => (
+          {intakeGroups.map((g) => (
             <div key={g.id} className="h-24 rounded-lg bg-muted/40 animate-pulse" />
           ))}
         </div>
       ) : (
-        APP_INTAKE_GROUPS.map((group) => (
+        intakeGroups.map((group) => (
           <Card key={group.id}>
             <CardContent className="pt-5">
               <IntakeGroupForm

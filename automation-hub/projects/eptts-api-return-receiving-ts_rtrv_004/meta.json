@@ -1,0 +1,22 @@
+{
+  "name": "eptts-api-return-receiving-ts_rtrv_004",
+  "title": "TS_RTRV_004 — receiving a mix of returned SSCCs and SGTINs in one request",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TS_RTRV_004",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "api-return-receiving",
+    "testcaseId": "TS_RTRV_004"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "write",
+    "blocked"
+  ],
+  "folder": "EPTTS APIs / api-return-receiving",
+  "engine": "playwright"
+}

@@ -1,0 +1,22 @@
+{
+  "name": "eptts-api-receiving-ts_recv_022",
+  "title": "TS_RECV_022 — receiving an already-received SGTIN is refused",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TS_RECV_022",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "api-receiving",
+    "testcaseId": "TS_RECV_022"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "write",
+    "blocked"
+  ],
+  "folder": "EPTTS APIs / api-receiving",
+  "engine": "playwright"
+}

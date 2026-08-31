@@ -1,0 +1,21 @@
+{
+  "name": "eptts-api-return-ts_rtn_007",
+  "title": "TS_RTN_007 — return shipping with an empty sourceList is refused",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TS_RTN_007",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "api-return",
+    "testcaseId": "TS_RTN_007"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "write"
+  ],
+  "folder": "EPTTS APIs / api-return",
+  "engine": "playwright"
+}

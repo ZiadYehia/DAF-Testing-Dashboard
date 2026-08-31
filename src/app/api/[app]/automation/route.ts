@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { guardApp } from '@/lib/auth'
 import { listProjects, createProject, slugify, listTsPageFiles, saveTsPageFile } from '@automation-hub/store'
 import { listTsPageFileContents } from '@automation-hub/lib/pom-index'
-import { type AppiumTarget, validateAppiumTarget } from '@automation-hub/types'
+import { type AppiumTarget, type AutomationEngine, validateAppiumTarget, isBrowserEngine }
+  from '@automation-hub/types'
+import { getApp } from '@/lib/apps'
 
 // The Automation Hub runs Playwright as a child process — force the Node runtime.
 export const runtime = 'nodejs'
@@ -26,6 +28,32 @@ await runSpec(async (driver) => {
   const el = await driver.$('~someAccessibilityId')
   await el.waitForDisplayed()
   await el.click()
+})
+`
+
+/**
+ * Starter for an API project: a plain @playwright/test spec driving APIRequestContext.
+ *
+ * Deliberately NO `stateFor()` and no `test.use({ storageState })`. An API project runs
+ * under the config's browserless `api` project, so there is no browser context to hydrate
+ * and no login bootstrap to depend on — and referencing a storage-state file that was
+ * never written fails the spec at collection with an opaque error.
+ *
+ * Base URL and credentials come from process.env (values live in automation-hub/.env),
+ * never inline: exports and specs are committed.
+ */
+const starterApi = (title: string) => `import { test, expect } from '@playwright/test'
+
+test('${title}', async ({ request }) => {
+  // \`request\` is an APIRequestContext — no browser is launched. The config's \`api\`
+  // project sets ignoreHTTPSErrors, which the EPTTS host needs (self-signed cert).
+  const res = await request.get(\`\${process.env.API_BASE_URL}/health\`, {
+    headers: { Accept: 'application/json' },
+  })
+  expect(res.status(), 'the endpoint answers').toBe(200)
+
+  // Most of this platform is asynchronous: a 2xx means "accepted", not "done". If this
+  // endpoint queues work, poll its status endpoint and assert THAT, not the status code.
 })
 `
 
@@ -113,9 +141,26 @@ export async function POST(
   const title = String(body?.title ?? '').trim()
   if (!title) return NextResponse.json({ error: 'A title is required' }, { status: 400 })
 
-  // Omitting `engine` entirely preserves legacy behavior (playwright, handled as
-  // "absent" by createProject/ProjectMeta) — only 'appium' is ever explicit here.
-  const engine = body?.engine === 'appium' ? 'appium' : undefined
+  // Engine comes from the APP first, not from the client. Every downstream decision keys
+  // off meta.engine — which config project the runner selects, whether page objects are
+  // scaffolded, whether the AI codegen prompt is allowed near the spec — so an API app must
+  // never end up holding a browser project because a stale client sent the wrong value.
+  //
+  // Note 'playwright' stays `undefined`: hundreds of legacy projects predate the field and
+  // absent means browser-Playwright. 'api' and 'appium' are always explicit.
+  const appType = (await getApp(app))?.type
+  const requested = body?.engine
+  if (appType === 'api' && requested && requested !== 'api') {
+    return NextResponse.json(
+      { error: `This is an API app — only the api engine is available (got "${requested}")` },
+      { status: 400 },
+    )
+  }
+  const engine: AutomationEngine | undefined =
+    appType === 'api' ? 'api'
+      : requested === 'appium' ? 'appium'
+        : requested === 'api' ? 'api'
+          : undefined
 
   let appium: AppiumTarget | undefined
   if (engine === 'appium') {
@@ -136,9 +181,10 @@ export async function POST(
     if (error) return NextResponse.json({ error }, { status: 400 })
   }
 
-  // Starting-page selection — playwright engine only.
+  // Starting-page selection — the BROWSER Playwright engine only. `!== 'appium'` would
+  // silently admit 'api' and scaffold a page object for an app that has no pages.
   let page: { importPath: string; className: string } | undefined
-  if (engine !== 'appium') {
+  if (isBrowserEngine(engine)) {
     const startPagePath = typeof body?.startPagePath === 'string' ? body.startPagePath.trim() : ''
     const newPageScreen = typeof body?.newPageScreen === 'string' ? body.newPageScreen.trim() : ''
     if (startPagePath && newPageScreen) {
@@ -185,7 +231,9 @@ export async function POST(
           ? body.spec
           : engine === 'appium'
             ? STARTER_SPEC_APPIUM
-            : fluentStarter(app, title, page),
+            : engine === 'api'
+              ? starterApi(title)
+              : fluentStarter(app, title, page),
       app,
       createdVia: 'manual',
       linkedTestcaseId: body?.linkedTestcaseId ?? null,

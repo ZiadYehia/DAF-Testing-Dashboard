@@ -1,0 +1,21 @@
+{
+  "name": "eptts-api-dispensing-tc_disp_003",
+  "title": "TC_DISP_003 — a dispensed SGTIN leaves the pharmacy inventory",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TC_DISP_003",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "api-dispensing",
+    "testcaseId": "TC_DISP_003"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "destructive"
+  ],
+  "folder": "EPTTS APIs / api-dispensing",
+  "engine": "playwright"
+}

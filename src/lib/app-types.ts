@@ -13,8 +13,15 @@ export interface AppConfig {
   icon: string
   /** Whether this app is active (false = archived/hidden from the dashboard) */
   enabled: boolean
-  /** Type of application */
-  type: 'mobile' | 'desktop' | 'web'
+  /**
+   * Type of application.
+   *
+   * `api` is a headless HTTP surface — no screens. It changes real behaviour rather than
+   * just a label: the Automation Hub gives it the browserless `api` engine, feature
+   * readiness stops demanding a screenshot, and the browser-login intake group is not
+   * asked for. See automation-hub/types.ts `isBrowserEngine`.
+   */
+  type: 'mobile' | 'desktop' | 'web' | 'api'
   /** Platform details */
   platform: string
   /** Per-app feature flags — controls what's shown in the dashboard */
@@ -26,7 +33,12 @@ export interface AppConfig {
   }
 }
 
-export const APP_TYPES: AppConfig['type'][] = ['web', 'mobile', 'desktop']
+/**
+ * The ENTIRE validation surface for `type`. Both admin routes gate on
+ * `APP_TYPES.includes(...)`, and both fail silently for anything else — POST coerces to
+ * 'web' and PUT drops the field — so a type must be added here before any UI can offer it.
+ */
+export const APP_TYPES: AppConfig['type'][] = ['web', 'mobile', 'desktop', 'api']
 
 export function defaultCapabilities(): AppConfig['capabilities'] {
   return { testCaseWriter: true, featureWizard: true, moduleKnowledge: false }

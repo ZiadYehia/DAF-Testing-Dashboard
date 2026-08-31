@@ -1,0 +1,22 @@
+{
+  "name": "eptts-api-shipping-tc_ship_002",
+  "title": "TC_SHIP_002 — ship from branch to branch",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TC_SHIP_002",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "api-shipping",
+    "testcaseId": "TC_SHIP_002"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "write",
+    "blocked"
+  ],
+  "folder": "EPTTS APIs / api-shipping",
+  "engine": "playwright"
+}

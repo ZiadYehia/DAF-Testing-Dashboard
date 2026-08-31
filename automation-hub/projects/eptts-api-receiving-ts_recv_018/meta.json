@@ -1,0 +1,22 @@
+{
+  "name": "eptts-api-receiving-ts_recv_018",
+  "title": "TS_RECV_018 — all EPCs valid except one invalid SGTIN",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TS_RECV_018",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "api-receiving",
+    "testcaseId": "TS_RECV_018"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "write",
+    "blocked"
+  ],
+  "folder": "EPTTS APIs / api-receiving",
+  "engine": "playwright"
+}

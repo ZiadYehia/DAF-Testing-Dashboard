@@ -11,6 +11,11 @@ export interface RunRecord {
   durationMs: number
   hasVideo: boolean
   hasTrace: boolean
+  /**
+   * True when the run emitted an api-log.html request/response viewer. Set only by API
+   * projects (automation-hub/lib/eptts-api-log.ts); absent on UI-only projects.
+   */
+  hasApiLog?: boolean
   error?: string
 }
 

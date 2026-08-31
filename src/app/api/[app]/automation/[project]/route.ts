@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { isBrowserEngine } from '@automation-hub/types'
 import { guardApp } from '@/lib/auth'
 import type { PermissionKey } from '@/lib/permissions'
 import {
@@ -27,9 +28,13 @@ export async function GET(
   if (!detail) return NextResponse.json({ error: 'Project not found' }, { status: 404 })
   const pythonEnabled = isPythonEnabled()
   const targetApp = detail.app ?? app
-  const pageFiles = pythonEnabled ? listPageFileContents(targetApp) : undefined
-  const tsPageFiles = listTsPageFileContents(targetApp)
-  const frameworkFiles = listFrameworkFileContents()
+  // Page objects and the framework sources are the BROWSER Playwright surface. The UI does
+  // not render any of it for appium/api projects, so shipping it is dead weight on every
+  // detail fetch — and there are hundreds of api projects.
+  const browserEngine = isBrowserEngine(detail.engine)
+  const pageFiles = pythonEnabled && browserEngine ? listPageFileContents(targetApp) : undefined
+  const tsPageFiles = browserEngine ? listTsPageFileContents(targetApp) : []
+  const frameworkFiles = browserEngine ? listFrameworkFileContents() : []
   return NextResponse.json({
     ...detail,
     pythonEnabled,

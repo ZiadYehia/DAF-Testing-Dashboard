@@ -1,0 +1,21 @@
+{
+  "name": "eptts-api-commission-tc_comm_018",
+  "title": "TC_COMM_018 — commissioning with an empty SBDH sender identifier is refused",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TC_COMM_018",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "api-commission",
+    "testcaseId": "TC_COMM_018"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "write"
+  ],
+  "folder": "EPTTS APIs / api-commission",
+  "engine": "playwright"
+}

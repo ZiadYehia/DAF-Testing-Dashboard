@@ -1,0 +1,22 @@
+{
+  "name": "eptts-api-partial-dispensing-tc_pdisp_018",
+  "title": "TC_PDISP_018 — a quantity of zero is refused",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TC_PDISP_018",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "api-partial-dispensing",
+    "testcaseId": "TC_PDISP_018"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "destructive",
+    "blocked"
+  ],
+  "folder": "EPTTS APIs / api-partial-dispensing",
+  "engine": "playwright"
+}

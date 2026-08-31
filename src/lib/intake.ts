@@ -356,6 +356,15 @@ ${severity}
  * regression run, independent of when the intake form was last saved.
  */
 async function compileAutomation(appSlug: string, answers: Record<string, IntakeValue>, force: boolean): Promise<void> {
+  // An API app has no browser login flow. The wizard does not offer this group for one
+  // (appIntakeGroupsFor), but a direct POST could still reach here — and writing the row
+  // would make automation-cache.ts render a data/<slug>/automation.json that the hub then
+  // tries to log in with, against an app that has no UI.
+  if ((await getApp(appSlug))?.type === 'api') {
+    console.warn(`[intake] ignoring an automation-login submission for API app "${appSlug}" — API apps have no browser login`)
+    return
+  }
+
   const baseUrlEnv = text(answers, 'baseUrlEnv')
   const credentialEnvs = rows(answers, 'credentialEnvs').map((r) => r.name).filter(Boolean)
   // Login steps are opaque to this compiler — the automation-hub schema is owned

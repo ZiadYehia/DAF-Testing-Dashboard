@@ -1,0 +1,21 @@
+{
+  "name": "eptts-api-partial-dispensing-tc_pdisp_006",
+  "title": "TC_PDISP_006 — a branch partially dispensing pharmacy-held stock does not succeed",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TC_PDISP_006",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "api-partial-dispensing",
+    "testcaseId": "TC_PDISP_006"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "destructive"
+  ],
+  "folder": "EPTTS APIs / api-partial-dispensing",
+  "engine": "playwright"
+}

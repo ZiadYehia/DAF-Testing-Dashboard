@@ -1,0 +1,22 @@
+{
+  "name": "eptts-api-authentication-tc_auth_011",
+  "title": "TC_AUTH_011 — a rotated (superseded) API key no longer authenticates",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TC_AUTH_011",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "api-authentication",
+    "testcaseId": "TC_AUTH_011"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "readonly",
+    "blocked"
+  ],
+  "folder": "EPTTS APIs / api-authentication",
+  "engine": "playwright"
+}

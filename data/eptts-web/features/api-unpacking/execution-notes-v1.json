@@ -1,0 +1,6 @@
+{
+  "TS_UNPK_005": "child not in this SSCC: the platform ACCEPTED input it should refuse — http=200 raw=\"S - Successful\" state=SUCCESS polls=6 logs=[I: Message processed successfully — all 1 event(s) completed]",
+  "TS_UNPK_008": "the contract exposes no distinct \"sealed\" state — confirm with the PO whether it differs from in-transit (TS_UNPK_009)",
+  "TS_UNPK_010": "fixture: ship urn:epc:id:sscc:84353083.183941547 to the branch did not succeed — http=200 raw=\"E - Application Error\" state=FAILED polls=6 logs=[E: Shipping event failed: [handleShipping] Invoice number 'INV-ZTG-MTHACRNX6N' is already used in shipment 01a0580d-67b4-77dd-be0b-58a8443115ad. Each shipment must have a unique invoice number. | E: Message processing failed — 1 of 1 event(s) encountered errors]",
+  "TS_UNPK_011": "identical second unpack: the platform ACCEPTED input it should refuse — http=200 raw=\"S - Successful\" state=SUCCESS polls=6 logs=[I: Message processed successfully — all 1 event(s) completed]"
+}

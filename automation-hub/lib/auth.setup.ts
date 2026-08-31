@@ -32,7 +32,10 @@ setup('authenticate target apps', async ({ browser }) => {
       continue // app not configured in this environment
     }
 
-    const context = await browser.newContext()
+    // ignoreHTTPSErrors: some targets (eptts-web on the production host) serve a
+    // self-signed certificate. browser.newContext() does NOT inherit the config's
+    // `use` options, so it has to be set explicitly here or the handshake fails.
+    const context = await browser.newContext({ ignoreHTTPSErrors: true })
     try {
       const page = await context.newPage()
       await app.login(page)

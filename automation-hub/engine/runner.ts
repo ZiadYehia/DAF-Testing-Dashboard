@@ -14,9 +14,10 @@ import { spawn } from 'child_process'
 import fs from 'fs/promises'
 import path from 'path'
 import {
-  HUB_ROOT, runDir, recordRun,
+  HUB_ROOT, runDir, recordRun, readMeta, specFileName,
 } from '../store'
 import type { RunResult } from '../types'
+import { playwrightProjectFor } from '../types'
 
 const CONFIG = path.join(HUB_ROOT, 'playwright.config.ts')
 
@@ -181,10 +182,15 @@ export async function runProject(name: string, now: string): Promise<RunResult> 
     // Playwright's positional filter is a regex matched against the test file path
     // RELATIVE to cwd — an absolute Windows path matches nothing. cwd is HUB_ROOT,
     // so a forward-slash relative path selects exactly this project's spec.
-    const specFilter = `projects/${name}/test.spec.ts`
+    const meta = await readMeta(name)
+    const specFilter = `projects/${name}/${specFileName(meta?.engine)}`
     const args = [
       cli, 'test', specFilter,
       '--config', CONFIG,
+      // ALWAYS pass --project. The config's `chromium` and `api` projects share a
+      // testMatch, so omitting this selects both and runs the spec twice — which against
+      // a write-heavy API suite would duplicate every event it submits.
+      `--project=${playwrightProjectFor(meta?.engine)}`,
       '--output', rawOut,
       '--reporter=json',
     ]
@@ -246,20 +252,32 @@ export async function runProject(name: string, now: string): Promise<RunResult> 
     if (video) { await fs.copyFile(video, path.join(dir, 'video.webm')); hasVideo = true }
     if (trace) { await fs.copyFile(trace, path.join(dir, 'trace.zip')); hasTrace = true }
 
+    // API projects also emit a request/response log (see lib/eptts-api-log.ts). Lift it
+    // so the Hub can show what was actually sent and received — for a 202-then-poll API
+    // that detail is the whole point of a replay, and pass/fail alone says almost nothing.
+    const apiArtifacts = ['api-log.html', 'api-exchanges.json', 'api-postman-collection.json']
+    let hasApiLog = false
+    for (const name of apiArtifacts) {
+      const found = await findFile(rawOut, (f) => f === name)
+      if (!found) continue
+      await fs.copyFile(found, path.join(dir, name))
+      if (name === 'api-log.html') hasApiLog = true
+    }
+
     const durationMs = parsed.durationMs ?? (Date.now() - startedAt)
     const log = stdout.slice(-4000)
 
     await fs.writeFile(
       path.join(dir, 'result.json'),
-      JSON.stringify({ status, exitCode: code, durationMs, error: parsed.error, hasVideo, hasTrace, log, executed }, null, 2),
+      JSON.stringify({ status, exitCode: code, durationMs, error: parsed.error, hasVideo, hasTrace, hasApiLog, log, executed }, null, 2),
       'utf8',
     )
     // The raw playwright output is bulky and already mined — drop it.
     await fs.rm(rawOut, { recursive: true, force: true })
 
-    await recordRun(name, { ts, status, durationMs, hasVideo, hasTrace, error: parsed.error })
+    await recordRun(name, { ts, status, durationMs, hasVideo, hasTrace, hasApiLog, error: parsed.error })
 
-    return { status, exitCode: code, durationMs, ts, error: parsed.error, hasVideo, hasTrace, log, executed }
+    return { status, exitCode: code, durationMs, ts, error: parsed.error, hasVideo, hasTrace, hasApiLog, log, executed }
   } finally {
     running.delete(name)
   }

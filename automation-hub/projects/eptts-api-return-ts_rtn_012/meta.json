@@ -1,0 +1,21 @@
+{
+  "name": "eptts-api-return-ts_rtn_012",
+  "title": "TS_RTN_012 — returning to a destination that is not the original manufacturer is refused",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TS_RTN_012",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "api-return",
+    "testcaseId": "TS_RTN_012"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "write"
+  ],
+  "folder": "EPTTS APIs / api-return",
+  "engine": "playwright"
+}

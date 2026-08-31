@@ -13,15 +13,17 @@ import { AppSelect } from '@/components/shared/AppSelect'
 import { IntakeGroupForm } from '@/components/shared/IntakeGroupForm'
 import { invalidateApps } from '@/lib/use-apps'
 import { APP_TYPES, appSlugIsValid, defaultCapabilities, type AppConfig } from '@/lib/app-types'
-import { APP_INTAKE_GROUPS, type IntakeValue } from '@/lib/intake-types'
+import { appIntakeGroupsFor, type IntakeValue } from '@/lib/intake-types'
 import { slugify } from '@/lib/utils'
 
 const TYPE_OPTIONS = APP_TYPES.map((t) => ({ value: t, label: t[0].toUpperCase() + t.slice(1) }))
 
-const STEPS = ['Basics', 'Capabilities', 'Domain', 'Testing', 'Bugs', 'Automation'] as const
+const FIXED_STEPS = ['Basics', 'Capabilities'] as const
 
-// Steps 2-5 each render the matching APP_INTAKE_GROUPS entry (domain/testing/bugs/automation).
-const INTAKE_STEP_OFFSET = 2
+// Every step past the fixed two renders one intake group, in order. The GROUPS ARE
+// TYPE-DEPENDENT — an API app has no browser login, so it has no Automation step — so the
+// wizard length is derived from appIntakeGroupsFor(type), never hardcoded.
+const INTAKE_STEP_OFFSET = FIXED_STEPS.length
 
 export default function NewAppPage() {
   const router = useRouter()
@@ -99,7 +101,7 @@ export default function NewAppPage() {
 
   function handleGroupSaved(groupId: string, answers: Record<string, IntakeValue>, stepIndex: number) {
     setIntakeAnswers((prev) => ({ ...prev, [groupId]: answers }))
-    if (stepIndex < STEPS.length - 1) {
+    if (stepIndex < steps.length - 1) {
       setStep(stepIndex + 1)
     } else {
       toast.success('App setup complete')
@@ -107,8 +109,10 @@ export default function NewAppPage() {
     }
   }
 
+  const intakeGroups = appIntakeGroupsFor(type)
+  const steps: string[] = [...FIXED_STEPS, ...intakeGroups.map((g) => g.title)]
   const isIntakeStep = step >= INTAKE_STEP_OFFSET
-  const intakeGroup = isIntakeStep ? APP_INTAKE_GROUPS[step - INTAKE_STEP_OFFSET] : null
+  const intakeGroup = isIntakeStep ? (intakeGroups[step - INTAKE_STEP_OFFSET] ?? null) : null
 
   return (
     <div className="space-y-5">
@@ -126,7 +130,7 @@ export default function NewAppPage() {
 
       {/* Stepper */}
       <div className="flex items-center gap-2 text-sm flex-wrap">
-        {STEPS.map((label, i) => (
+        {steps.map((label, i) => (
           <div key={label} className="flex items-center gap-2">
             <span className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium ${
               i === step ? 'bg-primary text-primary-foreground' : i < step ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
@@ -134,7 +138,7 @@ export default function NewAppPage() {
               {i < step ? <Check className="h-3.5 w-3.5" /> : i + 1}
             </span>
             <span className={i === step ? 'font-medium' : 'text-muted-foreground'}>{label}</span>
-            {i < STEPS.length - 1 && <span className="text-muted-foreground/40 mx-1">→</span>}
+            {i < steps.length - 1 && <span className="text-muted-foreground/40 mx-1">→</span>}
           </div>
         ))}
       </div>
@@ -172,7 +176,7 @@ export default function NewAppPage() {
                 </div>
                 <div className="grid gap-1.5">
                   <label className="text-sm font-medium">Platform</label>
-                  <Input value={platform} onChange={(e) => setPlatform(e.target.value)} placeholder="Browser / Android / Windows" />
+                  <Input value={platform} onChange={(e) => setPlatform(e.target.value)} placeholder="Browser / Android / Windows / REST over HTTPS" />
                 </div>
               </div>
               <div className="grid gap-1.5">
@@ -266,7 +270,7 @@ export default function NewAppPage() {
           </Button>
         ) : (
           <div className="flex items-center gap-2">
-            {step < STEPS.length - 1 && (
+            {step < steps.length - 1 && (
               <Button variant="ghost" onClick={() => setStep((s) => s + 1)}>
                 Skip this step
                 <ArrowRight className="h-4 w-4" />

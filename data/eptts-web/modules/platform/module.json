@@ -1,0 +1,8 @@
+{
+  "slug": "platform",
+  "name": "Platform Dashboard",
+  "icon": "LayoutDashboard",
+  "order": 2,
+  "pathPrefix": "platform",
+  "description": "Main EPTTS dashboard (:8444) — information centre, reporting, analytics, audit, and admin settings."
+}

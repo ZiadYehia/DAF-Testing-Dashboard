@@ -1,0 +1,21 @@
+{
+  "name": "eptts-api-shipping-tc_ship_011",
+  "title": "TC_SHIP_011 — shipping with the same source and destination is refused",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TC_SHIP_011",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "api-shipping",
+    "testcaseId": "TC_SHIP_011"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "write"
+  ],
+  "folder": "EPTTS APIs / api-shipping",
+  "engine": "playwright"
+}

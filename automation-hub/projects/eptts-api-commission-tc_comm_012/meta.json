@@ -1,0 +1,22 @@
+{
+  "name": "eptts-api-commission-tc_comm_012",
+  "title": "TC_COMM_012 — re-commissioning the same SGTIN with a different expiry is refused",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TC_COMM_012",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "api-commission",
+    "testcaseId": "TC_COMM_012"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "write",
+    "known-gap"
+  ],
+  "folder": "EPTTS APIs / api-commission",
+  "engine": "playwright"
+}

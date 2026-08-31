@@ -26,7 +26,8 @@ automation-hub/
   .env                  secrets + base URLs (gitignored; see .env.example)
   .auth/<app>.json      cached login state per target app (gitignored)
   types.ts              shared types + MAX_RUN_HISTORY
-  playwright.config.ts  video+trace on; `setup` project logs in, `chromium` runs specs
+  playwright.config.ts  `setup` logs in, `chromium` runs browser specs, `api` runs
+                        HTTP-only specs (no browser/login/artifacts). Pass --project.
   store.ts              project CRUD over projects/, meta.json, env-key listing
   lib/
     env.ts              loads .env into the test child; requireEnv()

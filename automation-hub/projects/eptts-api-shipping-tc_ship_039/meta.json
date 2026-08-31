@@ -1,0 +1,22 @@
+{
+  "name": "eptts-api-shipping-tc_ship_039",
+  "title": "TC_SHIP_039 — shipping with a non-ISO-8601 eventTime is refused",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TC_SHIP_039",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "api-shipping",
+    "testcaseId": "TC_SHIP_039"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "write",
+    "known-gap"
+  ],
+  "folder": "EPTTS APIs / api-shipping",
+  "engine": "playwright"
+}

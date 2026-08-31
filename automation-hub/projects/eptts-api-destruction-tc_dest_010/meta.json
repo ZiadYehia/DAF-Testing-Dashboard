@@ -1,0 +1,21 @@
+{
+  "name": "eptts-api-destruction-tc_dest_010",
+  "title": "TC_DEST_010 — destroying an already-destroyed SGTIN is refused",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TC_DEST_010",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "api-destruction",
+    "testcaseId": "TC_DEST_010"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "destructive"
+  ],
+  "folder": "EPTTS APIs / api-destruction",
+  "engine": "playwright"
+}

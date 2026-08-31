@@ -1,0 +1,21 @@
+{
+  "name": "eptts-api-dispensing-tc_disp_028",
+  "title": "TC_DISP_028 — dispensing with a malformed bizLocation SGLN is refused",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TC_DISP_028",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "api-dispensing",
+    "testcaseId": "TC_DISP_028"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "destructive"
+  ],
+  "folder": "EPTTS APIs / api-dispensing",
+  "engine": "playwright"
+}

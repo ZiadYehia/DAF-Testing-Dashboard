@@ -1,0 +1,21 @@
+{
+  "name": "eptts-api-unpacking-ts_unpk_009",
+  "title": "TS_UNPK_009 — unpacking from an in-transit SSCC is refused",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TS_UNPK_009",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "api-unpacking",
+    "testcaseId": "TS_UNPK_009"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "write"
+  ],
+  "folder": "EPTTS APIs / api-unpacking",
+  "engine": "playwright"
+}

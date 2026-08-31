@@ -1,0 +1,19 @@
+{
+  "name": "eptts-api-supply-chain",
+  "title": "EPTTS API — Full Supply-Chain Journey",
+  "app": "eptts-web",
+  "createdVia": "manual",
+  "linkedTestcaseId": "TS_RECV_001",
+  "linkedTestcase": null,
+  "createdAt": "2026-08-31T09:40:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "write",
+    "destructive",
+    "e2e"
+  ],
+  "folder": "EPTTS APIs",
+  "engine": "playwright"
+}

@@ -1,0 +1,21 @@
+{
+  "name": "eptts-api-packing-ts_pack_016",
+  "title": "TS_PACK_016 — a duplicate packing request is refused",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TS_PACK_016",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "api-packing",
+    "testcaseId": "TS_PACK_016"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "write"
+  ],
+  "folder": "EPTTS APIs / api-packing",
+  "engine": "playwright"
+}

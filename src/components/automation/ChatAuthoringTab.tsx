@@ -12,11 +12,12 @@ import {
 import { Bot, MessageSquare, Send, Wrench, Square, Save, Plus, Loader2, XCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { ChatSession } from './useChatSession'
+import type { AutomationEngine } from '@automation-hub/types'
 
 interface ChatAuthoringTabProps {
   session: ChatSession
   aiEnabled: boolean
-  lockedEngine: 'playwright' | 'appium' | null
+  lockedEngine: AutomationEngine | null
   chatModel: string
   modelName: string
 }

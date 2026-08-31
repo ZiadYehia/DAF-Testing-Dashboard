@@ -1,0 +1,21 @@
+{
+  "name": "eptts-api-dispensing-tc_disp_029",
+  "title": "TC_DISP_029 — dispensing with a readPoint and bizLocation belonging to different parties is refused",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TC_DISP_029",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "api-dispensing",
+    "testcaseId": "TC_DISP_029"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "destructive"
+  ],
+  "folder": "EPTTS APIs / api-dispensing",
+  "engine": "playwright"
+}

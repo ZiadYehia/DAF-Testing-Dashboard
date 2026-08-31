@@ -1,0 +1,21 @@
+{
+  "name": "eptts-api-shipping-tc_ship_041",
+  "title": "TC_SHIP_041 — a pharmacy cannot post a manufacturer-to-branch shipping event",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TC_SHIP_041",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "api-shipping",
+    "testcaseId": "TC_SHIP_041"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "write"
+  ],
+  "folder": "EPTTS APIs / api-shipping",
+  "engine": "playwright"
+}

@@ -1,0 +1,22 @@
+{
+  "name": "eptts-api-return-ts_rtn_005",
+  "title": "TS_RTN_005 — returning to another branch instead of the manufacturer is refused",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TS_RTN_005",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "api-return",
+    "testcaseId": "TS_RTN_005"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "write",
+    "blocked"
+  ],
+  "folder": "EPTTS APIs / api-return",
+  "engine": "playwright"
+}

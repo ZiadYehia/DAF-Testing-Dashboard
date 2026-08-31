@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getApp } from '@/lib/apps'
 import { guardApp } from '@/lib/auth'
 import { getSetting } from '@/lib/settings'
 import { getModelsWithStatusAsync } from '@/lib/ai'
@@ -44,6 +45,17 @@ export async function POST(
   }
 
   const body = await req.json().catch(() => ({}))
+  // The codegen prompt (engine/codegen.ts) MANDATES storageState/stateFor() and a
+  // one-page-per-test page object. Applied to an API spec — which is typically a two-line
+  // `defineCase('TC_X')` shim onto the test-case registry — it would rewrite it into a
+  // browser test and sever the link back to the test case. Refuse.
+  if ((await getApp(app))?.type === 'api') {
+    return NextResponse.json(
+      { error: 'AI spec revision targets browser page objects and would rewrite an API spec into a browser test. Edit the spec directly.' },
+      { status: 400 },
+    )
+  }
+
   const instruction = String(body?.instruction ?? '').trim()
   if (!instruction) return NextResponse.json({ error: 'An instruction is required' }, { status: 400 })
   const language = body?.language === 'py' ? 'py' : 'ts'

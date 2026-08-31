@@ -1,0 +1,22 @@
+{
+  "name": "eptts-api-return-ts_rtn_032",
+  "title": "TS_RTN_032 — return shipping with a non-ISO-8601 eventTime is refused",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TS_RTN_032",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "api-return",
+    "testcaseId": "TS_RTN_032"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "write",
+    "known-gap"
+  ],
+  "folder": "EPTTS APIs / api-return",
+  "engine": "playwright"
+}

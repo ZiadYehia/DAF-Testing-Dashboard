@@ -1,0 +1,22 @@
+{
+  "name": "eptts-api-partial-dispensing-tc_pdisp_020",
+  "title": "TC_PDISP_020 — a quantity greater than the pack contents is refused, not clamped",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TC_PDISP_020",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "api-partial-dispensing",
+    "testcaseId": "TC_PDISP_020"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "destructive",
+    "blocked"
+  ],
+  "folder": "EPTTS APIs / api-partial-dispensing",
+  "engine": "playwright"
+}

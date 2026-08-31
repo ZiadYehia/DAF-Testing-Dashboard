@@ -1,0 +1,21 @@
+{
+  "name": "eptts-api-return-receiving-ts_rtrv_005",
+  "title": "TS_RTRV_005 — returned products become available again at the manufacturer",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TS_RTRV_005",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "api-return-receiving",
+    "testcaseId": "TS_RTRV_005"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "write"
+  ],
+  "folder": "EPTTS APIs / api-return-receiving",
+  "engine": "playwright"
+}

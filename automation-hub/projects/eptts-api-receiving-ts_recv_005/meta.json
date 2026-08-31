@@ -1,0 +1,22 @@
+{
+  "name": "eptts-api-receiving-ts_recv_005",
+  "title": "TS_RECV_005 — partially receive a shipment",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TS_RECV_005",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "api-receiving",
+    "testcaseId": "TS_RECV_005"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "write",
+    "blocked"
+  ],
+  "folder": "EPTTS APIs / api-receiving",
+  "engine": "playwright"
+}

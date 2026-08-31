@@ -92,8 +92,19 @@ export function getTargetApp(slug: string): TargetApp {
   return app
 }
 
-/** Path to an app's cached auth state, for test.use({ storageState: stateFor(slug) }). */
+/**
+ * Path to an app's cached auth state, for test.use({ storageState: stateFor(slug) }).
+ *
+ * Validates the slug first. Returning a path for an unregistered app looks harmless, but
+ * the file is never written — so the spec fails later, inside Playwright, with an opaque
+ * "Error reading storage state file" that says nothing about the cause. Failing here
+ * instead surfaces the actionable message (which apps ARE registered) at collection time.
+ *
+ * This is also the guard rail for API apps: they deliberately have no automation.json, so
+ * an API spec that wrongly asks for browser storage state is told exactly why it cannot.
+ */
 export function stateFor(slug: string): string {
+  getTargetApp(slug)
   return path.join(HUB_DIR, '.auth', `${slug}.json`)
 }
 

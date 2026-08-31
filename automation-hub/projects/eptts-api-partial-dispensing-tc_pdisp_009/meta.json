@@ -1,0 +1,21 @@
+{
+  "name": "eptts-api-partial-dispensing-tc_pdisp_009",
+  "title": "TC_PDISP_009 — partially dispensing a pack held by another party is refused",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TC_PDISP_009",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "api-partial-dispensing",
+    "testcaseId": "TC_PDISP_009"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "destructive"
+  ],
+  "folder": "EPTTS APIs / api-partial-dispensing",
+  "engine": "playwright"
+}

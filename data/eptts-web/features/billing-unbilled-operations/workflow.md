@@ -1,0 +1,51 @@
+# Unbilled Operations — Dashboard Workflow
+
+## Feature Details
+
+| Field | Value |
+|-------|-------|
+| **Feature Name** | Unbilled Operations |
+| **Slug** | `billing-unbilled-operations` |
+| **Feature ID** | `EPTTS_BIL_02` |
+| **Module** | Billing Portal |
+| **Portal** | https://192.168.225.195:8446 |
+| **Route** | `Unbilled Operations` |
+| **Text direction** | ltr |
+| **Priority** | P2 |
+
+## Business Purpose
+
+Lists a MAH's packing operations that have not yet been invoiced, loaded by MAH GLN. This is the input to invoice generation, so an omission here becomes lost revenue.
+
+## UI Elements
+
+| Element | Type | Detail |
+|---------|------|--------|
+| Billing Portal | Heading | — |
+| ☰ | Button / action | — |
+| 🧾 Unbilled Operations | Button / action | — |
+| 📄 Invoices | Button / action | — |
+| 📊 Reports | Button / action | — |
+| ⚙️ Configuration | Button / action | — |
+| Logout | Button / action | — |
+| Load dues | Button / action | — |
+| lang-switch | select | options: English, العربية |
+| dues-gln | input | MAH GLN (13 digits) |
+
+## Happy Path
+
+1. Connect the Citrix VPN and open https://192.168.225.195:8446.
+2. Authenticate through Keycloak (`#username` / `#password` / `#kc-login`).
+3. Click **Unbilled Operations** in the portal navigation.
+4. The page loads with the heading "Unbilled Operations".
+
+## Edge Cases & Validation Rules
+
+- **Role isolation** — a role without access must be refused on direct URL entry, not merely have the menu entry hidden.
+- **Session expiry** — an expired Keycloak session must redirect to login, never display stale data.
+- **Backend failure** — a failing API call must surface an error state, not render empty data as a valid result.
+
+## Notes
+
+- Documented from live discovery against production on 2026-08-31; UI elements above are what the page actually rendered, not a specification.
+- Test cases are all `new_added` — none has been executed yet.

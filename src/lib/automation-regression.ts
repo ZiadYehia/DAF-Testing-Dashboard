@@ -10,6 +10,7 @@
  * client-side loop for live progress; only server-triggered regressions notify.
  */
 import { listProjects } from '@automation-hub/store'
+import { engineFamily } from '@automation-hub/types'
 import { runProject as runPlaywright, isRunning as isRunningPlaywright } from '@automation-hub/engine/runner'
 import { runProject as runAppium, isRunning as isRunningAppium } from '@automation-hub/engine/appium-runner'
 import { setExecutionStatus, appendExecutionNoteLine } from './execution'
@@ -74,7 +75,8 @@ export async function runRegression(opts: {
     const failures: RegressionFailure[] = []
 
     for (const p of projects) {
-      const isAppiumProject = p.engine === 'appium'
+      // engineFamily, not `=== 'appium'`: 'api' projects run on the Playwright runner.
+      const isAppiumProject = engineFamily(p.engine) === 'appium'
       const isRunning = isAppiumProject ? isRunningAppium : isRunningPlaywright
       const runProject = isAppiumProject ? runAppium : runPlaywright
       if (isRunning(p.name)) {

@@ -1,0 +1,21 @@
+{
+  "name": "eptts-api-authentication-tc_auth_012",
+  "title": "TC_AUTH_012 — dashboard credentials do not authenticate against the B2B API",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TC_AUTH_012",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "api-authentication",
+    "testcaseId": "TC_AUTH_012"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "readonly"
+  ],
+  "folder": "EPTTS APIs / api-authentication",
+  "engine": "playwright"
+}

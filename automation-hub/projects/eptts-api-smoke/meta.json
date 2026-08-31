@@ -1,0 +1,26 @@
+{
+  "name": "eptts-api-smoke",
+  "title": "EPTTS API — Contract Smoke",
+  "app": "eptts-web",
+  "createdVia": "manual",
+  "linkedTestcaseId": null,
+  "linkedTestcase": null,
+  "createdAt": "2026-08-31T09:00:00.000Z",
+  "lastStatus": "pass",
+  "runs": [
+    {
+      "ts": "2026-08-31T12-27-29-885Z",
+      "status": "pass",
+      "durationMs": 32367.896999999997,
+      "hasVideo": false,
+      "hasTrace": true
+    }
+  ],
+  "tags": [
+    "api",
+    "smoke",
+    "write"
+  ],
+  "folder": "EPTTS APIs",
+  "engine": "playwright"
+}

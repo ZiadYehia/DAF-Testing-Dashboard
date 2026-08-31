@@ -1,0 +1,21 @@
+{
+  "name": "eptts-api-receiving-ts_recv_040",
+  "title": "TS_RECV_040 — a branch receives a shipment from a manufacturer",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TS_RECV_040",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "api-receiving",
+    "testcaseId": "TS_RECV_040"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "write"
+  ],
+  "folder": "EPTTS APIs / api-receiving",
+  "engine": "playwright"
+}

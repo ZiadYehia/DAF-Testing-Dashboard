@@ -1,0 +1,22 @@
+{
+  "name": "eptts-api-authentication-tc_auth_007",
+  "title": "TC_AUTH_007 — an empty username is ignored rather than rejected",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TC_AUTH_007",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "api-authentication",
+    "testcaseId": "TC_AUTH_007"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "readonly",
+    "known-gap"
+  ],
+  "folder": "EPTTS APIs / api-authentication",
+  "engine": "playwright"
+}

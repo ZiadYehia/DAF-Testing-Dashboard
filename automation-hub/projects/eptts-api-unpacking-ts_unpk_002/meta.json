@@ -1,0 +1,21 @@
+{
+  "name": "eptts-api-unpacking-ts_unpk_002",
+  "title": "TS_UNPK_002 — unpack multiple SGTINs from an SSCC",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TS_UNPK_002",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "api-unpacking",
+    "testcaseId": "TS_UNPK_002"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "write"
+  ],
+  "folder": "EPTTS APIs / api-unpacking",
+  "engine": "playwright"
+}

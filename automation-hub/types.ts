@@ -20,8 +20,45 @@ export type RunStatus = 'pass' | 'fail' | 'never_run'
 /** How an automation project was created. */
 export type CreatedVia = 'manual' | 'testcase' | 'chat'
 
-/** Which automation engine drives this project. Absent = 'playwright' (all legacy projects). */
-export type AutomationEngine = 'playwright' | 'appium'
+/**
+ * Which automation engine drives this project. Absent = 'playwright' (all legacy projects).
+ *
+ * `api` is a Playwright-FAMILY engine: it runs under @playwright/test like `playwright`
+ * does, but drives an APIRequestContext and never opens a browser. It gets its own
+ * browserless project in playwright.config.ts so it pays for no browser, no login
+ * bootstrap, and no video/trace.
+ */
+export type AutomationEngine = 'playwright' | 'appium' | 'api'
+
+/** Which RUNTIME executes a project. `api` runs on the Playwright runner. */
+export type EngineFamily = 'playwright' | 'appium'
+
+export function engineFamily(engine?: AutomationEngine): EngineFamily {
+  return engine === 'appium' ? 'appium' : 'playwright'
+}
+
+/**
+ * The playwright.config.ts project name a spec of this engine must run under.
+ *
+ * The runner must ALWAYS pass this as `--project`. `chromium` and `api` deliberately share
+ * a testMatch, so omitting the flag selects both and runs every spec twice.
+ */
+export function playwrightProjectFor(engine?: AutomationEngine): 'chromium' | 'api' {
+  return engine === 'api' ? 'api' : 'chromium'
+}
+
+/**
+ * True only for the browser-driving Playwright engine — the one that has page objects,
+ * cached storageState, POM codegen and MCP chat authoring.
+ *
+ * Gate every one of those on this, NEVER on `engine !== 'appium'`. That older idiom
+ * silently admits `'api'`, which is how an API project ends up being offered a page-object
+ * picker, or having its two-line `defineCase()` shim rewritten by the POM codegen prompt
+ * into a browser test — severing the link to the test-case registry.
+ */
+export function isBrowserEngine(engine?: AutomationEngine): boolean {
+  return engine !== 'appium' && engine !== 'api'
+}
 
 /** Appium-specific target config; present only when ProjectMeta.engine === 'appium'. */
 export interface AppiumTarget {
@@ -69,6 +106,11 @@ export interface RunRecord {
   hasVideo: boolean
   /** True when a trace.zip exists for this run. */
   hasTrace: boolean
+  /**
+   * True when this run produced an api-log.html — the request/response viewer emitted by
+   * API projects (lib/eptts-api-log.ts). Absent on UI-only projects.
+   */
+  hasApiLog?: boolean
   /** First error message, if the run failed. */
   error?: string
 }
@@ -178,6 +220,8 @@ export interface RunResult {
   exitCode?: number | null
   hasVideo: boolean
   hasTrace: boolean
+  /** True when the run produced an api-log.html request/response viewer. */
+  hasApiLog?: boolean
   /** Raw stdout tail from the playwright run, for surfacing in the UI on failure. */
   log: string
   /**

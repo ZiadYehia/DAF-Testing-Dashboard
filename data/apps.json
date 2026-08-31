@@ -40,5 +40,19 @@
       "featureWizard": true,
       "moduleKnowledge": true
     }
+  },
+  {
+    "slug": "eptts-web",
+    "name": "EPTTS Web",
+    "description": "Masar Platform web dashboard & B2B APIs — pharmaceutical serialization and traceability (production, via Citrix VPN).",
+    "icon": "🌐",
+    "enabled": true,
+    "type": "web",
+    "platform": "Web (Chromium)",
+    "capabilities": {
+      "testCaseWriter": true,
+      "featureWizard": true,
+      "moduleKnowledge": true
+    }
   }
 ]

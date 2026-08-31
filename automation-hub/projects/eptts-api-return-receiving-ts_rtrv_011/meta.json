@@ -1,0 +1,21 @@
+{
+  "name": "eptts-api-return-receiving-ts_rtrv_011",
+  "title": "TS_RTRV_011 — return receiving a non-existent SSCC is refused",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TS_RTRV_011",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "api-return-receiving",
+    "testcaseId": "TS_RTRV_011"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "write"
+  ],
+  "folder": "EPTTS APIs / api-return-receiving",
+  "engine": "playwright"
+}

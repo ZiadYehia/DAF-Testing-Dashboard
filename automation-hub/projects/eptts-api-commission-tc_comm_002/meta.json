@@ -1,0 +1,21 @@
+{
+  "name": "eptts-api-commission-tc_comm_002",
+  "title": "TC_COMM_002 — commission multiple packs in one request",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TC_COMM_002",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "api-commission",
+    "testcaseId": "TC_COMM_002"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "write"
+  ],
+  "folder": "EPTTS APIs / api-commission",
+  "engine": "playwright"
+}

@@ -1,0 +1,21 @@
+{
+  "name": "eptts-api-packing-ts_pack_014",
+  "title": "TS_PACK_014 — packing into an in-transit SSCC is refused",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TS_PACK_014",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "api-packing",
+    "testcaseId": "TS_PACK_014"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "write"
+  ],
+  "folder": "EPTTS APIs / api-packing",
+  "engine": "playwright"
+}

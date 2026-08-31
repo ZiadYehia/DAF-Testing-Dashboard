@@ -1,0 +1,19 @@
+{
+  "TS_RECV_002": "needs multi-shipment or partial-receive semantics confirmed with the PO first — see the feature knowledge",
+  "TS_RECV_003": "fixture: ship urn:epc:id:sscc:84353083.183481031 to the branch did not succeed — http=200 raw=\"E - Application Error\" state=FAILED polls=6 logs=[E: Shipping event failed: [handleShipping] Invoice number 'INV-ZTG-MTHA8Q1H201' is already used in shipment 01a0580a-335f-7198-8a3e-2c268b9cbf86. Each shipment must have a unique invoice number. | E: Message processing failed — 1 of 1 event(s) encountered errors]",
+  "TS_RECV_004": "needs multi-shipment or partial-receive semantics confirmed with the PO first — see the feature knowledge",
+  "TS_RECV_005": "needs multi-shipment or partial-receive semantics confirmed with the PO first — see the feature knowledge",
+  "TS_RECV_006": "needs multi-shipment or partial-receive semantics confirmed with the PO first — see the feature knowledge",
+  "TS_RECV_007": "fixture: ship urn:epc:id:sscc:84353083.183482463 to the branch did not succeed — http=200 raw=\"E - Application Error\" state=FAILED polls=1 logs=[E: Shipping event failed: [handleShipping] Invoice number 'INV-ZTG-MTHA7K8VW5' is already used in shipment 01a05809-ba1d-74ab-88e7-e7a87558c611. Each shipment must have a unique invoice number. | E: Message processing failed — 1 of 1 event(s) encountered errors]",
+  "TS_RECV_013": "fixture: ship urn:epc:id:sscc:84353083.183531687 to the branch did not succeed — http=200 raw=\"E - Application Error\" state=FAILED polls=6 logs=[E: Shipping event failed: [handleShipping] Invoice number 'INV-ZTG-MTHA9JO65KB' is already used in shipment 01a0580a-a484-7235-89c3-372b3646cf81. Each shipment must have a unique invoice number. | E: Message processing failed — 1 of 1 event(s) encountered errors]",
+  "TS_RECV_014": "fixture: ship urn:epc:id:sscc:84353083.183541420 to the branch did not succeed — http=200 raw=\"E - Application Error\" state=FAILED polls=6 logs=[E: Shipping event failed: [handleShipping] Invoice number 'INV-ZTG-MTHA9ST73MA' is already used in shipment 01a0580a-cbb8-72a5-88b1-2ad0a8383caa. Each shipment must have a unique invoice number. | E: Message processing failed — 1 of 1 event(s) encountered errors]",
+  "TS_RECV_015": "fixture: ship urn:epc:id:sscc:84353083.183549424 to the branch did not succeed — http=200 raw=\"E - Application Error\" state=FAILED polls=6 logs=[E: Shipping event failed: [handleShipping] Invoice number 'INV-ZTG-MTHAA7FC5C0' is already used in shipment 01a0580b-15d0-7335-a5e8-ec469f1cca7d. Each shipment must have a unique invoice number. | E: Message processing failed — 1 of 1 event(s) encountered errors]",
+  "TS_RECV_016": "needs multi-shipment or partial-receive semantics confirmed with the PO first — see the feature knowledge",
+  "TS_RECV_017": "needs multi-shipment or partial-receive semantics confirmed with the PO first — see the feature knowledge",
+  "TS_RECV_018": "needs multi-shipment or partial-receive semantics confirmed with the PO first — see the feature knowledge",
+  "TS_RECV_020": "needs multi-shipment or partial-receive semantics confirmed with the PO first — see the feature knowledge",
+  "TS_RECV_022": "needs multi-shipment or partial-receive semantics confirmed with the PO first — see the feature knowledge",
+  "TS_RECV_023": "needs multi-shipment or partial-receive semantics confirmed with the PO first — see the feature knowledge",
+  "TS_RECV_024": "needs multi-shipment or partial-receive semantics confirmed with the PO first — see the feature knowledge",
+  "TS_RECV_041": "needs a second branch/distributor tenant; devsim has only distributor@devsim.local"
+}

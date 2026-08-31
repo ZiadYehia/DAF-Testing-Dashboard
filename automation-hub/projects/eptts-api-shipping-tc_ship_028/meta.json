@@ -1,0 +1,21 @@
+{
+  "name": "eptts-api-shipping-tc_ship_028",
+  "title": "TC_SHIP_028 — shipping with an empty bizStep is refused",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TC_SHIP_028",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "api-shipping",
+    "testcaseId": "TC_SHIP_028"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "write"
+  ],
+  "folder": "EPTTS APIs / api-shipping",
+  "engine": "playwright"
+}

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getApp } from '@/lib/apps'
 import { guardApp } from '@/lib/auth'
 import { getSetting } from '@/lib/settings'
 import { getModelsWithStatusAsync } from '@/lib/ai'
@@ -37,6 +38,16 @@ export async function POST(
   const { app } = await params
   const guard = await guardApp(app, 'automation.edit')
   if (!guard.ok) return guard.response
+
+  // Same reason as [project]/improve: generateSpecFromTestcase emits a Playwright-POM
+  // browser spec with page objects and cached storage state. There is no API variant of
+  // that prompt, so generating one for an API app would produce a spec that cannot run.
+  if ((await getApp(app))?.type === 'api') {
+    return NextResponse.json(
+      { error: 'Spec generation from a test case produces a browser page-object spec, which does not apply to an API app.' },
+      { status: 400 },
+    )
+  }
   if (!(await isFeatureEnabled(app, 'automationHub'))) {
     return NextResponse.json({ error: 'AI is disabled for this app (Settings → AI & Models)' }, { status: 403 })
   }

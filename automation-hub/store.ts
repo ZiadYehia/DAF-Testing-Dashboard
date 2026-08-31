@@ -31,7 +31,14 @@ export const PYTHON_ROOT = path.join(HUB_ROOT, 'python')
 export function projectDir(name: string): string {
   return path.join(PROJECTS_DIR, name)
 }
-/** Filename for a project's primary spec, by engine. */
+/**
+ * Filename for a project's primary spec, by engine.
+ *
+ * `api` deliberately keeps `test.spec.ts`: an API project is still a @playwright/test file
+ * (it just uses APIRequestContext instead of a page), and hundreds of existing API projects
+ * already carry that name. It is distinguished from a browser project by the config project
+ * it runs under — see playwrightProjectFor — not by its filename.
+ */
 export function specFileName(engine?: AutomationEngine): string {
   return engine === 'appium' ? 'test.appium.mjs' : 'test.spec.ts'
 }
