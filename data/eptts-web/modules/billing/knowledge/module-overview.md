@@ -13,11 +13,6 @@ automation must drive the real browser login.
 
 | Feature ID | Slug | Test cases |
 |---|---|---|
-| `EPTTS_BIL_01` | `billing-dashboard` | 3 |
-| `EPTTS_BIL_02` | `billing-unbilled-operations` | 3 |
-| `EPTTS_BIL_03` | `billing-invoices` | 8 |
-| `EPTTS_BIL_04` | `billing-reports` | 6 |
-| `EPTTS_BIL_05` | `billing-configuration` | 7 |
 
 ## Notes
 

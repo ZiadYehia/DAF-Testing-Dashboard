@@ -13,11 +13,6 @@ automation must drive the real browser login.
 
 | Feature ID | Slug | Test cases |
 |---|---|---|
-| `EPTTS_REG_01` | `registry-dashboard` | 7 |
-| `EPTTS_REG_02` | `registry-parties` | 8 |
-| `EPTTS_REG_03` | `registry-prefixes` | 8 |
-| `EPTTS_REG_04` | `registry-products` | 8 |
-| `EPTTS_REG_05` | `registry-register-pharmacy` | 6 |
 
 ## Notes
 
