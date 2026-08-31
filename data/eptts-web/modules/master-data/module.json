@@ -1,0 +1,8 @@
+{
+  "slug": "master-data",
+  "name": "Master Data",
+  "icon": "Database",
+  "order": 6,
+  "pathPrefix": "master-data",
+  "description": "The reference data every event is validated against — the product catalogue, inventory positions, pharmacy stock, and the MDM registry."
+}

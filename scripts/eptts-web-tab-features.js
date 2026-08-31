@@ -151,7 +151,20 @@ const CONTEXT = {
   },
 }
 
-const slug2mod = () => 'platform'
+/**
+ * Which module a tab belongs to: the one that owns its PARENT PAGE.
+ *
+ * /admin's tabs are Administration; /analytics' and /audit's tabs are Reports. Every tab
+ * slug is prefixed by its parent, so the parent is derivable — but this throws rather than
+ * guessing, because `features.module` has no foreign key and a wrong value produces a
+ * feature that belongs to a module that does not exist and shows up nowhere.
+ */
+const slug2mod = (slug) => {
+  if (slug.startsWith('web-settings-')) return 'administration'
+  if (slug.startsWith('web-analytics-')) return 'reports'
+  if (slug.startsWith('web-audit-')) return 'reports'
+  throw new Error(`no module mapping for tab feature "${slug}" — add one to slug2mod`)
+}
 
 // ─── test cases ──────────────────────────────────────────────────────────────
 
@@ -355,7 +368,7 @@ for (const tab of manifest.tabs) {
   if (WRITE) {
     const dir = path.join(FEATURES, slug)
     fs.mkdirSync(path.join(dir, 'screenshots'), { recursive: true })
-    fs.writeFileSync(path.join(dir, 'metadata.json'), JSON.stringify({ module: slug2mod() }, null, 2) + '\n')
+    fs.writeFileSync(path.join(dir, 'metadata.json'), JSON.stringify({ module: slug2mod(slug) }, null, 2) + '\n')
     fs.writeFileSync(path.join(dir, 'workflow.md'), workflow(tab, slug, featureId, ctx))
     fs.writeFileSync(path.join(dir, 'knowledge.md'), knowledge(tab, slug, ctx))
     fs.writeFileSync(path.join(dir, `${slug}-testcases.md`), md)

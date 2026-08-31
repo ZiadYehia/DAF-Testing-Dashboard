@@ -1,0 +1,8 @@
+{
+  "slug": "administration",
+  "name": "Administration",
+  "icon": "Settings",
+  "order": 9,
+  "pathPrefix": "administration",
+  "description": "Platform configuration and party management, almost all of it behind /admin's tab bars: manufacturers, distributors, pharmacies, government bodies, geography, staff, user locks and system configuration."
+}

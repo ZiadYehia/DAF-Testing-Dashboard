@@ -1,0 +1,8 @@
+{
+  "slug": "desktop-agent",
+  "name": "Desktop Agent",
+  "icon": "MonitorSmartphone",
+  "order": 11,
+  "pathPrefix": "desktop-agent",
+  "description": "Fleet management for the Windows Masar Agent (the separate `eptts` app): monitoring, device registry, activation keys and updates."
+}

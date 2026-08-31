@@ -37,6 +37,10 @@ const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
 
 // ─── modules ─────────────────────────────────────────────────────────────────
 
+// The dashboard's module tree is owned by scripts/eptts-web-module-tree.js, which mirrors
+// the real sidebar (11 groups). This map exists only so workflow.md can print a module's
+// display name and base URL; `platform` is kept as a LABEL for the dashboard portal and is
+// no longer written to disk as a module. See writeModules below.
 const MODULES = {
   platform: {
     name: 'Platform Dashboard',
@@ -73,47 +77,47 @@ const MODULES = {
  */
 const PAGE_META = {
   "dashboard:information-center": {
-    module: "platform", priority: "P3", feature: "Information Center",
+    module: "information-center", priority: "P3", feature: "Information Center",
     purpose:
       "The post-login landing page. Publishes platform announcements, upcoming compliance dates, guides and support contacts to trade partners. Read-only for every role, and the only page every role can reach - which makes it the de-facto fallback route when navigation fails.",
   },
   "dashboard:command-center": {
-    module: "platform", priority: "P1", feature: "Command Center",
+    module: "reports", priority: "P1", feature: "Command Center",
     purpose:
       "The national operations overview: pack counts by lifecycle status, stock value, partner activity and expiry exposure. This is the page a regulator looks at first, so wrong numbers here are worse than a broken page - they are believed.",
   },
   "dashboard:reporting": {
-    module: "platform", priority: "P2", feature: "Reports",
+    module: "reports", priority: "P2", feature: "Reports",
     purpose:
       "Stock and shipment reporting with a date-range filter, search, pagination and CSV export. The export is what partners reconcile against, so column fidelity matters as much as the on-screen totals.",
   },
   "dashboard:analytics": {
-    module: "platform", priority: "P2", feature: "Analytics",
+    module: "reports", priority: "P2", feature: "Analytics",
     purpose:
       "Four analytical views over the same traceability data - Activity, Inventory, Shipments and Expiry risk. Expiry risk is the commercially significant one: it drives write-off decisions.",
   },
   "dashboard:violations": {
-    module: "platform", priority: "P2", feature: "Violations",
+    module: "reports", priority: "P2", feature: "Violations",
     purpose:
       "Compliance violations raised against trade partners, bucketed by severity. Drives regulatory follow-up, so a missed violation is a compliance failure rather than a display bug.",
   },
   "dashboard:audit-console": {
-    module: "platform", priority: "P1", feature: "Audit Console",
+    module: "reports", priority: "P1", feature: "Audit Console",
     purpose:
       "The regulatory audit trail across four tabs - Regulatory events, EDA submissions, Master-data changes and Integrity. This is the evidence record: it must be complete, immutable and attributable. It also carries a 'What is not recorded?' disclosure, which is itself worth verifying against reality.",
   },
   "dashboard:master-data": {
-    module: "platform", priority: "P2", feature: "Master Data Snapshots",
+    module: "integrations", priority: "P2", feature: "Master Data Snapshots",
     purpose:
       "Generates and distributes full master-data snapshots and incremental deltas that integrators pull via the manifest endpoint. Each file is SHA-256 stamped and the manifest is HMAC-signed, so integrity verification is part of the contract rather than optional.",
   },
   "dashboard:settings-admin": {
-    module: "platform", priority: "P1", feature: "Settings (Administration)",
+    module: "administration", priority: "P1", feature: "Settings (Administration)",
     purpose:
       "The full platform administration surface: 15 tabs covering partner types (Government, Manufacturer, Distributor, Dispenser), Pharmacies and Pharmacy Admins, POS Partners, B2B Partners, Platform Staff, User Locks, Geography and System Configuration. The highest-privilege page in the product - and currently unreachable from the navigation menu.",
   },
   "dashboard:products": {
-    module: "platform", priority: "P2", feature: "Product Display",
+    module: "master-data", priority: "P2", feature: "Product Display",
     purpose:
       "Browses the registered product catalogue as the platform sees it. Also unreachable from the navigation menu.",
   },
@@ -185,7 +189,16 @@ function featureSlug(page) {
 function moduleFor(page) {
   const meta = metaFor(page)
   if (meta?.module) return meta.module
-  return page.portal === 'dashboard' ? 'platform' : page.portal
+  // No silent fallback for dashboard pages: the sidebar has 11 modules and guessing one
+  // would quietly file a feature in the wrong place. Registry/billing pages still map to
+  // their portal, which IS their module.
+  if (page.portal === 'dashboard') {
+    throw new Error(
+      `no PAGE_META entry for "dashboard:${page.name}" — add one (with its module) before ` +
+      'generating this page',
+    )
+  }
+  return page.portal
 }
 
 // ─── test-case generation ────────────────────────────────────────────────────
@@ -446,6 +459,11 @@ for (const page of manifest.pages) {
 
 if (WRITE) {
   for (const [slug, m] of Object.entries(MODULES)) {
+    // `platform` is a LABEL for the dashboard portal, not a module any more. The dashboard's
+    // 11 real modules are owned by scripts/eptts-web-module-tree.js; recreating `platform`
+    // here would resurrect the catch-all module that restructure deleted, and features
+    // pointing at it would appear nowhere.
+    if (slug === 'platform') continue
     const dir = path.join(APP_DIR, 'modules', slug)
     fs.mkdirSync(path.join(dir, 'knowledge'), { recursive: true })
     fs.writeFileSync(path.join(dir, 'module.json'), JSON.stringify({

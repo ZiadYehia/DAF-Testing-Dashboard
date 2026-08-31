@@ -1,0 +1,8 @@
+{
+  "slug": "integrations",
+  "name": "Integrations",
+  "icon": "Plug",
+  "order": 10,
+  "pathPrefix": "integrations",
+  "description": "What partners connect WITH: downloadable integration clients, master-data snapshots they sync from, and registered POS partners."
+}

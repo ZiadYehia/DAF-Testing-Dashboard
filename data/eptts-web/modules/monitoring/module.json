@@ -1,0 +1,8 @@
+{
+  "slug": "monitoring",
+  "name": "Monitoring",
+  "icon": "Activity",
+  "order": 7,
+  "pathPrefix": "monitoring",
+  "description": "The operator's window into what the platform actually received and did: pack trace, B2B EPCIS messages, the message log, and webhook delivery history."
+}

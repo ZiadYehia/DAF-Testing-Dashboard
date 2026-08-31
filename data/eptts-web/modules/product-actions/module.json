@@ -1,0 +1,8 @@
+{
+  "slug": "product-actions",
+  "name": "Product Actions",
+  "icon": "ScanLine",
+  "order": 4,
+  "pathPrefix": "product-actions",
+  "description": "Operations performed on a pack in place rather than moving it: scanning to look one up, verifying authenticity, destroying it, and recall."
+}

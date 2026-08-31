@@ -1,0 +1,8 @@
+{
+  "slug": "information-center",
+  "name": "Information Center",
+  "icon": "Info",
+  "order": 1,
+  "pathPrefix": "information-center",
+  "description": "Platform announcements, guidance and reference material pushed to trade partners."
+}

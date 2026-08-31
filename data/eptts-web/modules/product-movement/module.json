@@ -1,0 +1,8 @@
+{
+  "slug": "product-movement",
+  "name": "Product Movement",
+  "icon": "Truck",
+  "order": 2,
+  "pathPrefix": "product-movement",
+  "description": "Custody transfer — the core of a track-and-trace system."
+}

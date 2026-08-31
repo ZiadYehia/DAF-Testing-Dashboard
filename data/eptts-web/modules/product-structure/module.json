@@ -1,0 +1,8 @@
+{
+  "slug": "product-structure",
+  "name": "Product Structure",
+  "icon": "Boxes",
+  "order": 3,
+  "pathPrefix": "product-structure",
+  "description": "How packs are nested inside containers — aggregation and its reverse."
+}

@@ -1,0 +1,8 @@
+{
+  "slug": "reports",
+  "name": "Reports",
+  "icon": "BarChart3",
+  "order": 8,
+  "pathPrefix": "reports",
+  "description": "Aggregate views over the traceability graph: the command centre, reporting, analytics, violations and the audit console."
+}

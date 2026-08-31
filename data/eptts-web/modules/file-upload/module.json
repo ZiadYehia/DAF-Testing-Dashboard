@@ -1,0 +1,8 @@
+{
+  "slug": "file-upload",
+  "name": "File Upload",
+  "icon": "Upload",
+  "order": 5,
+  "pathPrefix": "file-upload",
+  "description": "Bulk ingestion for partners who cannot integrate against the API: EPCIS XML documents and commissioning/packing CSVs."
+}

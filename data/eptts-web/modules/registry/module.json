@@ -2,7 +2,7 @@
   "slug": "registry",
   "name": "Master Data Registry",
   "icon": "BookMarked",
-  "order": 3,
+  "order": 12,
   "pathPrefix": "registry",
   "description": "Registry portal (:8445) — trade parties, GS1 prefixes, products, pharmacy onboarding, and B2B API keys."
 }
