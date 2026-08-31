@@ -10,7 +10,7 @@
   "TC_PDISP_009": "pass",
   "TC_PDISP_010": "blocked",
   "TC_PDISP_011": "blocked",
-  "TC_PDISP_012": "fail",
+  "TC_PDISP_012": "pass",
   "TC_PDISP_013": "blocked",
   "TC_PDISP_014": "pass",
   "TC_PDISP_015": "pass",

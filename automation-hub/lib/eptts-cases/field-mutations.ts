@@ -192,6 +192,15 @@ export type MutationName = keyof typeof MUTATIONS
  * Confirmed on 2026-08-31 against commissioning; the same validation layer serves every
  * event type, so a feature that maps to one of these inherits the marker.
  */
+/**
+ * Validation gaps observed on the platform, keyed by mutation.
+ *
+ * IMPORTANT: these are gaps on MOST endpoints, not all of them. The validator is not
+ * uniform — `/Dispensation`, for instance, rejects a malformed eventTime that
+ * `/scp/SendEPCIS` accepts. A feature whose endpoint DOES validate correctly must list the
+ * affected case ids in `validates`, or the marker claims a defect that is not there and
+ * hides the fact that this endpoint gets it right.
+ */
 export const KNOWN_GAPS: Partial<Record<MutationName, string>> = {
   emptyEventTime: 'an empty eventTime is accepted and processed successfully',
   invalidEventTime: 'a non-ISO-8601 eventTime is accepted and processed successfully',
@@ -238,6 +247,12 @@ export interface FieldCaseOpts {
   /** Extra gap markers specific to this feature, merged over KNOWN_GAPS. */
   gaps?: Partial<Record<string, string>>
   /**
+   * Case ids where this endpoint DOES validate correctly, despite the mutation being a
+   * known gap elsewhere. Suppresses the expected-failure marker so the case is a plain
+   * pass — which is the truth, and stops the suite implying a defect that is not present.
+   */
+  validates?: string[]
+  /**
    * How to submit and assert a refusal. Defaults to /scp/SendEPCIS via `expectRejected`.
    * Dispensing MUST override this — it posts to /Dispensation, and submitting its
    * documents to /scp/SendEPCIS would test the wrong endpoint entirely while still
@@ -252,7 +267,7 @@ export function fieldCases(opts: FieldCaseOpts): ApiCase[] {
   for (const [id, name] of Object.entries(opts.map)) {
     if (!name) continue
     const m = MUTATIONS[name]
-    const gap = opts.gaps?.[id] ?? KNOWN_GAPS[name]
+    const gap = opts.validates?.includes(id) ? undefined : (opts.gaps?.[id] ?? KNOWN_GAPS[name])
     out.push({
       id,
       feature: opts.feature,

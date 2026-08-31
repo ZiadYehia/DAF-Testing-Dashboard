@@ -236,7 +236,8 @@ const RTN_FIELDS: Partial<Record<string, MutationName>> = {
 export const RETURN_CASES: ApiCase[] = [
   ...returnBusiness,
   ...returnUnclear,
-  ...fieldCases({ feature: RTN, role: 'branch', verb: 'return shipping', baseDoc: rtnBase, map: RTN_FIELDS }),
+  ...fieldCases({
+    validates: ['TS_RTN_031'], feature: RTN, role: 'branch', verb: 'return shipping', baseDoc: rtnBase, map: RTN_FIELDS }),
 ]
 
 // ─── return receiving ────────────────────────────────────────────────────────

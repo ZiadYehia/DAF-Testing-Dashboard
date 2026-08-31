@@ -2,8 +2,16 @@
   "TS_RTN_002": "needs two concurrent branch-held shipments, or a defined all-or-nothing semantic for mixed EPC lists — confirm with the PO first",
   "TS_RTN_004": "needs two concurrent branch-held shipments, or a defined all-or-nothing semantic for mixed EPC lists — confirm with the PO first",
   "TS_RTN_005": "needs a second branch/distributor tenant; devsim has only distributor@devsim.local",
+  "TS_RTN_007": "TS_RTN_007 an empty sourceList: the platform ACCEPTED input it should refuse — http=200 raw=\"S - Successful\" state=SUCCESS polls=6 logs=[I: Return event processed successfully | I: Message processed successfully — all 1 event(s) completed]",
+  "TS_RTN_009": "TS_RTN_009 an empty destinationList: the platform ACCEPTED input it should refuse — http=200 raw=\"S - Successful\" state=SUCCESS polls=6 logs=[I: Return event processed successfully | I: Message processed successfully — all 1 event(s) completed]",
+  "TS_RTN_012": "return to a party that never supplied the pack: the platform ACCEPTED input it should refuse — http=200 raw=\"S - Successful\" state=SUCCESS polls=6 logs=[I: Return event processed successfully | I: Message processed successfully — all 1 event(s) completed]",
   "TS_RTN_018": "needs two concurrent branch-held shipments, or a defined all-or-nothing semantic for mixed EPC lists — confirm with the PO first",
+  "TS_RTN_021": "duplicate EPCs: the platform ACCEPTED input it should refuse — http=200 raw=\"S - Successful\" state=SUCCESS polls=6 logs=[I: Return event processed successfully | I: Message processed successfully — all 1 event(s) completed]",
   "TS_RTN_022": "needs two concurrent branch-held shipments, or a defined all-or-nothing semantic for mixed EPC lists — confirm with the PO first",
   "TS_RTN_023": "needs two concurrent branch-held shipments, or a defined all-or-nothing semantic for mixed EPC lists — confirm with the PO first",
-  "TS_RTN_024": "needs two concurrent branch-held shipments, or a defined all-or-nothing semantic for mixed EPC lists — confirm with the PO first"
+  "TS_RTN_024": "needs two concurrent branch-held shipments, or a defined all-or-nothing semantic for mixed EPC lists — confirm with the PO first",
+  "TS_RTN_025": "TS_RTN_025 an empty bizTransactionList: the platform ACCEPTED input it should refuse — http=200 raw=\"S - Successful\" state=SUCCESS polls=6 logs=[I: Return event processed successfully | I: Message processed successfully — all 1 event(s) completed]",
+  "TS_RTN_031": "Previously a known platform gap; the platform now behaves correctly. Remove the expected-failure marker for this case in automation-hub/lib/eptts-cases/.",
+  "TS_RTN_032": "platform validation gap: a non-ISO-8601 eventTime is accepted and processed successfully",
+  "TS_RTN_033": "platform validation gap: eventTimeZoneOffset +99:99 is accepted and processed successfully"
 }

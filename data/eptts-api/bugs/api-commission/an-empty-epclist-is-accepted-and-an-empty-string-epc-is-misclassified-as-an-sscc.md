@@ -57,3 +57,15 @@ Functional (Backend/API)
 ---
 **Notes:**
 Covered by `TC_COMM_004` / `TC_COMM_004b` (both `test.fail()`), and by `SMOKE-05b` in `automation-hub/projects/eptts-api-smoke/` for the empty-eventList case. The SSCC misclassification is the part worth investigating first — it points at the EPC parser rather than at input validation.
+
+---
+**SCOPE CORRECTION (2026-09-01): empty-list acceptance is platform-wide, not just `epcList`.**
+
+A full clean run showed the same behaviour for `sourceList`, `destinationList` and
+`bizTransactionList` across shipping, receiving and both return legs — 8 cases in total. Filed
+as *"Empty required lists are accepted across shipping, receiving and both return legs"*
+(`api-shipping`), which lists them.
+
+Keep this ticket for the commissioning `epcList` case and its separate finding that an
+empty-string EPC is misclassified as an SSCC — that part is specific to the identifier parser
+and does not appear in the wider set.

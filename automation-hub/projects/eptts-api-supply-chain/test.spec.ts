@@ -170,9 +170,11 @@ test.describe.serial('supply-chain journey', () => {
 
   test('CHAIN-07 — pharmacy dispenses the pack', async () => {
     test.slow()
-    // CORRECTION: /Dispensation is ASYNCHRONOUS (202 + I001, then MsgStatusQuery),
-    // not synchronous 200. Both the source spreadsheet ("200 Success") and the vendor
-    // collection describe it as synchronous; verified live, it is not.
+    // /Dispensation is ASYNCHRONOUS but acknowledges with 200 — not 202 like
+    // /scp/SendEPCIS. The spreadsheet and vendor collection say "200 Success" meaning
+    // synchronously complete: the code is right, the meaning is wrong. So do not assert the
+    // status code; assert the polled messagestatus. Reading 200 as success would pass while
+    // the dispense actually failed.
     const { dispensation, bodyOf, pollMsgStatus } = await import('../../lib/eptts-api')
     const doc = epcisDocument(
       [dispensingEvent({ epcList: [sgtin], readPointSgln: sglnOf('pharmacy') })],
@@ -181,7 +183,7 @@ test.describe.serial('supply-chain journey', () => {
     const res = await dispensation('pharmacy', doc)
     const body = await bodyOf(res)
     console.log(`[chain] dispense -> ${res.status()} ${JSON.stringify(body).slice(0, 200)}`)
-    expect(res.status(), 'dispensing is accepted for processing').toBe(202)
+    expect([200, 202], `dispensing acknowledged — got ${res.status()}`).toContain(res.status())
 
     const iid = doc.sbdh.documentIdentification.instanceIdentifier
     const msg = await pollMsgStatus('pharmacy', iid)

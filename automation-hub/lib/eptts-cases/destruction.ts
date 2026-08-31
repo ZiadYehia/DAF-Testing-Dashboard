@@ -223,5 +223,6 @@ const duplicateRequest: ApiCase = {
 export const DESTRUCTION_CASES: ApiCase[] = [
   ...business,
   duplicateRequest,
-  ...fieldCases({ feature: FEATURE, role: 'manufacturer', verb: 'destroying', baseDoc, map: FIELD_MAP }),
+  ...fieldCases({
+    validates: ['TC_DEST_018'], feature: FEATURE, role: 'manufacturer', verb: 'destroying', baseDoc, map: FIELD_MAP }),
 ]

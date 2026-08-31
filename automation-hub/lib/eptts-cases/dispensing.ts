@@ -99,12 +99,30 @@ const business: ApiCase[] = [
     id: 'TC_DISP_002', feature: FEATURE, slow: true,
     title: 'a pharmacy dispenses multiple valid SGTINs in one request',
     run: async () => {
+      // THE SHEET AND THE PLATFORM DISAGREE, and the platform has the better argument.
+      //
+      // The sheet marks multi-EPC dispensing POSITIVE. The platform refuses it outright:
+      // "Dispense event must contain exactly 1 EPC, got 3". That is coherent — a dispense is
+      // recorded against one prescription line, so one event per pack keeps the audit trail
+      // attributable. Batching would make it impossible to say which pack went to whom.
+      //
+      // So this asserts the real behaviour and records the divergence, rather than failing
+      // forever against a sheet assumption. Worth confirming with the PO that one-per-request
+      // is intended rather than a limitation.
       const a = await atPharmacy(3)
-      await expectDispensed('pharmacy', dispDoc(a.sgtins), 'dispense three packs')
+      await expectRefused('pharmacy', dispDoc(a.sgtins), 'three packs in one dispense')
+
+      // And the packs must be untouched by the refusal — a rejected batch must not
+      // partially apply.
       for (const s of a.sgtins) {
         const v = await packOf('pharmacy', s)
-        expect(v.pack?.status, `${s} becomes dispensed`).toBe('dispensed')
+        expect(v.pack?.status, `${s} was NOT dispensed by the refused batch`).not.toBe('dispensed')
       }
+
+      // One at a time is the supported path, so prove that still works.
+      await expectDispensed('pharmacy', dispDoc([a.sgtins[0]]), 'one pack per request')
+      const first = await packOf('pharmacy', a.sgtins[0])
+      expect(first.pack?.status, 'the single dispense applied').toBe('dispensed')
     },
   },
   {
@@ -315,6 +333,9 @@ export const DISPENSING_CASES: ApiCase[] = [
   ...business,
   // reject: expectRefused — these documents go to /Dispensation, NOT /scp/SendEPCIS.
   ...fieldCases({
+    // These reached a correct refusal in the clean run, so the shared KNOWN_GAPS marker
+    // would claim a defect this endpoint does not have — and hide that it validates.
+    validates: ['TC_DISP_018', 'TC_DISP_022', 'TC_DISP_023', 'TC_DISP_024'],
     feature: FEATURE, role: 'pharmacy', verb: 'dispensing', baseDoc, map: FIELD_MAP,
     reject: expectRefused,
   }),

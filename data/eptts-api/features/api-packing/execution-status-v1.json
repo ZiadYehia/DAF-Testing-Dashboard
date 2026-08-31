@@ -1,9 +1,9 @@
 {
   "TS_PACK_001": "pass",
   "TS_PACK_002": "pass",
-  "TS_PACK_003": "fail",
+  "TS_PACK_003": "pass",
   "TS_PACK_004": "pass",
-  "TS_PACK_005": "fail",
+  "TS_PACK_005": "blocked",
   "TS_PACK_006": "pass",
   "TS_PACK_007": "pass",
   "TS_PACK_008": "pass",

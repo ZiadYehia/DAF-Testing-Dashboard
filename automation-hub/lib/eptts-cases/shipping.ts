@@ -314,7 +314,8 @@ const SHIP_FIELDS: Partial<Record<string, MutationName>> = {
 
 export const SHIPPING_CASES: ApiCase[] = [
   ...shippingBusiness,
-  ...fieldCases({ feature: SHIP, role: 'manufacturer', verb: 'shipping', baseDoc: shipBase, map: SHIP_FIELDS }),
+  ...fieldCases({
+    validates: ['TC_SHIP_020', 'TC_SHIP_029'], feature: SHIP, role: 'manufacturer', verb: 'shipping', baseDoc: shipBase, map: SHIP_FIELDS }),
 ]
 
 // ─── receiving ───────────────────────────────────────────────────────────────

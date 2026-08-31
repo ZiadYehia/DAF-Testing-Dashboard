@@ -185,6 +185,9 @@ export const PARTIAL_DISPENSING_CASES: ApiCase[] = [
   ...blocked,
   ...runnable,
   ...fieldCases({
+    // These reached a correct refusal in the clean run, so the shared KNOWN_GAPS marker
+    // would claim a defect this endpoint does not have — and hide that it validates.
+    validates: ['TC_PDISP_016', 'TC_PDISP_026', 'TC_PDISP_027', 'TC_PDISP_028'],
     feature: FEATURE, role: 'pharmacy', verb: 'partially dispensing', baseDoc, map: FIELD_MAP,
     reject: expectRefused,   // /Dispensation, not /scp/SendEPCIS
   }),

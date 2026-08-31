@@ -51,3 +51,10 @@ Functional (Backend/API)
 ---
 **Notes:**
 Covered by `TC_COMM_034` (marked `test.fail()`). `TC_COMM_033` (empty disposition) passes and is unaffected. Was recorded as `Fail` in the source spreadsheet and remains broken, unlike TC_COMM_033/035/038/041/042 which now reject correctly.
+
+---
+**SCOPE CORRECTION (2026-09-01): also present on Receiving and Return Receiving.**
+
+The same unvalidated `disposition` was accepted on `TS_RECV_028` and `TS_RTRV_029` in a full
+clean run, so this belongs to the shared event validator rather than the commissioning
+handler. `TC_COMM_034` remains the commissioning instance.

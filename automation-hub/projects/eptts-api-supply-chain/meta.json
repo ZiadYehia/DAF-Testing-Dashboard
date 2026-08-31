@@ -6,8 +6,18 @@
   "linkedTestcaseId": "TS_RECV_001",
   "linkedTestcase": null,
   "createdAt": "2026-08-31T09:40:00.000Z",
-  "lastStatus": "never_run",
-  "runs": [],
+  "lastStatus": "fail",
+  "runs": [
+    {
+      "ts": "2026-08-31T22-03-42-550Z",
+      "status": "fail",
+      "durationMs": 131589.447,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": false,
+      "error": "Error: dispensing is accepted for processing"
+    }
+  ],
   "tags": [
     "api",
     "write",
