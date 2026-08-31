@@ -1,0 +1,3 @@
+{
+  "WEB_IDL_001": "The page renders its content but shows \"Error — Cannot GET this resource\" in the body: GET /registry-service/api/v1/onboarding/integration/info returns 404, while the page's other two calls return 200. Partial failure — usable, but showing a raw backend error the user cannot act on."
+}

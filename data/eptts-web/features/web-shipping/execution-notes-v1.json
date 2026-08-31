@@ -1,0 +1,3 @@
+{
+  "WEB_SHP_001": "The page renders, but one of its header buttons shows the raw translation key \"shipments.bulkUpload\" instead of a label. Unresolved in BOTH Arabic and English, so it is a missing catalogue entry rather than one locale lagging. The control is the entry point to bulk shipping upload, so a user cannot tell what it does."
+}
