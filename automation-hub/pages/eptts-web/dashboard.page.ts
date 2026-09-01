@@ -459,8 +459,257 @@ export class DashboardPage extends FluentPage {
     })
   }
 
+  /**
+   * A GLN filter must refuse a check digit that does not compute.
+   *
+   * Safe on any page: a filter issues a query and writes nothing. That is why the four audit
+   * screens are treated differently from the four "Add …" forms below — same test-case
+   * wording, completely different blast radius.
+   *
+   * "Refuse" means SAYING SO. A field that quietly runs the lookup and returns nothing has
+   * not validated anything; it has told the user their GLN does not exist, which is a
+   * different and wrong statement. So an empty result set with no message fails here, and the
+   * message says which of the two happened.
+   */
+  expectGlnFilterRejectsBadCheckDigit(placeholder: string): this {
+    return this.step(async () => {
+      const bad = invalidGln()
+      expect(isValidGln(bad), `${bad} must genuinely fail the GS1 check-digit rule`).toBe(false)
+
+      const box = this.scope().locator(
+        `input[placeholder*="${placeholder}" i]`).first()
+      await box.waitFor({ state: 'visible', timeout: 20_000 })
+      await box.fill(bad)
+      await box.press('Enter')
+      await this.page.waitForLoadState('networkidle', { timeout: 20_000 }).catch(() => {})
+      await this.page.waitForTimeout(1200)
+
+      const complaint = await this.findValidationComplaint(/gln|check digit|invalid|not valid|format/i)
+
+      // A single "No records match these filters" row IS an empty result, not surviving data
+      // — PrimeNG renders the empty state as a row. Counting rows alone would report "still
+      // shows 1 row", which points a reader at the wrong problem.
+      const rowTexts = (await this.scope().locator('tbody tr').allInnerTexts())
+        .map((t) => t.replace(/\s+/g, ' ').trim()).filter(Boolean)
+      const emptied = rowTexts.length === 0 ||
+        (rowTexts.length === 1 && /^(no|none|nothing|empty)\b|not found|no results|no records/i.test(rowTexts[0]))
+
+      expect(
+        complaint,
+        `entering the invalid GLN ${bad} produced no validation message — the page ${
+          emptied
+            ? `ran the lookup and reported ${rowTexts[0] ? `"${rowTexts[0].slice(0, 80)}"` : 'an empty table'}, ` +
+              'which tells the user their GLN was not found rather than that it is malformed'
+            : `ran the lookup and still shows ${rowTexts.length} row(s)`
+        }`,
+      ).not.toBeNull()
+    })
+  }
+
+  /**
+   * An "Add …" form must refuse a GLN whose check digit does not compute.
+   *
+   * THIS ONE CAN WRITE TO PRODUCTION, so it is built with two independent barriers:
+   *
+   *  1. Only the GLN is filled. Every other required field is left EMPTY, so even if the
+   *     check digit is never validated, required-field validation still stops the record
+   *     being created. Both would have to be missing for anything to be written.
+   *  2. The row count is captured before and re-checked after. If a record IS created, the
+   *     test fails saying exactly that, so it can be found and removed by hand. It does not
+   *     try to delete it — that is another production write, and one nobody asked for.
+   *
+   * Leaving the other fields empty would normally make a rejection ambiguous ("was that the
+   * GLN or the blank name?"), so the assertion does not accept a bare rejection: it requires
+   * a complaint that actually mentions the GLN. Required-field errors alone are reported as
+   * "the check digit is not validated", which is the finding.
+   */
+  expectCreateFormRejectsBadGln(openButtonName: string, glnFieldHint = 'GLN'): this {
+    return this.step(async () => {
+      const bad = invalidGln()
+      expect(isValidGln(bad), `${bad} must genuinely fail the GS1 check-digit rule`).toBe(false)
+
+      const rowsBefore = await this.scope().locator('tbody tr').count()
+
+      await this.scope().getByRole('button', { name: openButtonName }).first()
+        .click({ timeout: 20_000 })
+      const dialog = this.page.locator('[role="dialog"], .p-dialog').first()
+      await dialog.waitFor({ state: 'visible', timeout: 20_000 })
+
+      const gln = dialog.locator(
+        `input[placeholder*="${glnFieldHint}" i], input[name*="${glnFieldHint}" i], ` +
+        `input[formcontrolname*="${glnFieldHint}" i]`).first()
+      await gln.waitFor({ state: 'visible', timeout: 15_000 })
+      await gln.fill(bad)
+      await gln.press('Tab')          // blur first: most Angular forms validate here
+      await this.page.waitForTimeout(800)
+
+      let complaint = await this.findValidationComplaint(/gln|check digit/i, dialog)
+      const tried = ['blur']
+
+      /**
+       * The form's own GLN affordance, and the reason this test never has to submit.
+       *
+       * "Add Manufacturer" carries a Verify button, described in the dialog as "Verified
+       * against the GS1 registry with the GLN". It is disabled while the GLN box is empty and
+       * becomes enabled as soon as 13 digits are typed — for a malformed GLN just as readily
+       * as a valid one. Pressing it performs a LOOKUP, not a write, so it exercises exactly
+       * the requirement ("is this GLN acceptable?") with no possibility of creating a record.
+       */
+      if (!complaint) {
+        const verify = buttonByText(dialog, /^\s*(verify|validate|check)\b/i)
+        if (await verify.count() && await verify.first().isEnabled()) {
+          tried.push('Verify')
+
+          // Watch the verification call itself. On this environment it answers
+          // 403 "GS1 verification is not enabled in this environment" — for a VALID GLN just
+          // as much as an invalid one. That means the check-digit rule cannot be exercised
+          // here at all, and the case is BLOCKED on environment configuration rather than
+          // failed. Calling it a defect would be reporting a switched-off feature as a bug.
+          let disabledReason: string | null = null
+          const watch = async (res: { url(): string; status(): number; text(): Promise<string> }) => {
+            if (!/gs1|verify|preview/i.test(res.url()) || res.status() < 400) return
+            const body = await res.text().catch(() => '')
+            if (/not enabled|disabled|not configured|not supported/i.test(body)) {
+              disabledReason = `${res.status()} from ${res.url().split('/').slice(-1)[0]}: ` +
+                (body.match(/"message"\s*:\s*"([^"]+)"/)?.[1] ?? body.slice(0, 120))
+            }
+          }
+          this.page.on('response', watch)
+          await verify.first().click()
+          await this.page.waitForLoadState('networkidle', { timeout: 20_000 }).catch(() => {})
+          await this.page.waitForTimeout(2500)
+          this.page.off('response', watch)
+
+          if (disabledReason) {
+            await this.page.keyboard.press('Escape').catch(() => {})
+            test.skip(true, 'GLN verification is switched off on this environment, so the ' +
+              `check-digit rule cannot be exercised — ${disabledReason}`)
+            return
+          }
+          complaint = await this.findValidationComplaint(/gln|check digit|not found|invalid|registry/i, dialog)
+        }
+      }
+
+      /**
+       * Whether the form would let this be submitted at all.
+       *
+       * Never clicked. With only the GLN filled, a DISABLED Create is the required-field
+       * barrier doing its job; an ENABLED one would mean the form is willing to submit a
+       * record with an invalid GLN and every other field blank, which is worth reporting in
+       * its own right. Either way, clicking it is the one thing that could write.
+       */
+      const create = buttonByText(dialog, /^\s*(save|add|create|submit|confirm)\b/i)
+      // Not `.catch(() => false)`: on a locator that matches nothing isEnabled() throws, and
+      // swallowing that would report "Create stayed disabled" having never found a Create
+      // button at all — a confident statement resting on nothing.
+      expect(await create.count(), 'the dialog has a submit button').toBeGreaterThan(0)
+      const createEnabled = await create.first().isEnabled()
+
+      // Whatever happened, make sure nothing was created before reporting anything else.
+      await this.page.keyboard.press('Escape').catch(() => {})
+      await this.page.waitForTimeout(600)
+      const rowsAfter = await this.scope().locator('tbody tr').count()
+      expect(
+        rowsAfter,
+        `a record was created on PRODUCTION from an invalid GLN (${bad}) — rows went ` +
+        `${rowsBefore} -> ${rowsAfter}. Find it by that GLN and remove it by hand; this test ` +
+        'deliberately does not delete it.',
+      ).toBeLessThanOrEqual(rowsBefore)
+
+      /**
+       * No complaint, no verification affordance, and Create disabled: there is nothing left
+       * to observe without filling every required field and pressing Create, which creates a
+       * record on production. That makes the case BLOCKED, not failed.
+       *
+       * The distinction matters. Failing it would assert "this form does not validate GLN
+       * check digits", and the only evidence for that would be the absence of CLIENT-side
+       * feedback — which says nothing about what the server does on submit. An unfounded
+       * claim in a bug report costs more than an honest "not exercised".
+       */
+      if (!complaint && !createEnabled && !tried.includes('Verify')) {
+        test.skip(true, 'this form offers no way to check a GLN without submitting it: no ' +
+          'inline validation on blur, no Verify control, and Create is disabled until every ' +
+          'required field is filled. Exercising the rule would mean creating a record on ' +
+          'production, which is out of scope.')
+        return
+      }
+
+      expect(
+        complaint,
+        `the form accepted the GLN ${bad}, whose check digit does not compute, without any ` +
+        `complaint (tried: ${tried.join(', ')}). ${
+          createEnabled
+            ? 'Create was ENABLED with an invalid GLN and every other field blank — it was ' +
+              'deliberately not pressed, since that is the step that could write to production.'
+            : 'Create stayed disabled, so the required-field barrier is doing the work rather ' +
+              'than any GLN validation.'
+        }`,
+      ).not.toBeNull()
+    })
+  }
+
+  /**
+   * The first validation message on screen matching `pattern`, or null.
+   *
+   * PrimeNG spreads these across several idioms (`p-error`, `.p-invalid` siblings, toasts,
+   * `[role=alert]`), and different screens in this app use different ones, so this looks at
+   * all of them rather than betting on one.
+   */
+  private async findValidationComplaint(pattern: RegExp, within?: Locator): Promise<string | null> {
+    const root = within ?? this.scope()
+    const inline = await root.locator(
+      '.p-error, .p-invalid, small.p-error, [role="alert"], .p-message-text, ' +
+      '.invalid-feedback, .error, .text-danger',
+    ).allInnerTexts().catch(() => [] as string[])
+
+    // Toasts are portalled to the document, OUTSIDE the panel or dialog being examined, so a
+    // scoped search cannot see them. Looking only inside the dialog is how "the 403 is
+    // swallowed silently" got believed for a while — the platform was in fact showing
+    // "GS1 verification is not enabled in this environment" as a page-level toast the whole
+    // time. Anything user-visible counts as the product having spoken.
+    const toasts = await this.page.locator(
+      '.p-toast, .p-toast-message, .p-toast-detail, .p-toast-summary, .toast, .snackbar',
+    ).allInnerTexts().catch(() => [] as string[])
+
+    return [...inline, ...toasts]
+      .map((t) => t.replace(/\s+/g, ' ').trim())
+      .find((t) => t && pattern.test(t)) ?? null
+  }
+
   /** Escape hatch for a page-specific assertion the shared vocabulary does not cover. */
   locator(selector: string): Locator {
     return this.page.locator(selector)
   }
+}
+
+/**
+ * A button matched on the text a user actually sees.
+ *
+ * `getByRole('button', { name })` matches the ACCESSIBLE name, which on these dialogs is not
+ * the visible label — the Verify button reads "Verify" on screen and matched zero elements by
+ * role. Matching on text is what a reader of the test expects anyway.
+ */
+function buttonByText(within: Locator, text: RegExp): Locator {
+  return within.locator('button').filter({ hasText: text })
+}
+
+/**
+ * The GS1 mod-10 check digit for the first 12 digits of a GLN-13.
+ *
+ * Computed rather than hard-coded so the specs can PROVE the value they submit is invalid.
+ * A hard-coded "bad" GLN that turns out to be valid would make the whole check vacuous, and
+ * nothing would ever say so.
+ */
+export function glnCheckDigit(first12: string): number {
+  const sum = [...first12].reduce((acc, d, i) => acc + Number(d) * (i % 2 === 0 ? 1 : 3), 0)
+  return (10 - (sum % 10)) % 10
+}
+
+export function isValidGln(gln: string): boolean {
+  return /^\d{13}$/.test(gln) && glnCheckDigit(gln.slice(0, 12)) === Number(gln[12])
+}
+
+/** A well-formed 13-digit GLN whose check digit is deliberately one off. */
+export function invalidGln(first12 = '843530830000'): string {
+  return first12 + ((glnCheckDigit(first12) + 1) % 10)
 }

@@ -22,6 +22,11 @@ A related endpoint is missing on the service the collection documents: `GET /mas
 
 This matters beyond cosmetics: this page is how integrators obtain the signed master-data manifest, and the page cannot show whether any snapshot exists.
 ---
+**Covers test cases:** `WEB_MDT_001`, `WEB_MDT_002`
+
+Both fail on the same error banner — `WEB_MDT_002` differs only in reloading the route rather
+than opening it fresh.
+
 **Steps to Reproduce:**
 1. Connect the Citrix VPN and open https://192.168.225.195:8444.
 2. Log in as admin@devsim.local.

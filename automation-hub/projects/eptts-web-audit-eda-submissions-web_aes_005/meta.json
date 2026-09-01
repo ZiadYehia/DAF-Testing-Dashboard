@@ -1,0 +1,23 @@
+{
+  "name": "eptts-web-audit-eda-submissions-web_aes_005",
+  "title": "WEB_AES_005 — Validate that EDA submissions rejects a GLN with an invalid check digit",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_AES_005",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-audit-eda-submissions",
+    "testcaseId": "WEB_AES_005"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "glnFilter",
+    "tab"
+  ],
+  "folder": "EPTTS Web / web-audit-eda-submissions",
+  "engine": "playwright"
+}

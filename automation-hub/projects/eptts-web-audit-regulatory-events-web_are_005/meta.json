@@ -1,0 +1,23 @@
+{
+  "name": "eptts-web-audit-regulatory-events-web_are_005",
+  "title": "WEB_ARE_005 — Validate that search filters the Regulatory events list",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_ARE_005",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-audit-regulatory-events",
+    "testcaseId": "WEB_ARE_005"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "searchFilters",
+    "tab"
+  ],
+  "folder": "EPTTS Web / web-audit-regulatory-events",
+  "engine": "playwright"
+}

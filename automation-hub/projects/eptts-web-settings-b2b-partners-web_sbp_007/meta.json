@@ -1,0 +1,23 @@
+{
+  "name": "eptts-web-settings-b2b-partners-web_sbp_007",
+  "title": "WEB_SBP_007 — Validate that B2B Partners rejects a GLN with an invalid check digit",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_SBP_007",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-settings-b2b-partners",
+    "testcaseId": "WEB_SBP_007"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "write",
+    "glnCreateForm",
+    "tab"
+  ],
+  "folder": "EPTTS Web / web-settings-b2b-partners",
+  "engine": "playwright"
+}

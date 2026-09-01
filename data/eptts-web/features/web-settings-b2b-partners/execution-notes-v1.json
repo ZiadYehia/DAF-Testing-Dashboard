@@ -1,5 +1,6 @@
 {
   "WEB_SBP_001": "control \"Add Partner\" is present",
   "WEB_SBP_002": "a data table is rendered",
-  "WEB_SBP_003": "control \"Add Partner\" is present"
+  "WEB_SBP_003": "control \"Add Partner\" is present",
+  "WEB_SBP_007": "TimeoutError: locator.click: Timeout 20000ms exceeded."
 }

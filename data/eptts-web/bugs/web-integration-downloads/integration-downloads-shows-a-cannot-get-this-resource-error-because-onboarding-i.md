@@ -44,7 +44,10 @@ a page calling an endpoint that does not exist — but a different page and a di
 path, so they need separate fixes. Worth checking whether other pages call endpoints from a
 stale API map; two instances of one pattern suggests more.
 ---
-**Covers test case:** `WEB_IDL_001`
+**Covers test cases:** `WEB_IDL_001`, `WEB_IDL_002`
+
+`WEB_IDL_002` reloads the route rather than opening it fresh; the error banner is present
+either way, so both fail on this one defect.
 
 **Steps to Reproduce:**
 1. Connect the Citrix VPN and open https://192.168.225.195:8444.

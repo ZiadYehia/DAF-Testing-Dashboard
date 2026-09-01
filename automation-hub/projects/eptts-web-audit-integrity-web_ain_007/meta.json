@@ -1,0 +1,23 @@
+{
+  "name": "eptts-web-audit-integrity-web_ain_007",
+  "title": "WEB_AIN_007 — Validate that Integrity rejects a GLN with an invalid check digit",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_AIN_007",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-audit-integrity",
+    "testcaseId": "WEB_AIN_007"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "glnFilter",
+    "tab"
+  ],
+  "folder": "EPTTS Web / web-audit-integrity",
+  "engine": "playwright"
+}

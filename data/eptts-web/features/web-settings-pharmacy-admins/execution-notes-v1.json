@@ -2,5 +2,6 @@
   "WEB_SPA_001": "control \"Add Pharmacy Admin\" is present",
   "WEB_SPA_002": "a data table is rendered",
   "WEB_SPA_003": "control \"Add Pharmacy Admin\" is present",
-  "WEB_SPA_005": "TimeoutError: locator.waitFor: Timeout 20000ms exceeded."
+  "WEB_SPA_005": "TimeoutError: locator.waitFor: Timeout 20000ms exceeded.",
+  "WEB_SPA_007": "TimeoutError: locator.click: Timeout 20000ms exceeded."
 }

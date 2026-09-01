@@ -10,8 +10,25 @@
     "testcaseId": "TS_RTN_006"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "never_run",
-  "runs": [],
+  "lastStatus": "pass",
+  "runs": [
+    {
+      "ts": "2026-09-01T05-43-49-676Z",
+      "status": "pass",
+      "durationMs": 56358.384999999995,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true
+    },
+    {
+      "ts": "2026-09-01T05-25-22-546Z",
+      "status": "pass",
+      "durationMs": 57029.168000000005,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true
+    }
+  ],
   "tags": [
     "api",
     "write"

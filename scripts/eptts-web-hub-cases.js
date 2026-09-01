@@ -69,8 +69,12 @@ function elementsFromWorkflow(md) {
   for (const line of section.split('\n')) {
     const b = /^\| ([^|]+?) \| Button \/ action \|/.exec(line)
     if (b) buttons.push(b[1].trim())
-    const i = /^\| ([^|]+?) \| input \|/.exec(line)
-    if (i) inputs.push(i[1].trim())
+    // Discovery records the type when it knows it: `input`, but also `input[text]`,
+    // `input[date]`, `input[checkbox]`… Matching only the bare word dropped 59 of the 116
+    // inputs in these workflows, which is why so many pages looked like they had no search
+    // box and had their search and empty-state cases skipped.
+    const i = /^\| ([^|]+?) \| input(?:\[([^\]]*)\])? \|/.exec(line)
+    if (i) inputs.push({ placeholder: i[1].trim(), type: (i[2] ?? 'text').trim() })
   }
   return { columns, buttons, inputs }
 }
@@ -97,7 +101,10 @@ const isLabel = (b) => b && b !== 'AR' && b !== 'EN' && b.length >= 3 && b.lengt
 /** Placeholder text of the page's search box, if it has one. */
 function searchPlaceholder(t) {
   const cands = [
-    ...(t.inputs ?? []).map((i) => (typeof i === 'string' ? i : i.placeholder || i.name || '')),
+    ...(t.inputs ?? [])
+      // A checkbox or file picker is not a search box however it is labelled.
+      .filter((i) => typeof i === 'string' || !i.type || /^(text|search|)$/.test(i.type))
+      .map((i) => (typeof i === 'string' ? i : i.placeholder || i.name || '')),
   ].filter(Boolean)
   const hit = cands.find((p) => /search|filter|find/i.test(p))
   if (!hit) return null
@@ -154,7 +161,24 @@ function classify(title, t) {
     return { skip: 'rotates a live credential — irreversible, must never run against production' }
   }
 
-  if (/mandatory fields|check digit|rejected/.test(s)) {
+  /**
+   * GLN check-digit validation. Two very different shapes behind one sentence.
+   *
+   * On the four audit screens the GLN box is a FILTER ("13-digit GLN", "Filter by GLN",
+   * "GLN or GTIN"): typing into it runs a query and writes nothing, so it is as safe as any
+   * read-only case. On the four settings tabs it is an "Add …" form that really can create a
+   * record on production, so it gets the guarded protocol in
+   * DashboardPage.expectCreateFormRejectsBadGln — GLN filled, every other required field left
+   * empty as a second barrier, and a before/after row count.
+   *
+   * Preferring the filter when a page somehow has both is deliberate: same coverage, no write.
+   */
+  if (/check digit/.test(s)) {
+    if (t.glnFilter) return { kind: 'glnFilter' }
+    if (t.addButton) return { kind: 'glnCreateForm' }
+    return { skip: 'no GLN input and no "Add …" form was observed on this page' }
+  }
+  if (/mandatory fields|rejected/.test(s)) {
     return { skip: 'submits a form against production — needs write-safety review first' }
   }
   return { skip: 'no automation pattern matches this case title' }
@@ -188,6 +212,17 @@ for (const feature of fs.readdirSync(FEATURES)) {
 
   t.search = searchPlaceholder(t)
   t.exportButton = (t.buttons ?? []).find((b) => /export/i.test(b) && isLabel(b)) ?? null
+
+  // A GLN input that is a FILTER writes nothing; an "Add …" form does. Same test-case
+  // wording on both, so the two have to be told apart from what discovery saw, not from the
+  // title. Filters are recognised by their placeholder, create forms by their open button.
+  t.glnFilter = ((t.inputs ?? [])
+    .filter((i) => typeof i === 'string' || !i.type || /^(text|search|)$/.test(i.type))
+    .map((i) => (typeof i === 'string' ? i : i.placeholder || ''))
+    // "Search by name, GLN, or email" is a general search box, not a GLN field: it is meant
+    // to take a partial name, so demanding a valid check digit from it would be wrong.
+    .find((p) => /gln/i.test(p) && !/search by/i.test(p)) ?? null)
+  t.addButton = (t.buttons ?? []).find((b) => /^add\b/i.test(b) && isLabel(b)) ?? null
   t.priority = field(md, 'Priority') ?? 'P3'
   targets.push(t)
 }

@@ -1,0 +1,23 @@
+{
+  "name": "eptts-web-settings-manufacturer-web_smf_007",
+  "title": "WEB_SMF_007 — Validate that Manufacturer rejects a GLN with an invalid check digit",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_SMF_007",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-settings-manufacturer",
+    "testcaseId": "WEB_SMF_007"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "write",
+    "glnCreateForm",
+    "tab"
+  ],
+  "folder": "EPTTS Web / web-settings-manufacturer",
+  "engine": "playwright"
+}

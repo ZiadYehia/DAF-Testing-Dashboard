@@ -1,0 +1,23 @@
+{
+  "name": "eptts-web-audit-master-data-changes-web_amd_005",
+  "title": "WEB_AMD_005 — Validate that Master-data changes rejects a GLN with an invalid check digit",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_AMD_005",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-audit-master-data-changes",
+    "testcaseId": "WEB_AMD_005"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "glnFilter",
+    "tab"
+  ],
+  "folder": "EPTTS Web / web-audit-master-data-changes",
+  "engine": "playwright"
+}

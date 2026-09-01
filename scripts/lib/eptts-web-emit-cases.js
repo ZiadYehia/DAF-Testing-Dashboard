@@ -37,6 +37,12 @@ const BODY = {
   apiKeyMasked: () => [
     `    .expectNoFullApiKey()`,
   ],
+  glnFilter: (t) => [
+    `    .expectGlnFilterRejectsBadCheckDigit('${esc(t.glnFilter.split(/\s+/).slice(0, 2).join(' '))}')`,
+  ],
+  glnCreateForm: (t) => [
+    `    .expectCreateFormRejectsBadGln('${esc(t.addButton)}')`,
+  ],
 }
 
 const esc = (s) => String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'")
@@ -60,7 +66,29 @@ const WHY = {
   session: 'an expired session sends the user back to sign in rather than showing a broken page',
   roleBlocked: 'a role without permission is refused, not merely un-linked in the menu',
   apiKeyMasked: 'no API key is rendered in full — the platform cannot re-display an issued key, so one shown on screen is a long-lived credential leaked into the UI',
+  glnFilter: 'a GLN whose check digit does not compute is refused with a message, rather than quietly looked up and reported as "no results" — which tells the user their GLN does not exist when in fact it is malformed',
+  glnCreateForm: 'a GLN whose check digit does not compute is refused by the create form',
 }
+
+/**
+ * The safety note in each generated spec's header. Says what the test does to the
+ * environment, because "read-only" is load-bearing on a production target and must not be
+ * claimed by a spec that submits a form.
+ */
+const SAFETY = {
+  glnCreateForm:
+    ' * WRITES TO PRODUCTION IF THE PLATFORM LETS IT. Two independent barriers keep that from\n' +
+    ' * happening: only the GLN is filled, so required-field validation still blocks the record\n' +
+    ' * even when the check digit is not validated; and the row count is compared before and\n' +
+    ' * after, so a record that IS created is reported by GLN for manual removal. The test does\n' +
+    ' * not delete it — that is another production write.',
+  glnFilter:
+    ' * Read-only: a filter runs a query and submits nothing. The four "Add …" forms carrying\n' +
+    ' * this same case wording are a different matter and use a guarded protocol instead.',
+}
+const DEFAULT_SAFETY =
+  ' * Read-only: navigates and asserts, submits nothing. Elements asserted are what discovery\n' +
+  ' * observed on the page, not a specification.'
 
 /** Open the page or its tab. */
 const opener = (t) => t.tab
@@ -75,8 +103,7 @@ function chainSpec(t, c, kind) {
  *
  * Checks that ${WHY[kind]}.
  *
- * Read-only: navigates and asserts, submits nothing. Elements asserted are what discovery
- * observed on the page, not a specification.
+${SAFETY[kind] ?? DEFAULT_SAFETY}
  */
 import { test } from '@playwright/test'
 import { DashboardPage } from '../../pages/eptts-web/dashboard.page'
@@ -224,7 +251,10 @@ module.exports = function emit({ targets, classify, casesOf, PROJECTS, WRITE }) 
         createdAt: '2026-09-01T04:00:00.000Z',
         lastStatus: 'never_run',
         runs: [],
-        tags: ['dashboard', 'readonly', kind, ...(t.tab ? ['tab'] : [])],
+        // 'readonly' is a claim about production, so only the kinds that submit nothing get
+        // it. A form-submitting project is tagged 'write' instead — visible in the Hub.
+        tags: ['dashboard', kind === 'glnCreateForm' ? 'write' : 'readonly', kind,
+          ...(t.tab ? ['tab'] : [])],
         folder: `EPTTS Web / ${t.feature}`,
         engine: 'playwright',
       }

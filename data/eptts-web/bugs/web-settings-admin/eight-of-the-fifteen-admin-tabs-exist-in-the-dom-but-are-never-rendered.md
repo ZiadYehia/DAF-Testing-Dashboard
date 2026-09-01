@@ -51,7 +51,12 @@ items"* bug: same shape — parts of the app are built but cannot be reached. Tw
 instances suggests a layout or feature-flag problem broader than either page, and worth
 looking at together.
 ---
-**Covers test cases:** `WEB_SBP_001`, `WEB_SUL_001`
+**Covers test cases:** `WEB_SBP_001`, `WEB_SBP_002`, `WEB_SBP_003`, `WEB_SBP_007`, `WEB_SGE_001`, `WEB_SGE_002`, `WEB_SGE_003`, `WEB_SPA_001`, `WEB_SPA_002`, `WEB_SPA_003`, `WEB_SPA_005`, `WEB_SPA_007`, `WEB_SUL_001`, `WEB_SUL_002`, `WEB_SUL_003`, `WEB_SUL_005`
+
+Every one of these fails for the same single reason: the tab cannot be opened, so its
+controls, table, search box and Add dialog are all unreachable. They are not sixteen defects.
+(The list is kept on one line deliberately — the coverage scanner reads only the first line of
+this field, so a wrapped list silently loses everything after the wrap.)
 
 **Steps to Reproduce:**
 1. Connect the Citrix VPN and open https://192.168.225.195:8444.

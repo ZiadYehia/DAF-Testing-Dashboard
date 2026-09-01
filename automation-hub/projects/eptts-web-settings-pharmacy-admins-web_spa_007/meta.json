@@ -1,0 +1,23 @@
+{
+  "name": "eptts-web-settings-pharmacy-admins-web_spa_007",
+  "title": "WEB_SPA_007 — Validate that Pharmacy Admins rejects a GLN with an invalid check digit",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_SPA_007",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-settings-pharmacy-admins",
+    "testcaseId": "WEB_SPA_007"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "write",
+    "glnCreateForm",
+    "tab"
+  ],
+  "folder": "EPTTS Web / web-settings-pharmacy-admins",
+  "engine": "playwright"
+}
