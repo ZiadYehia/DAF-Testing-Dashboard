@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-cancel-transfer-web_cxl_001",
+  "title": "WEB_CXL_001 — Validate that the Cancel Transfer page renders with its heading and primary controls",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_CXL_001",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-cancel-transfer",
+    "testcaseId": "WEB_CXL_001"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "render"
+  ],
+  "folder": "EPTTS Web / web-cancel-transfer",
+  "engine": "playwright"
+}

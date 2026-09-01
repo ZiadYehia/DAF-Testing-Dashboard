@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-violations-web_vio_003",
+  "title": "WEB_VIO_003 — Validate that the table displays all expected columns",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_VIO_003",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-violations",
+    "testcaseId": "WEB_VIO_003"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "columns"
+  ],
+  "folder": "EPTTS Web / web-violations",
+  "engine": "playwright"
+}

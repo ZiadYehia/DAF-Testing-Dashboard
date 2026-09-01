@@ -69,7 +69,305 @@ EPCIS event validator rather than any single handler.
    `logList` reporting the event processed successfully.
 2. No error, no warning, and nothing downstream indicates the aggregation is inconsistent.
 ---
+**Request / Response (for debugging):**
+
+Captured from the automated run. Credentials are masked; intermediate "still processing" polls are omitted so the submission and the verdict stand out.
+
+<details><summary><code>TS_PACK_009</code> — the exact exchange</summary>
+
+Preceded by 1 successful setup call(s) that built the stock this request acts on. The call below is the one under test.
+
+```http
+POST https://192.168.225.195:8444/masar-service/api/v1/scp/SendEPCIS
+Authorization: «masked, 448 chars»
+
+{
+  "@context": [
+    "https://ref.gs1.org/standards/epcis/2.0.0/epcis-context.jsonld"
+  ],
+  "type": "EPCISDocument",
+  "schemaVersion": "2.0",
+  "creationDate": "2026-09-01T02:17:53+03:00",
+  "sbdh": {
+    "headerVersion": "1.3",
+    "sender": {
+      "identifier": "8435308300002"
+    },
+    "receiver": {
+      "identifier": "8435308300002"
+    },
+    "documentIdentification": {
+      "standard": "EPCGlobal",
+      "typeVersion": "1.0",
+      "instanceIdentifier": "ztg-mti1evhm6hr-0004",
+      "type": "Events",
+      "creationDateAndTime": "2026-09-01T02:17:53+03:00"
+    }
+  },
+  "epcisBody": {
+    "eventList": [
+      {
+        "type": "AggregationEvent",
+        "eventTime": "2026-09-01T02:17:53+03:00",
+        "eventTimeZoneOffset": "+03:00",
+        "readPoint": {
+          "id": "urn:epc:id:sgln:84353083.0000.0"
+        },
+        "bizLocation": {
+          "id": "urn:epc:id:sgln:84353083.0000.0"
+        },
+        "action": "ADD",
+        "bizStep": "packing",
+        "disposition": "active",
+        "parentID": "urn:epc:id:sscc:84353083.229073742",
+        "childEPCs": [
+          "urn:epc:id:sgtin:84353083.05448.ZTGMTI1EVHM6HR0001",
+          "urn:epc:id:sgtin:84353083.05448.ZTGMTI1EVHM6HR0001"
+        ]
+      }
+    ]
+  }
+}
+```
+
+Response — **202 Accepted** in 92 ms:
+```json
+{
+  "statustype": "I",
+  "code": 202,
+  "date": "2026-09-01T02:17:51.185Z",
+  "messageid": "ztg-mti1evhm6hr-0004",
+  "status": {
+    "reason": "Message accepted for EPTTS Processing, the message status can be viewed in the message status query",
+    "code": "I001"
+  }
+}
+```
+
+Then the platform's own verdict, from `POST /MsgStatusQuery`:
+```json
+{
+  "instanceIdentifier": "ztg-mti1evhm6hr-0004",
+  "messagestatus": "S - Successful",
+  "logList": [
+    {
+      "type": "I",
+      "message": "Packing event processed successfully"
+    },
+    {
+      "type": "I",
+      "message": "Message processed successfully — all 1 event(s) completed"
+    }
+  ]
+}
+```
+
+</details>
+
+<details><summary><code>TS_PACK_011</code> — the exact exchange</summary>
+
+Preceded by 1 successful setup call(s) that built the stock this request acts on. The call below is the one under test.
+
+```http
+POST https://192.168.225.195:8444/masar-service/api/v1/scp/SendEPCIS
+Authorization: «masked, 448 chars»
+
+{
+  "@context": [
+    "https://ref.gs1.org/standards/epcis/2.0.0/epcis-context.jsonld"
+  ],
+  "type": "EPCISDocument",
+  "schemaVersion": "2.0",
+  "creationDate": "2026-09-01T02:17:53+03:00",
+  "sbdh": {
+    "headerVersion": "1.3",
+    "sender": {
+      "identifier": "8435308300002"
+    },
+    "receiver": {
+      "identifier": "8435308300002"
+    },
+    "documentIdentification": {
+      "standard": "EPCGlobal",
+      "typeVersion": "1.0",
+      "instanceIdentifier": "ztg-mti1evh918j-0006",
+      "type": "Events",
+      "creationDateAndTime": "2026-09-01T02:17:53+03:00"
+    }
+  },
+  "epcisBody": {
+    "eventList": [
+      {
+        "type": "AggregationEvent",
+        "eventTime": "2026-09-01T02:17:53+03:00",
+        "eventTimeZoneOffset": "+03:00",
+        "readPoint": {
+          "id": "urn:epc:id:sgln:84353083.0000.0"
+        },
+        "bizLocation": {
+          "id": "urn:epc:id:sgln:84353083.0000.0"
+        },
+        "action": "ADD",
+        "bizStep": "packing",
+        "disposition": "active",
+        "parentID": "urn:epc:id:sscc:84353083.229073766",
+        "childEPCs": [
+          "urn:epc:id:sgtin:84353083.05448.ZTGMTI1EVH918J0001"
+        ]
+      },
+      {
+        "type": "AggregationEvent",
+        "eventTime": "2026-09-01T02:17:53+03:00",
+        "eventTimeZoneOffset": "+03:00",
+        "readPoint": {
+          "id": "urn:epc:id:sgln:84353083.0000.0"
+        },
+        "bizLocation": {
+          "id": "urn:epc:id:sgln:84353083.0000.0"
+        },
+        "action": "ADD",
+        "bizStep": "packing",
+        "disposition": "active",
+        "parentID": "urn:epc:id:sscc:84353083.229073766",
+        "childEPCs": [
+          "urn:epc:id:sgtin:84353083.05448.ZTGMTI1EVH918J0001"
+        ]
+      }
+    ]
+  }
+}
+```
+
+Response — **202 Accepted** in 91 ms:
+```json
+{
+  "statustype": "I",
+  "code": 202,
+  "date": "2026-09-01T02:17:51.212Z",
+  "messageid": "ztg-mti1evh918j-0006",
+  "status": {
+    "reason": "Message accepted for EPTTS Processing, the message status can be viewed in the message status query",
+    "code": "I001"
+  }
+}
+```
+
+Then the platform's own verdict, from `POST /MsgStatusQuery`:
+```json
+{
+  "instanceIdentifier": "ztg-mti1evh918j-0006",
+  "messagestatus": "S - Successful",
+  "logList": [
+    {
+      "type": "I",
+      "message": "Packing event processed successfully"
+    },
+    {
+      "type": "I",
+      "message": "Message processed successfully — all 2 event(s) completed"
+    }
+  ]
+}
+```
+
+</details>
+
+<details><summary><code>TS_UNPK_005</code> — the exact exchange</summary>
+
+Preceded by 3 successful setup call(s) that built the stock this request acts on. The call below is the one under test.
+
+```http
+POST https://192.168.225.195:8444/masar-service/api/v1/scp/SendEPCIS
+Authorization: «masked, 448 chars»
+
+{
+  "@context": [
+    "https://ref.gs1.org/standards/epcis/2.0.0/epcis-context.jsonld"
+  ],
+  "type": "EPCISDocument",
+  "schemaVersion": "2.0",
+  "creationDate": "2026-09-01T02:23:18+03:00",
+  "sbdh": {
+    "headerVersion": "1.3",
+    "sender": {
+      "identifier": "8435308300002"
+    },
+    "receiver": {
+      "identifier": "8435308300002"
+    },
+    "documentIdentification": {
+      "standard": "EPCGlobal",
+      "typeVersion": "1.0",
+      "instanceIdentifier": "ztg-mti1ldva4zy-0007",
+      "type": "Events",
+      "creationDateAndTime": "2026-09-01T02:23:18+03:00"
+    }
+  },
+  "epcisBody": {
+    "eventList": [
+      {
+        "type": "AggregationEvent",
+        "eventTime": "2026-09-01T02:23:18+03:00",
+        "eventTimeZoneOffset": "+03:00",
+        "readPoint": {
+          "id": "urn:epc:id:sgln:84353083.0000.0"
+        },
+        "bizLocation": {
+          "id": "urn:epc:id:sgln:84353083.0000.0"
+        },
+        "action": "DELETE",
+        "bizStep": "unpacking",
+        "disposition": "active",
+        "parentID": "urn:epc:id:sscc:84353083.229377347",
+        "childEPCs": [
+          "urn:epc:id:sgtin:84353083.05448.ZTGMTI1LDVA4ZY0005"
+        ]
+      }
+    ]
+  }
+}
+```
+
+Response — **202 Accepted** in 67 ms:
+```json
+{
+  "statustype": "I",
+  "code": 202,
+  "date": "2026-09-01T02:23:15.814Z",
+  "messageid": "ztg-mti1ldva4zy-0007",
+  "status": {
+    "reason": "Message accepted for EPTTS Processing, the message status can be viewed in the message status query",
+    "code": "I001"
+  }
+}
+```
+
+Then the platform's own verdict, from `POST /MsgStatusQuery`:
+```json
+{
+  "instanceIdentifier": "ztg-mti1ldva4zy-0007",
+  "messagestatus": "S - Successful",
+  "logList": [
+    {
+      "type": "I",
+      "message": "Message processed successfully — all 1 event(s) completed"
+    }
+  ]
+}
+```
+
+</details>
+
+The same exchange shape repeats for the other case(s) this bug covers (`TC_DEST_008`, `TS_RECV_015`, `TS_RTN_021`); they are omitted here for length.
+---
 **Environment:** Masar Platform · `:8444/masar-service/api/v1` · tenant devsim · via Citrix VPN
 
 **Evidence:** the `api-log.html` artifact for each case records the submitted document and the
 poll responses. Replay `eptts-api-packing-ts_pack_011` for the two-parent case.
+
+---
+**Priority:**
+P1 – Critical
+---
+**Bug Type:**
+Functional (Backend/API)

@@ -1,9 +1,9 @@
 {
-  "WEB_MDT_001": "new_added",
-  "WEB_MDT_002": "new_added",
-  "WEB_MDT_003": "new_added",
+  "WEB_MDT_001": "fail",
+  "WEB_MDT_002": "fail",
+  "WEB_MDT_003": "pass",
   "WEB_MDT_004": "new_added",
-  "WEB_MDT_005": "new_added",
-  "WEB_MDT_006": "new_added",
-  "WEB_MDT_007": "new_added"
+  "WEB_MDT_005": "pass",
+  "WEB_MDT_006": "pass",
+  "WEB_MDT_007": "pass"
 }

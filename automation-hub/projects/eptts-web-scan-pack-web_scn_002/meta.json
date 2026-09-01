@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-scan-pack-web_scn_002",
+  "title": "WEB_SCN_002 — Validate that /scanning is reachable by direct URL and survives a refresh",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_SCN_002",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-scan-pack",
+    "testcaseId": "WEB_SCN_002"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "directUrl"
+  ],
+  "folder": "EPTTS Web / web-scan-pack",
+  "engine": "playwright"
+}

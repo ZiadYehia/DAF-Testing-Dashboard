@@ -10,8 +10,17 @@
     "testcaseId": "TS_RECV_042"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "never_run",
-  "runs": [],
+  "lastStatus": "pass",
+  "runs": [
+    {
+      "ts": "2026-09-01T00-16-30-144Z",
+      "status": "pass",
+      "durationMs": 65926.456,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true
+    }
+  ],
   "tags": [
     "api",
     "write"

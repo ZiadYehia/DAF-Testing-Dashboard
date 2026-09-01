@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-mdm-registry-web_mdm_002",
+  "title": "WEB_MDM_002 — Validate that /mdm-registry is reachable by direct URL and survives a refresh",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_MDM_002",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-mdm-registry",
+    "testcaseId": "WEB_MDM_002"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "directUrl"
+  ],
+  "folder": "EPTTS Web / web-mdm-registry",
+  "engine": "playwright"
+}

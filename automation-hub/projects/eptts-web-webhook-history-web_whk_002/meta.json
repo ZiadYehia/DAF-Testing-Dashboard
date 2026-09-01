@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-webhook-history-web_whk_002",
+  "title": "WEB_WHK_002 — Validate that /webhook-history is reachable by direct URL and survives a refresh",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_WHK_002",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-webhook-history",
+    "testcaseId": "WEB_WHK_002"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "directUrl"
+  ],
+  "folder": "EPTTS Web / web-webhook-history",
+  "engine": "playwright"
+}

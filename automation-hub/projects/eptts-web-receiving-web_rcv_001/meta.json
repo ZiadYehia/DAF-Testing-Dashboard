@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-receiving-web_rcv_001",
+  "title": "WEB_RCV_001 — Validate that the Receiving page renders with its heading and primary controls",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_RCV_001",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-receiving",
+    "testcaseId": "WEB_RCV_001"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "render"
+  ],
+  "folder": "EPTTS Web / web-receiving",
+  "engine": "playwright"
+}

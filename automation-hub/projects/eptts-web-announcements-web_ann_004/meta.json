@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-announcements-web_ann_004",
+  "title": "WEB_ANN_004 — Validate that the table renders an empty state when no records match",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_ANN_004",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-announcements",
+    "testcaseId": "WEB_ANN_004"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "emptyState"
+  ],
+  "folder": "EPTTS Web / web-announcements",
+  "engine": "playwright"
+}

@@ -44,6 +44,95 @@ Note the same empty-eventList behaviour also exists one level up: a well-formed 
 2. epcList [""] is accepted and logged as "Commission (SSCCs) event processed successfully".
 3. An empty eventList returns 202 with code I001 and is queued for processing.
 ---
+**Request / Response (for debugging):**
+
+Captured from the automated run. Credentials are masked; intermediate "still processing" polls are omitted so the submission and the verdict stand out.
+
+<details><summary><code>TC_COMM_004</code> — the exact exchange</summary>
+
+```http
+POST https://192.168.225.195:8444/masar-service/api/v1/scp/SendEPCIS
+Authorization: «masked, 448 chars»
+
+{
+  "@context": [
+    "https://ref.gs1.org/standards/epcis/2.0.0/epcis-context.jsonld"
+  ],
+  "type": "EPCISDocument",
+  "schemaVersion": "2.0",
+  "creationDate": "2026-09-01T02:15:09+03:00",
+  "sbdh": {
+    "headerVersion": "1.3",
+    "sender": {
+      "identifier": "8435308300002"
+    },
+    "receiver": {
+      "identifier": "8435308300002"
+    },
+    "documentIdentification": {
+      "standard": "EPCGlobal",
+      "typeVersion": "1.0",
+      "instanceIdentifier": "ztg-mti1bkor2wy-0002",
+      "type": "Events",
+      "creationDateAndTime": "2026-09-01T02:15:09+03:00"
+    }
+  },
+  "epcisBody": {
+    "eventList": [
+      {
+        "type": "ObjectEvent",
+        "eventTime": "2026-09-01T02:15:09+03:00",
+        "eventTimeZoneOffset": "+03:00",
+        "readPoint": {
+          "id": "urn:epc:id:sgln:84353083.0000.0"
+        },
+        "bizLocation": {
+          "id": "urn:epc:id:sgln:84353083.0000.0"
+        },
+        "action": "ADD",
+        "bizStep": "commissioning",
+        "disposition": "active",
+        "epcList": [],
+        "ilmd": {
+          "cbvmda:lotNumber": "ZTG-MTI1BKOR2WY",
+          "cbvmda:itemExpirationDate": "2030-12-31"
+        }
+      }
+    ]
+  }
+}
+```
+
+Response — **202 Accepted** in 210 ms:
+```json
+{
+  "statustype": "I",
+  "code": 202,
+  "date": "2026-09-01T02:15:06.787Z",
+  "messageid": "ztg-mti1bkor2wy-0002",
+  "status": {
+    "reason": "Message accepted for EPTTS Processing, the message status can be viewed in the message status query",
+    "code": "I001"
+  }
+}
+```
+
+Then the platform's own verdict, from `POST /MsgStatusQuery`:
+```json
+{
+  "instanceIdentifier": "ztg-mti1bkor2wy-0002",
+  "messagestatus": "S - Successful",
+  "logList": [
+    {
+      "type": "I",
+      "message": "Message processed successfully — all 1 event(s) completed"
+    }
+  ]
+}
+```
+
+</details>
+---
 **Environment:**
 - Masar B2B API via Citrix VPN
 - Auth: POST https://192.168.225.195:8445/registry-service/api/v1/auth (apikey header)

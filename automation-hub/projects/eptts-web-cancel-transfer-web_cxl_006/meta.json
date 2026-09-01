@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-cancel-transfer-web_cxl_006",
+  "title": "WEB_CXL_006 — Validate that the page handles an expired session",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_CXL_006",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-cancel-transfer",
+    "testcaseId": "WEB_CXL_006"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "session"
+  ],
+  "folder": "EPTTS Web / web-cancel-transfer",
+  "engine": "playwright"
+}

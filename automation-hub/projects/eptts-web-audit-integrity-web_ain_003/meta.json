@@ -1,0 +1,23 @@
+{
+  "name": "eptts-web-audit-integrity-web_ain_003",
+  "title": "WEB_AIN_003 — Validate that Integrity data is not carried over from another tab",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_AIN_003",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-audit-integrity",
+    "testcaseId": "WEB_AIN_003"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "render",
+    "tab"
+  ],
+  "folder": "EPTTS Web / web-audit-integrity",
+  "engine": "playwright"
+}

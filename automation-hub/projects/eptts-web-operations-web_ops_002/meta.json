@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-operations-web_ops_002",
+  "title": "WEB_OPS_002 — Validate that /operations is reachable by direct URL and survives a refresh",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_OPS_002",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-operations",
+    "testcaseId": "WEB_OPS_002"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "directUrl"
+  ],
+  "folder": "EPTTS Web / web-operations",
+  "engine": "playwright"
+}

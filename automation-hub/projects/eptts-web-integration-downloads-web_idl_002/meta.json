@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-integration-downloads-web_idl_002",
+  "title": "WEB_IDL_002 — Validate that /integration-downloads is reachable by direct URL and survives a refresh",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_IDL_002",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-integration-downloads",
+    "testcaseId": "WEB_IDL_002"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "directUrl"
+  ],
+  "folder": "EPTTS Web / web-integration-downloads",
+  "engine": "playwright"
+}

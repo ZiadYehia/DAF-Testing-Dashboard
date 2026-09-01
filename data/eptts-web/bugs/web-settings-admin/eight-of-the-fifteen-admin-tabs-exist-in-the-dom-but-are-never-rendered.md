@@ -84,3 +84,10 @@ neither it nor its bar appears anywhere on the page.
 (`pn_id_4_tabpanel_settings` and `pn_id_10_tabpanel_system`). Whatever the layout fix, those
 two need distinguishable names or one of them cannot be referred to unambiguously — by a user
 or by a test.
+
+---
+**Priority:**
+P1 – Critical
+---
+**Bug Type:**
+UI/UX

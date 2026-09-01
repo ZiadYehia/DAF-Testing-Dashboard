@@ -1,0 +1,23 @@
+{
+  "name": "eptts-web-settings-pharmacy-admins-web_spa_004",
+  "title": "WEB_SPA_004 — Validate that the Pharmacy Admins tab reloads its data after a page refresh",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_SPA_004",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-settings-pharmacy-admins",
+    "testcaseId": "WEB_SPA_004"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "directUrl",
+    "tab"
+  ],
+  "folder": "EPTTS Web / web-settings-pharmacy-admins",
+  "engine": "playwright"
+}

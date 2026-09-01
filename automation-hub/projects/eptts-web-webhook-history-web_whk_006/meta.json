@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-webhook-history-web_whk_006",
+  "title": "WEB_WHK_006 — Validate that the page handles an expired session",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_WHK_006",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-webhook-history",
+    "testcaseId": "WEB_WHK_006"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "session"
+  ],
+  "folder": "EPTTS Web / web-webhook-history",
+  "engine": "playwright"
+}

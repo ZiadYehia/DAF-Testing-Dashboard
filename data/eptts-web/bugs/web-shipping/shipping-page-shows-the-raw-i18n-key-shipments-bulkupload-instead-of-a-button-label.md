@@ -56,3 +56,10 @@ so it is worth checking whether other recently-added controls have the same gap.
 
 **Evidence:** `data/eptts-web/features/web-shipping/screenshots/web-shipping.jpg` — captured
 with the UI in English, showing the unresolved key in the button row.
+
+---
+**Priority:**
+P3 – Medium
+---
+**Bug Type:**
+UI/UX

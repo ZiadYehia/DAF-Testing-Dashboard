@@ -1,0 +1,23 @@
+{
+  "name": "eptts-web-analytics-inventory-web_niv_003",
+  "title": "WEB_NIV_003 — Validate that Inventory data is not carried over from another tab",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_NIV_003",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-analytics-inventory",
+    "testcaseId": "WEB_NIV_003"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "render",
+    "tab"
+  ],
+  "folder": "EPTTS Web / web-analytics-inventory",
+  "engine": "playwright"
+}

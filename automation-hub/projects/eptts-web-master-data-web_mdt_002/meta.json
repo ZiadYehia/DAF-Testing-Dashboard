@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-master-data-web_mdt_002",
+  "title": "WEB_MDT_002 — Validate that /master-data is reachable by direct URL and survives a refresh",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_MDT_002",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-master-data",
+    "testcaseId": "WEB_MDT_002"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "directUrl"
+  ],
+  "folder": "EPTTS Web / web-master-data",
+  "engine": "playwright"
+}

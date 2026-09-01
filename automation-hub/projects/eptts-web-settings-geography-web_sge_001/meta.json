@@ -1,0 +1,23 @@
+{
+  "name": "eptts-web-settings-geography-web_sge_001",
+  "title": "WEB_SGE_001 — Validate that the Geography tab opens and loads its own content",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_SGE_001",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-settings-geography",
+    "testcaseId": "WEB_SGE_001"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "render",
+    "tab"
+  ],
+  "folder": "EPTTS Web / web-settings-geography",
+  "engine": "playwright"
+}

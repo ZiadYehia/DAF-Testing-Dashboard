@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-reporting-web_rpt_007",
+  "title": "WEB_RPT_007 — Validate that the CSV export downloads and matches the on-screen data",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_RPT_007",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-reporting",
+    "testcaseId": "WEB_RPT_007"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "csv"
+  ],
+  "folder": "EPTTS Web / web-reporting",
+  "engine": "playwright"
+}

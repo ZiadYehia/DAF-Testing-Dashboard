@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-products-web_prd_006",
+  "title": "WEB_PRD_006 — Validate that search handles a no-match value without error",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_PRD_006",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-products",
+    "testcaseId": "WEB_PRD_006"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "emptyState"
+  ],
+  "folder": "EPTTS Web / web-products",
+  "engine": "playwright"
+}

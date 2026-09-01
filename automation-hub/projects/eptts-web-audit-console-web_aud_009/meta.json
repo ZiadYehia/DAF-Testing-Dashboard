@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-audit-console-web_aud_009",
+  "title": "WEB_AUD_009 — Validate that the page handles an expired session",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_AUD_009",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-audit-console",
+    "testcaseId": "WEB_AUD_009"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "session"
+  ],
+  "folder": "EPTTS Web / web-audit-console",
+  "engine": "playwright"
+}

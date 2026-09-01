@@ -69,3 +69,10 @@ stale API map; two instances of one pattern suggests more.
 **Evidence:**
 `data/eptts-web/features/web-integration-downloads/screenshots/web-integration-downloads.jpg`
 — full-page capture showing the error banner above the loaded content.
+
+---
+**Priority:**
+P2 – High
+---
+**Bug Type:**
+Functional (Backend/API)

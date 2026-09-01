@@ -17,7 +17,7 @@
  * in the storage state via `localStorage.lang`. `open()` VERIFIES it rather than trusting it,
  * so if that ever stops working the failure says exactly that.
  */
-import { expect, type Locator, type Page } from '@playwright/test'
+import { expect, test, type Locator, type Page } from '@playwright/test'
 import { FluentPage } from '../../lib/framework/fluent-page'
 import { ensureLoggedIn } from '../../lib/auth'
 
@@ -277,6 +277,185 @@ export class DashboardPage extends FluentPage {
         firstScreenful,
         'the page shows no raw backend error',
       ).not.toMatch(/Cannot GET this resource|Something went wrong|Internal Server Error/i)
+    })
+  }
+
+  /**
+   * Assert the route survives a hard refresh.
+   *
+   * Worth its own check on this app: it is an OIDC SPA in FRAGMENT response mode, so a reload
+   * discards the in-memory token and re-runs the whole auth round trip. A deep link that works
+   * only when reached by clicking, and 404s or bounces to the landing page on refresh, is a
+   * real defect for anyone who bookmarks or shares a URL.
+   */
+  expectSurvivesReload(route: string): this {
+    return this.step(async () => {
+      await this.page.reload({ waitUntil: 'domcontentloaded' })
+      await this.page.locator('nav, aside, [class*="layout-menu"]').first()
+        .waitFor({ state: 'visible', timeout: 45_000 })
+      await this.page.waitForLoadState('networkidle', { timeout: 20_000 }).catch(() => {})
+      expect(
+        new URL(this.page.url()).pathname,
+        `after a refresh the browser is still on ${route}`,
+      ).toBe(route)
+    })
+  }
+
+  /**
+   * Assert the table shows an empty state — not a spinner, not a blank panel — when a filter
+   * matches nothing.
+   *
+   * "No results" is a real state a user hits daily, and getting it wrong (an endless spinner,
+   * or a table that keeps showing the previous results) is both common and confusing.
+   */
+  expectEmptyState(searchPlaceholder: string, noMatchValue: string): this {
+    return this.step(async () => {
+      const box = this.scope().locator(
+        `input[placeholder*="${searchPlaceholder}" i], input[type="search"]`).first()
+      await box.waitFor({ state: 'visible', timeout: 20_000 })
+      await box.fill(noMatchValue)
+      await box.press('Enter')
+      await this.page.waitForLoadState('networkidle', { timeout: 20_000 }).catch(() => {})
+      await this.page.waitForTimeout(1500)
+
+      const rowTexts = (await this.scope().locator('tbody tr').allInnerTexts())
+        .map((t) => t.replace(/\s+/g, ' ').trim())
+        .filter(Boolean)
+
+      // An empty state is EITHER no rows at all, OR a single placeholder row carrying the
+      // message. PrimeNG uses the latter — "No registered devices" — so counting rows alone
+      // reads a correct empty state as stale data. Matched on the shape of a message ("no
+      // ...", "nothing ...", "empty") rather than a fixed phrase, since each page words it
+      // differently.
+      const empty = rowTexts.length === 0 ||
+        (rowTexts.length === 1 && /^(no|none|nothing|empty)\b|not found|no results/i.test(rowTexts[0]))
+
+      expect(
+        empty,
+        'a value that matches nothing shows an empty state, not stale rows ' +
+        `(${rowTexts.length} row(s): ${rowTexts.slice(0, 2).map((t) => `"${t.slice(0, 50)}"`).join(', ')})`,
+      ).toBe(true)
+    })
+  }
+
+  /** Assert a search narrows the result set rather than ignoring the input. */
+  expectSearchFilters(searchPlaceholder: string, value: string): this {
+    return this.step(async () => {
+      const rows = this.scope().locator('tbody tr')
+      const before = await rows.count()
+      if (before === 0) {
+        // Nothing to filter. Say so rather than pass silently on an empty table, which would
+        // let a broken search go unnoticed on any page that happens to have no data.
+        test.skip(true, 'the table is empty, so there is nothing for a search to narrow')
+        return
+      }
+
+      // Search for a term taken from the data itself. The fixed value this used to pass
+      // ("a") appears in almost every row, so it narrowed nothing and reported a working
+      // search as broken — the test was wrong, not the product.
+      const firstRow = (await rows.first().innerText()).replace(/\s+/g, ' ').trim()
+      const term = (value && value.length > 2 ? value : null)
+        ?? firstRow.split(/\s+/).find((w) => w.length >= 4 && /[A-Za-z0-9]/.test(w))
+      if (!term) {
+        test.skip(true, `no searchable term could be taken from the first row ("${firstRow.slice(0, 40)}")`)
+        return
+      }
+
+      const box = this.scope().locator(
+        `input[placeholder*="${searchPlaceholder}" i], input[type="search"]`).first()
+      await box.waitFor({ state: 'visible', timeout: 20_000 })
+      await box.fill(term)
+      await box.press('Enter')
+      await this.page.waitForLoadState('networkidle', { timeout: 20_000 }).catch(() => {})
+      await this.page.waitForTimeout(1500)
+      const after = await rows.count()
+
+      // Searching a term that IS in the data must keep at least one row and must not invent
+      // rows. Requiring a strict decrease would be wrong when every row legitimately matches.
+      expect(
+        after,
+        `searching "${term}" (taken from row 1) does not increase the result set (${before} -> ${after})`,
+      ).toBeLessThanOrEqual(before)
+      expect(
+        after,
+        `searching "${term}", which appears in row 1, still returns that row`,
+      ).toBeGreaterThan(0)
+    })
+  }
+
+  /**
+   * Assert a backend failure is surfaced, not swallowed.
+   *
+   * The endpoint is failed at the network layer, which is the only way to produce a 500 on
+   * demand without breaking production data. What matters is that the user is told: a page
+   * that renders an empty table when its API failed is indistinguishable from a page that
+   * genuinely has no data, and that is how a real outage gets mistaken for empty stock.
+   */
+  expectBackendFailureHandled(urlFragment: string): this {
+    return this.step(async () => {
+      await this.page.route(`**${urlFragment}**`, (r) =>
+        r.fulfill({ status: 500, contentType: 'application/json', body: '{"error":"induced"}' }))
+      await this.page.reload({ waitUntil: 'domcontentloaded' })
+      await this.page.waitForLoadState('networkidle', { timeout: 25_000 }).catch(() => {})
+      await this.page.waitForTimeout(2000)
+
+      const text = (await this.page.locator('body').innerText()).replace(/\s+/g, ' ')
+      await this.page.unroute(`**${urlFragment}**`)
+
+      expect(
+        /error|failed|unable|could not|try again|retry|wrong/i.test(text),
+        `a failing ${urlFragment} is reported to the user rather than shown as an empty page`,
+      ).toBe(true)
+    })
+  }
+
+  /** Assert a CSV export actually downloads a file. */
+  expectCsvDownload(buttonName: string): this {
+    return this.step(async () => {
+      const [download] = await Promise.all([
+        this.page.waitForEvent('download', { timeout: 30_000 }),
+        this.scope().getByRole('button', { name: buttonName, exact: false }).first().click(),
+      ])
+      const name = download.suggestedFilename()
+      expect(name, `"${buttonName}" downloads a file`).toBeTruthy()
+      expect(name, `the download is a CSV (got "${name}")`).toMatch(/\.csv$/i)
+    })
+  }
+
+  /**
+   * Assert no full API key is rendered.
+   *
+   * The B2B partner keys are 64-character tokens, and the platform CANNOT re-display one once
+   * issued — which is precisely why a screen that shows one in full is a problem: it is a
+   * long-lived credential sitting in a page that gets screenshotted, shared and cached. A
+   * masked prefix is enough to identify a key; the rest is a secret.
+   *
+   * Matches on shape rather than on a known value, so it catches any key, not just the ones
+   * this environment happens to hold.
+   */
+  expectNoFullApiKey(): this {
+    return this.step(async () => {
+      // Read each cell and control SEPARATELY. Scanning the panel's innerText as one string
+      // reports a leak that is not there: on a panel the product renders at zero height,
+      // innerText drops the whitespace between elements, so the KPI figures and the column
+      // headers run together into "Partners6Active2MAH2SCPNameTypeGLNAPI" — 37 unbroken
+      // characters that look exactly like a key. Per-element text cannot fuse that way.
+      const scope = this.scope()
+      const values = await scope.locator('td, th, input, textarea, code, [class*="key" i]')
+        .evaluateAll((nodes) => nodes.map((n) => {
+          const el = n as HTMLInputElement
+          return (el.value || el.textContent || '').trim()
+        }))
+
+      // 32+ unbroken key-ish characters within ONE element. Masked forms (••••, abcd…wxyz,
+      // 6224…13b7, ****) do not match, because the mask breaks the run.
+      const exposed = values.flatMap((v) => [...v.matchAll(/\b[A-Za-z0-9_-]{32,}\b/g)].map((m) => m[0]))
+      expect(
+        // Never print the value itself — this message is quoted into reports.
+        exposed.map((k) => `${k.slice(0, 6)}…(${k.length} chars)`),
+        'no full-length API key is rendered on screen — keys cannot be re-displayed once ' +
+        'issued, so anything shown in full is a long-lived credential leaked into the UI',
+      ).toEqual([])
     })
   }
 

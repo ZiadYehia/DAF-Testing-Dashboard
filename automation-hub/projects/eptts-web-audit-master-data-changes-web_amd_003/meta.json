@@ -1,0 +1,23 @@
+{
+  "name": "eptts-web-audit-master-data-changes-web_amd_003",
+  "title": "WEB_AMD_003 — Validate that Master-data changes data is not carried over from another tab",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_AMD_003",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-audit-master-data-changes",
+    "testcaseId": "WEB_AMD_003"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "render",
+    "tab"
+  ],
+  "folder": "EPTTS Web / web-audit-master-data-changes",
+  "engine": "playwright"
+}

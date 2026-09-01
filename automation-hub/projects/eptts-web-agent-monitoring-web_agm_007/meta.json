@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-agent-monitoring-web_agm_007",
+  "title": "WEB_AGM_007 — Validate that a non-privileged role cannot reach this page",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_AGM_007",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-agent-monitoring",
+    "testcaseId": "WEB_AGM_007"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "roleBlocked"
+  ],
+  "folder": "EPTTS Web / web-agent-monitoring",
+  "engine": "playwright"
+}

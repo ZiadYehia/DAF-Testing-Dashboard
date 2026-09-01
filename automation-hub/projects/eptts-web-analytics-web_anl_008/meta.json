@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-analytics-web_anl_008",
+  "title": "WEB_ANL_008 — Validate that the page surfaces a backend failure instead of failing silently",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_ANL_008",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-analytics",
+    "testcaseId": "WEB_ANL_008"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "backendFailure"
+  ],
+  "folder": "EPTTS Web / web-analytics",
+  "engine": "playwright"
+}

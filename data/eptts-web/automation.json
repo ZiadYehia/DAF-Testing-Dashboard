@@ -28,7 +28,13 @@
     "session, or one already in English, and it becomes a no-op rather than an error.",
     "",
     "The final waitForVisible is the assertion. Once English is active the toggle reads AR, so",
-    "seeing an AR button is proof the switch actually happened rather than a hope that it did."
+    "seeing an AR button is proof the switch actually happened rather than a hope that it did.",
+    "",
+    "The two steps before the language switch dismiss a PRODUCTION-ACCESS DISCLAIMER modal",
+    "(\"Authorized Access Only...\") that appears on login. It is a real modal backdrop, so it",
+    "intercepts every click underneath — including the EN toggle. Left in place it does not fail",
+    "with 'modal is open'; it fails with a click timeout on whatever the test tried to press next,",
+    "which is a much harder thing to diagnose. Tick the acknowledgement, then Accept."
   ],
   "login": [
     {
@@ -76,6 +82,22 @@
         "value": "nav, aside, [class*=\"layout-menu\"]"
       },
       "timeoutMs": 45000
+    },
+    {
+      "action": "click",
+      "locator": {
+        "kind": "css",
+        "value": "app-disclaimer-modal input[type=checkbox], .disclaimer-backdrop input[type=checkbox]"
+      },
+      "onlyIfVisible": true
+    },
+    {
+      "action": "click",
+      "locator": {
+        "kind": "css",
+        "value": ".disclaimer-accept-btn"
+      },
+      "onlyIfVisible": true
     },
     {
       "action": "click",

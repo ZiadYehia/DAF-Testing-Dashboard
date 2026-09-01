@@ -1,0 +1,23 @@
+{
+  "name": "eptts-web-settings-pos-partners-web_spp_002",
+  "title": "WEB_SPP_002 — Validate that the POS Partners tab reloads its data after a page refresh",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_SPP_002",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-settings-pos-partners",
+    "testcaseId": "WEB_SPP_002"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "directUrl",
+    "tab"
+  ],
+  "folder": "EPTTS Web / web-settings-pos-partners",
+  "engine": "playwright"
+}

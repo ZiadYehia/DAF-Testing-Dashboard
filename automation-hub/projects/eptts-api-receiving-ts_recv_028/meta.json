@@ -10,8 +10,18 @@
     "testcaseId": "TS_RECV_028"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "never_run",
-  "runs": [],
+  "lastStatus": "pass",
+  "runs": [
+    {
+      "ts": "2026-09-01T00-07-14-473Z",
+      "status": "pass",
+      "durationMs": 43824.62,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: TS_RECV_028 a disposition outside the CBV vocabulary: the platform ACCEPTED input it should refuse — http=200 raw=\"S - Successful\" state=SUCCESS polls=6 logs=[I: Receiving event processed successfully | I: Message processed successfully — all 1 event(s) completed]"
+    }
+  ],
   "tags": [
     "api",
     "write",

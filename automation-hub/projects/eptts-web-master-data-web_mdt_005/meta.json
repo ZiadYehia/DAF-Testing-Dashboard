@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-master-data-web_mdt_005",
+  "title": "WEB_MDT_005 — Validate that a non-privileged role cannot reach this page",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_MDT_005",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-master-data",
+    "testcaseId": "WEB_MDT_005"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "roleBlocked"
+  ],
+  "folder": "EPTTS Web / web-master-data",
+  "engine": "playwright"
+}

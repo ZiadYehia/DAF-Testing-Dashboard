@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-announcements-web_ann_002",
+  "title": "WEB_ANN_002 — Validate that /admin/announcements is reachable by direct URL and survives a refresh",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_ANN_002",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-announcements",
+    "testcaseId": "WEB_ANN_002"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "directUrl"
+  ],
+  "folder": "EPTTS Web / web-announcements",
+  "engine": "playwright"
+}

@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-agent-monitoring-web_agm_002",
+  "title": "WEB_AGM_002 — Validate that /agent-monitoring is reachable by direct URL and survives a refresh",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_AGM_002",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-agent-monitoring",
+    "testcaseId": "WEB_AGM_002"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "directUrl"
+  ],
+  "folder": "EPTTS Web / web-agent-monitoring",
+  "engine": "playwright"
+}

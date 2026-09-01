@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-products-web_prd_002",
+  "title": "WEB_PRD_002 — Validate that /products is reachable by direct URL and survives a refresh",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_PRD_002",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-products",
+    "testcaseId": "WEB_PRD_002"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "directUrl"
+  ],
+  "folder": "EPTTS Web / web-products",
+  "engine": "playwright"
+}

@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-activation-keys-web_aky_001",
+  "title": "WEB_AKY_001 — Validate that the Desktop Agent - Activation Keys page renders with its heading and primary controls",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_AKY_001",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-activation-keys",
+    "testcaseId": "WEB_AKY_001"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "render"
+  ],
+  "folder": "EPTTS Web / web-activation-keys",
+  "engine": "playwright"
+}

@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-mobile-versions-web_mob_006",
+  "title": "WEB_MOB_006 — Validate that the page handles an expired session",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_MOB_006",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-mobile-versions",
+    "testcaseId": "WEB_MOB_006"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "session"
+  ],
+  "folder": "EPTTS Web / web-mobile-versions",
+  "engine": "playwright"
+}

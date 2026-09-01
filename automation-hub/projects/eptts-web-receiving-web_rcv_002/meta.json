@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-receiving-web_rcv_002",
+  "title": "WEB_RCV_002 — Validate that /shipments/receive is reachable by direct URL and survives a refresh",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_RCV_002",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-receiving",
+    "testcaseId": "WEB_RCV_002"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "directUrl"
+  ],
+  "folder": "EPTTS Web / web-receiving",
+  "engine": "playwright"
+}

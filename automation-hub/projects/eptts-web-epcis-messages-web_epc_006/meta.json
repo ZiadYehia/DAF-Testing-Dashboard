@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-epcis-messages-web_epc_006",
+  "title": "WEB_EPC_006 — Validate that search handles a no-match value without error",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_EPC_006",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-epcis-messages",
+    "testcaseId": "WEB_EPC_006"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "emptyState"
+  ],
+  "folder": "EPTTS Web / web-epcis-messages",
+  "engine": "playwright"
+}

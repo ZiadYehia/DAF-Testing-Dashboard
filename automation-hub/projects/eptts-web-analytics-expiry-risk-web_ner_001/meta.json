@@ -1,0 +1,23 @@
+{
+  "name": "eptts-web-analytics-expiry-risk-web_ner_001",
+  "title": "WEB_NER_001 — Validate that the Expiry risk tab opens and loads its own content",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_NER_001",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-analytics-expiry-risk",
+    "testcaseId": "WEB_NER_001"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "render",
+    "tab"
+  ],
+  "folder": "EPTTS Web / web-analytics-expiry-risk",
+  "engine": "playwright"
+}

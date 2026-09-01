@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-epcis-xml-upload-web_xml_006",
+  "title": "WEB_XML_006 — Validate that the page handles an expired session",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_XML_006",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-epcis-xml-upload",
+    "testcaseId": "WEB_XML_006"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "session"
+  ],
+  "folder": "EPTTS Web / web-epcis-xml-upload",
+  "engine": "playwright"
+}

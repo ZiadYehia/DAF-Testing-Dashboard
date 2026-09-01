@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-audit-console-web_aud_002",
+  "title": "WEB_AUD_002 — Validate that /audit is reachable by direct URL and survives a refresh",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_AUD_002",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-audit-console",
+    "testcaseId": "WEB_AUD_002"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "directUrl"
+  ],
+  "folder": "EPTTS Web / web-audit-console",
+  "engine": "playwright"
+}

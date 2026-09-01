@@ -1,0 +1,23 @@
+{
+  "name": "eptts-web-settings-government-web_sgv_001",
+  "title": "WEB_SGV_001 — Validate that the Government tab opens and loads its own content",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_SGV_001",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-settings-government",
+    "testcaseId": "WEB_SGV_001"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "render",
+    "tab"
+  ],
+  "folder": "EPTTS Web / web-settings-government",
+  "engine": "playwright"
+}

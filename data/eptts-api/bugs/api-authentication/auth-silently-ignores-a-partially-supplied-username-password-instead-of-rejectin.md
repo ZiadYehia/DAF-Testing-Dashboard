@@ -46,6 +46,83 @@ The source suite expected 400 for these four cases (TC_AUTH_007–TC_AUTH_010).
 1. All four partial-credential variants return 200 with a valid access token.
 2. Only a fully-supplied, incorrect pair returns 401.
 ---
+**Request / Response (for debugging):**
+
+Captured from the automated run. Credentials are masked; intermediate "still processing" polls are omitted so the submission and the verdict stand out.
+
+<details><summary><code>TC_AUTH_007</code> — the exact exchange</summary>
+
+```http
+POST https://192.168.225.195:8445/registry-service/api/v1/auth
+apikey: «masked, 64 chars»
+
+{
+  "username": "",
+  "password": "«redacted»"
+}
+```
+
+Response — **200 OK** in 364 ms:
+```json
+{
+  "access_token": "«redacted»",
+  "refresh_token": "«redacted»",
+  "token_type": "Bearer",
+  "expires_in": 900
+}
+```
+
+</details>
+
+<details><summary><code>TC_AUTH_008</code> — the exact exchange</summary>
+
+```http
+POST https://192.168.225.195:8445/registry-service/api/v1/auth
+apikey: «masked, 64 chars»
+
+{
+  "username": "someone@example.invalid",
+  "password": "«redacted»"
+}
+```
+
+Response — **200 OK** in 339 ms:
+```json
+{
+  "access_token": "«redacted»",
+  "refresh_token": "«redacted»",
+  "token_type": "Bearer",
+  "expires_in": 900
+}
+```
+
+</details>
+
+<details><summary><code>TC_AUTH_009</code> — the exact exchange</summary>
+
+```http
+POST https://192.168.225.195:8445/registry-service/api/v1/auth
+apikey: «masked, 64 chars»
+
+{
+  "password": "«redacted»"
+}
+```
+
+Response — **200 OK** in 337 ms:
+```json
+{
+  "access_token": "«redacted»",
+  "refresh_token": "«redacted»",
+  "token_type": "Bearer",
+  "expires_in": 900
+}
+```
+
+</details>
+
+The same exchange shape repeats for the other case(s) this bug covers (`TC_AUTH_010`); they are omitted here for length.
+---
 **Environment:**
 - Masar B2B API via Citrix VPN
 - POST https://192.168.225.195:8445/registry-service/api/v1/auth

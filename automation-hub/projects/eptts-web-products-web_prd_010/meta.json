@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-products-web_prd_010",
+  "title": "WEB_PRD_010 — Validate that the page surfaces a backend failure instead of failing silently",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_PRD_010",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-products",
+    "testcaseId": "WEB_PRD_010"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "backendFailure"
+  ],
+  "folder": "EPTTS Web / web-products",
+  "engine": "playwright"
+}

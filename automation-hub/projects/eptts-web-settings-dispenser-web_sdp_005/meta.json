@@ -1,0 +1,23 @@
+{
+  "name": "eptts-web-settings-dispenser-web_sdp_005",
+  "title": "WEB_SDP_005 — Validate that search filters the Dispenser list",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_SDP_005",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-settings-dispenser",
+    "testcaseId": "WEB_SDP_005"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "searchFilters",
+    "tab"
+  ],
+  "folder": "EPTTS Web / web-settings-dispenser",
+  "engine": "playwright"
+}

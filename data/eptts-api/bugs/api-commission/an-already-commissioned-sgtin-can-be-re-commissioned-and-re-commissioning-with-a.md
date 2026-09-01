@@ -44,6 +44,196 @@ The source test suite recorded TC_COMM_003 as a *Positive* case expecting the pa
 2. The third commissioning with a different expiry also succeeds, overwriting the pack's expiry date.
 3. Re-commissioning with a different batch is correctly refused, showing the guard exists but does not cover expiry or plain duplicates.
 ---
+**Request / Response (for debugging):**
+
+Captured from the automated run. Credentials are masked; intermediate "still processing" polls are omitted so the submission and the verdict stand out.
+
+<details><summary><code>TC_COMM_003</code> — the exact exchange</summary>
+
+Preceded by 1 successful setup call(s) that built the stock this request acts on. The call below is the one under test.
+
+```http
+POST https://192.168.225.195:8444/masar-service/api/v1/scp/SendEPCIS
+Authorization: «masked, 448 chars»
+
+{
+  "@context": [
+    "https://ref.gs1.org/standards/epcis/2.0.0/epcis-context.jsonld"
+  ],
+  "type": "EPCISDocument",
+  "schemaVersion": "2.0",
+  "creationDate": "2026-09-01T02:15:19+03:00",
+  "sbdh": {
+    "headerVersion": "1.3",
+    "sender": {
+      "identifier": "8435308300002"
+    },
+    "receiver": {
+      "identifier": "8435308300002"
+    },
+    "documentIdentification": {
+      "standard": "EPCGlobal",
+      "typeVersion": "1.0",
+      "instanceIdentifier": "ztg-mti1bkok1cd-0003",
+      "type": "Events",
+      "creationDateAndTime": "2026-09-01T02:15:19+03:00"
+    }
+  },
+  "epcisBody": {
+    "eventList": [
+      {
+        "type": "ObjectEvent",
+        "eventTime": "2026-09-01T02:15:19+03:00",
+        "eventTimeZoneOffset": "+03:00",
+        "readPoint": {
+          "id": "urn:epc:id:sgln:84353083.0000.0"
+        },
+        "bizLocation": {
+          "id": "urn:epc:id:sgln:84353083.0000.0"
+        },
+        "action": "ADD",
+        "bizStep": "commissioning",
+        "disposition": "active",
+        "epcList": [
+          "urn:epc:id:sgtin:84353083.05448.ZTGMTI1BKOK1CD0001"
+        ],
+        "ilmd": {
+          "cbvmda:lotNumber": "ZTG-MTI1BKOK1CD",
+          "cbvmda:itemExpirationDate": "2030-12-31"
+        }
+      }
+    ]
+  }
+}
+```
+
+Response — **202 Accepted** in 92 ms:
+```json
+{
+  "statustype": "I",
+  "code": 202,
+  "date": "2026-09-01T02:15:17.427Z",
+  "messageid": "ztg-mti1bkok1cd-0003",
+  "status": {
+    "reason": "Message accepted for EPTTS Processing, the message status can be viewed in the message status query",
+    "code": "I001"
+  }
+}
+```
+
+Then the platform's own verdict, from `POST /MsgStatusQuery`:
+```json
+{
+  "instanceIdentifier": "ztg-mti1bkok1cd-0003",
+  "messagestatus": "S - Successful",
+  "logList": [
+    {
+      "type": "I",
+      "message": "Commission (Items) event processed successfully"
+    },
+    {
+      "type": "I",
+      "message": "Message processed successfully — all 1 event(s) completed"
+    }
+  ]
+}
+```
+
+</details>
+
+<details><summary><code>TC_COMM_012</code> — the exact exchange</summary>
+
+Preceded by 1 successful setup call(s) that built the stock this request acts on. The call below is the one under test.
+
+```http
+POST https://192.168.225.195:8444/masar-service/api/v1/scp/SendEPCIS
+Authorization: «masked, 448 chars»
+
+{
+  "@context": [
+    "https://ref.gs1.org/standards/epcis/2.0.0/epcis-context.jsonld"
+  ],
+  "type": "EPCISDocument",
+  "schemaVersion": "2.0",
+  "creationDate": "2026-09-01T02:15:11+03:00",
+  "sbdh": {
+    "headerVersion": "1.3",
+    "sender": {
+      "identifier": "8435308300002"
+    },
+    "receiver": {
+      "identifier": "8435308300002"
+    },
+    "documentIdentification": {
+      "standard": "EPCGlobal",
+      "typeVersion": "1.0",
+      "instanceIdentifier": "ztg-mti1bknb372-0003",
+      "type": "Events",
+      "creationDateAndTime": "2026-09-01T02:15:11+03:00"
+    }
+  },
+  "epcisBody": {
+    "eventList": [
+      {
+        "type": "ObjectEvent",
+        "eventTime": "2026-09-01T02:15:11+03:00",
+        "eventTimeZoneOffset": "+03:00",
+        "readPoint": {
+          "id": "urn:epc:id:sgln:84353083.0000.0"
+        },
+        "bizLocation": {
+          "id": "urn:epc:id:sgln:84353083.0000.0"
+        },
+        "action": "ADD",
+        "bizStep": "commissioning",
+        "disposition": "active",
+        "epcList": [
+          "urn:epc:id:sgtin:84353083.05448.ZTGMTI1BKNB3720001"
+        ],
+        "ilmd": {
+          "cbvmda:lotNumber": "ZTG-MTI1BKNB372",
+          "cbvmda:itemExpirationDate": "2029-06-30"
+        }
+      }
+    ]
+  }
+}
+```
+
+Response — **202 Accepted** in 84 ms:
+```json
+{
+  "statustype": "I",
+  "code": 202,
+  "date": "2026-09-01T02:15:09.136Z",
+  "messageid": "ztg-mti1bknb372-0003",
+  "status": {
+    "reason": "Message accepted for EPTTS Processing, the message status can be viewed in the message status query",
+    "code": "I001"
+  }
+}
+```
+
+Then the platform's own verdict, from `POST /MsgStatusQuery`:
+```json
+{
+  "instanceIdentifier": "ztg-mti1bknb372-0003",
+  "messagestatus": "S - Successful",
+  "logList": [
+    {
+      "type": "I",
+      "message": "Commission (Items) event processed successfully"
+    },
+    {
+      "type": "I",
+      "message": "Message processed successfully — all 1 event(s) completed"
+    }
+  ]
+}
+```
+
+</details>
+---
 **Environment:**
 - Masar B2B API via Citrix VPN
 - Auth: POST https://192.168.225.195:8445/registry-service/api/v1/auth (apikey header)

@@ -1,0 +1,23 @@
+{
+  "name": "eptts-web-analytics-expiry-risk-web_ner_003",
+  "title": "WEB_NER_003 — Validate that Expiry risk data is not carried over from another tab",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_NER_003",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-analytics-expiry-risk",
+    "testcaseId": "WEB_NER_003"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "render",
+    "tab"
+  ],
+  "folder": "EPTTS Web / web-analytics-expiry-risk",
+  "engine": "playwright"
+}

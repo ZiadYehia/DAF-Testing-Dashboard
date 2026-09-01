@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-master-data-web_mdt_001",
+  "title": "WEB_MDT_001 — Validate that the Master Data Snapshots page renders with its heading and primary controls",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_MDT_001",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-master-data",
+    "testcaseId": "WEB_MDT_001"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "render"
+  ],
+  "folder": "EPTTS Web / web-master-data",
+  "engine": "playwright"
+}

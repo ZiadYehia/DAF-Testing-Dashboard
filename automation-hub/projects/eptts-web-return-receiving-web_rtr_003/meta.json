@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-return-receiving-web_rtr_003",
+  "title": "WEB_RTR_003 — Validate that the table displays all expected columns",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_RTR_003",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-return-receiving",
+    "testcaseId": "WEB_RTR_003"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "columns"
+  ],
+  "folder": "EPTTS Web / web-return-receiving",
+  "engine": "playwright"
+}

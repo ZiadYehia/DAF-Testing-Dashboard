@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-pharmacy-stock-web_phs_005",
+  "title": "WEB_PHS_005 — Validate that the CSV export downloads and matches the on-screen data",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_PHS_005",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-pharmacy-stock",
+    "testcaseId": "WEB_PHS_005"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "csv"
+  ],
+  "folder": "EPTTS Web / web-pharmacy-stock",
+  "engine": "playwright"
+}

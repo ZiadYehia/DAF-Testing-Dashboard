@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test'
+import fs from 'fs'
 import path from 'path'
 import { loadHubEnv } from './lib/env'
 
@@ -9,9 +10,9 @@ import { loadHubEnv } from './lib/env'
  *   npx playwright test <spec> --config automation-hub/playwright.config.ts
  *     --project <chromium|api> --output <runDir>
  *
- * `--project` is NOT optional. `chromium` and `api` share a testMatch, so omitting it
- * selects both and runs every spec twice. engine/runner.ts always passes it; if you run
- * the CLI by hand, pass it too.
+ * Each project selects its own specs by engine (see specsForEngine), so a project never
+ * picks up another engine's tests. Still pass `--project`: with none given Playwright runs
+ * every project, which is rarely what you want. engine/runner.ts always passes it.
  *
  * Video + trace are on globally so browser replays produce artifacts the UI can show; the
  * `api` project turns them back off. The per-run output directory comes from --output.
@@ -26,6 +27,38 @@ import { loadHubEnv } from './lib/env'
 
 // Secrets/base URLs live in automation-hub/.env — load them for the whole child process.
 loadHubEnv()
+
+/**
+ * The spec files belonging to one engine family, read from each project's own meta.json.
+ *
+ * `chromium` and `api` used to share the pattern `projects/<any>/test.spec.ts`, which meant
+ * `--project=api` selected EVERY project — all 340 dashboard specs included — and ran them
+ * with no browser. They do not fail informatively when that happens; they sit there until
+ * something times out, so a "run the API suite" command quietly becomes a 712-test run that
+ * takes many times longer and reports nonsense for two thirds of it.
+ *
+ * Deriving the file list from `engine` makes each project select exactly its own specs, so a
+ * bare `npx playwright test --project=api` is now correct on its own.
+ */
+function specsForEngine(family: 'browser' | 'api'): RegExp[] | string[] {
+  const root = path.join(__dirname, 'projects')
+  if (!fs.existsSync(root)) return [/(?!)/]
+
+  const specs: string[] = []
+  for (const name of fs.readdirSync(root)) {
+    let engine: string | undefined
+    try {
+      engine = JSON.parse(fs.readFileSync(path.join(root, name, 'meta.json'), 'utf8')).engine
+    } catch {
+      // A project with no readable meta is a browser project — that is what every project
+      // was before the `api` engine existed, and guessing 'api' would skip its login setup.
+    }
+    if ((family === 'api') === (engine === 'api')) specs.push(`projects/${name}/test.spec.ts`)
+  }
+  // An empty array is treated by Playwright as "no filter", i.e. match everything — the
+  // opposite of what an empty set means. Return a regex that cannot match instead.
+  return specs.length ? specs : [/(?!)/]
+}
 
 export default defineConfig({
   testDir: __dirname,
@@ -60,7 +93,7 @@ export default defineConfig({
     },
     {
       name: 'chromium',
-      testMatch: /projects[\\/].*test\.spec\.ts/,
+      testMatch: specsForEngine('browser'),
       dependencies: ['setup'],
       use: { ...devices['Desktop Chrome'] },
     },
@@ -77,13 +110,12 @@ export default defineConfig({
      * self-signed certificate. Specs that build their own context (lib/eptts-api.ts) pass
      * it themselves, but one using the plain `request` fixture inherits it from here.
      *
-     * NOTE: this shares `chromium`'s testMatch, so it is selected exclusively via
-     * `--project=api` from engine/runner.ts. Running the CLI by hand without --project
-     * matches both projects and runs every spec twice.
+     * Its spec list is derived from each project's `engine`, so `--project=api` runs the
+     * API specs and nothing else.
      */
     {
       name: 'api',
-      testMatch: /projects[\\/].*test\.spec\.ts/,
+      testMatch: specsForEngine('api'),
       use: { video: 'off', trace: 'off', screenshot: 'off', ignoreHTTPSErrors: true },
     },
   ],

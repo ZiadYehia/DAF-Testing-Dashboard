@@ -1,0 +1,23 @@
+{
+  "name": "eptts-web-settings-pharmacies-web_sph_002",
+  "title": "WEB_SPH_002 — Validate that the Pharmacies tab reloads its data after a page refresh",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_SPH_002",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-settings-pharmacies",
+    "testcaseId": "WEB_SPH_002"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "directUrl",
+    "tab"
+  ],
+  "folder": "EPTTS Web / web-settings-pharmacies",
+  "engine": "playwright"
+}

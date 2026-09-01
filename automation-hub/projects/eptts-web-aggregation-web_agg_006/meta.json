@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-aggregation-web_agg_006",
+  "title": "WEB_AGG_006 — Validate that the page handles an expired session",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_AGG_006",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-aggregation",
+    "testcaseId": "WEB_AGG_006"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "session"
+  ],
+  "folder": "EPTTS Web / web-aggregation",
+  "engine": "playwright"
+}

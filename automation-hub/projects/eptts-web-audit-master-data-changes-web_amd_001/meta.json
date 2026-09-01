@@ -1,0 +1,23 @@
+{
+  "name": "eptts-web-audit-master-data-changes-web_amd_001",
+  "title": "WEB_AMD_001 — Validate that the Master-data changes tab opens and loads its own content",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_AMD_001",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-audit-master-data-changes",
+    "testcaseId": "WEB_AMD_001"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "render",
+    "tab"
+  ],
+  "folder": "EPTTS Web / web-audit-master-data-changes",
+  "engine": "playwright"
+}

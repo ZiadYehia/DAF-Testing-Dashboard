@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-announcements-web_ann_007",
+  "title": "WEB_ANN_007 — Validate that a non-privileged role cannot reach this page",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_ANN_007",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-announcements",
+    "testcaseId": "WEB_ANN_007"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "roleBlocked"
+  ],
+  "folder": "EPTTS Web / web-announcements",
+  "engine": "playwright"
+}

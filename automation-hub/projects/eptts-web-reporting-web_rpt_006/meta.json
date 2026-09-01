@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-reporting-web_rpt_006",
+  "title": "WEB_RPT_006 — Validate that search handles a no-match value without error",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_RPT_006",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-reporting",
+    "testcaseId": "WEB_RPT_006"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "emptyState"
+  ],
+  "folder": "EPTTS Web / web-reporting",
+  "engine": "playwright"
+}

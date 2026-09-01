@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-pos-partners-web_pos_002",
+  "title": "WEB_POS_002 — Validate that /pos-partners is reachable by direct URL and survives a refresh",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_POS_002",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-pos-partners",
+    "testcaseId": "WEB_POS_002"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "directUrl"
+  ],
+  "folder": "EPTTS Web / web-pos-partners",
+  "engine": "playwright"
+}

@@ -1,3 +1,5 @@
 {
-  "WEB_SBP_001": "The tab exists and its panel contains real content, but neither the tab bar nor the panel is ever rendered on screen: /admin paints only the FIRST of its five tab bars, so 8 of 15 tabs cannot be reached by a user. The panel measures 0x0 with display:inline inside a zero-height .p-tabpanels parent, while aria-selected does flip to true — so the components are live and it is the layout that is broken."
+  "WEB_SBP_001": "control \"Add Partner\" is present",
+  "WEB_SBP_002": "a data table is rendered",
+  "WEB_SBP_003": "control \"Add Partner\" is present"
 }

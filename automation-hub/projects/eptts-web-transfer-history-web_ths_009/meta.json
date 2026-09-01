@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-transfer-history-web_ths_009",
+  "title": "WEB_THS_009 — Validate that the page surfaces a backend failure instead of failing silently",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_THS_009",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-transfer-history",
+    "testcaseId": "WEB_THS_009"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "backendFailure"
+  ],
+  "folder": "EPTTS Web / web-transfer-history",
+  "engine": "playwright"
+}

@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-receiving-web_rcv_003",
+  "title": "WEB_RCV_003 — Validate that the table displays all expected columns",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_RCV_003",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-receiving",
+    "testcaseId": "WEB_RCV_003"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "columns"
+  ],
+  "folder": "EPTTS Web / web-receiving",
+  "engine": "playwright"
+}

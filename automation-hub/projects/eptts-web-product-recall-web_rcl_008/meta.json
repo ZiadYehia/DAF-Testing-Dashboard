@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-product-recall-web_rcl_008",
+  "title": "WEB_RCL_008 — Validate that the page handles an expired session",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_RCL_008",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-product-recall",
+    "testcaseId": "WEB_RCL_008"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "session"
+  ],
+  "folder": "EPTTS Web / web-product-recall",
+  "engine": "playwright"
+}

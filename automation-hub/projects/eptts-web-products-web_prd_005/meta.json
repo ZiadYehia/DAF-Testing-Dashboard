@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-products-web_prd_005",
+  "title": "WEB_PRD_005 — Validate that search filters the result set",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_PRD_005",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-products",
+    "testcaseId": "WEB_PRD_005"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "searchFilters"
+  ],
+  "folder": "EPTTS Web / web-products",
+  "engine": "playwright"
+}

@@ -1,0 +1,23 @@
+{
+  "name": "eptts-web-settings-manufacturer-web_smf_002",
+  "title": "WEB_SMF_002 — Validate that the Manufacturer table displays all expected columns",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_SMF_002",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-settings-manufacturer",
+    "testcaseId": "WEB_SMF_002"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "columns",
+    "tab"
+  ],
+  "folder": "EPTTS Web / web-settings-manufacturer",
+  "engine": "playwright"
+}

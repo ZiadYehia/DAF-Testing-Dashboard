@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-audit-console-web_aud_001",
+  "title": "WEB_AUD_001 — Validate that the Audit Console page renders with its heading and primary controls",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_AUD_001",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-audit-console",
+    "testcaseId": "WEB_AUD_001"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "render"
+  ],
+  "folder": "EPTTS Web / web-audit-console",
+  "engine": "playwright"
+}

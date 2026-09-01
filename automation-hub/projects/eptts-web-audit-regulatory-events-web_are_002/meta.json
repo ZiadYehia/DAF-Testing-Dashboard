@@ -1,0 +1,23 @@
+{
+  "name": "eptts-web-audit-regulatory-events-web_are_002",
+  "title": "WEB_ARE_002 — Validate that the Regulatory events table displays all expected columns",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_ARE_002",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-audit-regulatory-events",
+    "testcaseId": "WEB_ARE_002"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "columns",
+    "tab"
+  ],
+  "folder": "EPTTS Web / web-audit-regulatory-events",
+  "engine": "playwright"
+}

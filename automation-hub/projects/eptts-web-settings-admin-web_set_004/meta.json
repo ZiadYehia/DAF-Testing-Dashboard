@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-settings-admin-web_set_004",
+  "title": "WEB_SET_004 — Validate that the table renders an empty state when no records match",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_SET_004",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-settings-admin",
+    "testcaseId": "WEB_SET_004"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "emptyState"
+  ],
+  "folder": "EPTTS Web / web-settings-admin",
+  "engine": "playwright"
+}

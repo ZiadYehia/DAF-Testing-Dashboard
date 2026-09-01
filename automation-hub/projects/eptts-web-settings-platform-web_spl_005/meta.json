@@ -1,0 +1,23 @@
+{
+  "name": "eptts-web-settings-platform-web_spl_005",
+  "title": "WEB_SPL_005 — Validate that search filters the Platform list",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_SPL_005",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-settings-platform",
+    "testcaseId": "WEB_SPL_005"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "searchFilters",
+    "tab"
+  ],
+  "folder": "EPTTS Web / web-settings-platform",
+  "engine": "playwright"
+}

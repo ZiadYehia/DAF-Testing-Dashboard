@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-return-receiving-web_rtr_008",
+  "title": "WEB_RTR_008 — Validate that the page handles an expired session",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_RTR_008",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-return-receiving",
+    "testcaseId": "WEB_RTR_008"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "session"
+  ],
+  "folder": "EPTTS Web / web-return-receiving",
+  "engine": "playwright"
+}

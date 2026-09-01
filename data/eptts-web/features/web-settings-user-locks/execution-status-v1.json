@@ -1,9 +1,9 @@
 {
   "WEB_SUL_001": "fail",
-  "WEB_SUL_002": "new_added",
-  "WEB_SUL_003": "new_added",
-  "WEB_SUL_004": "new_added",
-  "WEB_SUL_005": "new_added",
+  "WEB_SUL_002": "fail",
+  "WEB_SUL_003": "fail",
+  "WEB_SUL_004": "pass",
+  "WEB_SUL_005": "fail",
   "WEB_SUL_006": "new_added",
   "WEB_SUL_007": "new_added",
   "WEB_SUL_008": "new_added"

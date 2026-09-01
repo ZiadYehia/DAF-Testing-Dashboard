@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-activation-keys-web_aky_007",
+  "title": "WEB_AKY_007 — Validate that the page surfaces a backend failure instead of failing silently",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_AKY_007",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-activation-keys",
+    "testcaseId": "WEB_AKY_007"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "backendFailure"
+  ],
+  "folder": "EPTTS Web / web-activation-keys",
+  "engine": "playwright"
+}

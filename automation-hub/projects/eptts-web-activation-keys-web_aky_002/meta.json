@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-activation-keys-web_aky_002",
+  "title": "WEB_AKY_002 — Validate that /activation-keys is reachable by direct URL and survives a refresh",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_AKY_002",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-activation-keys",
+    "testcaseId": "WEB_AKY_002"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "directUrl"
+  ],
+  "folder": "EPTTS Web / web-activation-keys",
+  "engine": "playwright"
+}

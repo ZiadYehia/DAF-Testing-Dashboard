@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-return-shipping-web_rts_002",
+  "title": "WEB_RTS_002 — Validate that /return-to-branch is reachable by direct URL and survives a refresh",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_RTS_002",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-return-shipping",
+    "testcaseId": "WEB_RTS_002"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "directUrl"
+  ],
+  "folder": "EPTTS Web / web-return-shipping",
+  "engine": "playwright"
+}

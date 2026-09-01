@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-product-recall-web_rcl_003",
+  "title": "WEB_RCL_003 — Validate that the table displays all expected columns",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_RCL_003",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-product-recall",
+    "testcaseId": "WEB_RCL_003"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "columns"
+  ],
+  "folder": "EPTTS Web / web-product-recall",
+  "engine": "playwright"
+}

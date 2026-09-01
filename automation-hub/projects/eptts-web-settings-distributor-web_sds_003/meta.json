@@ -1,0 +1,23 @@
+{
+  "name": "eptts-web-settings-distributor-web_sds_003",
+  "title": "WEB_SDS_003 — Validate that search filters the Distributor list",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_SDS_003",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-settings-distributor",
+    "testcaseId": "WEB_SDS_003"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "searchFilters",
+    "tab"
+  ],
+  "folder": "EPTTS Web / web-settings-distributor",
+  "engine": "playwright"
+}

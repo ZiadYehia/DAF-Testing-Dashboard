@@ -1,0 +1,23 @@
+{
+  "name": "eptts-web-analytics-shipments-web_nsh_004",
+  "title": "WEB_NSH_004 — Validate that the Shipments tab reloads its data after a page refresh",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_NSH_004",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-analytics-shipments",
+    "testcaseId": "WEB_NSH_004"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "directUrl",
+    "tab"
+  ],
+  "folder": "EPTTS Web / web-analytics-shipments",
+  "engine": "playwright"
+}

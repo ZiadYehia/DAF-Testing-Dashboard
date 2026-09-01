@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-return-receiving-web_rtr_002",
+  "title": "WEB_RTR_002 — Validate that /pending-returns is reachable by direct URL and survives a refresh",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_RTR_002",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-return-receiving",
+    "testcaseId": "WEB_RTR_002"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "directUrl"
+  ],
+  "folder": "EPTTS Web / web-return-receiving",
+  "engine": "playwright"
+}

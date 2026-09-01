@@ -1,0 +1,23 @@
+{
+  "name": "eptts-web-settings-user-locks-web_sul_005",
+  "title": "WEB_SUL_005 — Validate that search filters the User Locks list",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_SUL_005",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-settings-user-locks",
+    "testcaseId": "WEB_SUL_005"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "searchFilters",
+    "tab"
+  ],
+  "folder": "EPTTS Web / web-settings-user-locks",
+  "engine": "playwright"
+}

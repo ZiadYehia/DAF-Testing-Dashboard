@@ -1,0 +1,23 @@
+{
+  "name": "eptts-web-analytics-activity-web_nac_004",
+  "title": "WEB_NAC_004 — Validate that the Activity tab reloads its data after a page refresh",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_NAC_004",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-analytics-activity",
+    "testcaseId": "WEB_NAC_004"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "directUrl",
+    "tab"
+  ],
+  "folder": "EPTTS Web / web-analytics-activity",
+  "engine": "playwright"
+}

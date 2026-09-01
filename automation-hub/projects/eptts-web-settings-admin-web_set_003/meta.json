@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-settings-admin-web_set_003",
+  "title": "WEB_SET_003 — Validate that the table displays all expected columns",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_SET_003",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-settings-admin",
+    "testcaseId": "WEB_SET_003"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "columns"
+  ],
+  "folder": "EPTTS Web / web-settings-admin",
+  "engine": "playwright"
+}

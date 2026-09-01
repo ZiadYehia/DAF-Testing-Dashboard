@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-mdm-registry-web_mdm_001",
+  "title": "WEB_MDM_001 — Validate that the MDM Registry page renders with its heading and primary controls",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_MDM_001",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-mdm-registry",
+    "testcaseId": "WEB_MDM_001"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "render"
+  ],
+  "folder": "EPTTS Web / web-mdm-registry",
+  "engine": "playwright"
+}

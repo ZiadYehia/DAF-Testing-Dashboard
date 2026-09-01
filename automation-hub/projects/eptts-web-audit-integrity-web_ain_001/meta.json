@@ -1,0 +1,23 @@
+{
+  "name": "eptts-web-audit-integrity-web_ain_001",
+  "title": "WEB_AIN_001 — Validate that the Integrity tab opens and loads its own content",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_AIN_001",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-audit-integrity",
+    "testcaseId": "WEB_AIN_001"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "render",
+    "tab"
+  ],
+  "folder": "EPTTS Web / web-audit-integrity",
+  "engine": "playwright"
+}

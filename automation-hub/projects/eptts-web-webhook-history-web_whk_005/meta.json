@@ -1,0 +1,22 @@
+{
+  "name": "eptts-web-webhook-history-web_whk_005",
+  "title": "WEB_WHK_005 — Validate that a non-privileged role cannot reach this page",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_WHK_005",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-webhook-history",
+    "testcaseId": "WEB_WHK_005"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "roleBlocked"
+  ],
+  "folder": "EPTTS Web / web-webhook-history",
+  "engine": "playwright"
+}

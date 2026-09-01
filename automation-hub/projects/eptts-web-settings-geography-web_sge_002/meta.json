@@ -1,0 +1,23 @@
+{
+  "name": "eptts-web-settings-geography-web_sge_002",
+  "title": "WEB_SGE_002 — Validate that the Geography table displays all expected columns",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_SGE_002",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-settings-geography",
+    "testcaseId": "WEB_SGE_002"
+  },
+  "createdAt": "2026-09-01T04:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "columns",
+    "tab"
+  ],
+  "folder": "EPTTS Web / web-settings-geography",
+  "engine": "playwright"
+}

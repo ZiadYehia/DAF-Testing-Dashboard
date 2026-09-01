@@ -61,3 +61,7 @@ test-results/
 __pycache__/
 scripts/.assembled-prompt-*.txt
 backups/
+
+# Transient: the recorder writes the list of cases held back for infrastructure reasons.
+automation-hub/rerun-cases-*.txt
+probe-*-tmp.js
