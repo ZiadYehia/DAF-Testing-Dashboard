@@ -10,8 +10,16 @@
     "testcaseId": "TC_AUTH_011"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "never_run",
+  "lastStatus": "pass",
   "runs": [
+    {
+      "ts": "2026-09-01T12-29-01-676Z",
+      "status": "pass",
+      "durationMs": 3444.036,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": false
+    },
     {
       "ts": "2026-09-01T06-29-30-271Z",
       "status": "pass",

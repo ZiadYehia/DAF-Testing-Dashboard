@@ -16,6 +16,7 @@ import {
   XCircle, FlaskConical, MessageSquare, Tag, X, Folder, ChevronDown, ChevronRight,
   Bug, Link2, Search, ArrowLeftRight, Download,
 } from 'lucide-react'
+import { ApiConsole } from './ApiConsole'
 import { cn } from '@/lib/utils'
 import { useModels } from '@/hooks/useModels'
 import { useApp } from '@/lib/use-apps'
@@ -107,6 +108,14 @@ export function AutomationHub({ app }: { app: string }) {
           : null
   // MCP chat drives a real browser, so it does not apply to an API app.
   const chatAvailable = lockedEngine !== 'api'
+  const isApiApp = lockedEngine === 'api'
+  /**
+   * Which run the API console reads its exchanges from.
+   *
+   * Seeded from the newest run of the selected project, so opening the console shows the last
+   * thing that happened rather than an empty panel asking the user to go and find a run.
+   */
+  const [consoleRunTs, setConsoleRunTs] = useState<string | null>(null)
 
   const loadList = useCallback(async () => {
     const res = await fetch(base)
@@ -123,6 +132,9 @@ export function AutomationHub({ app }: { app: string }) {
       tsFiles.resetFrom(d.spec, d.tsPageFiles ?? [])
       pyFiles.resetFrom(d.pySpec ?? '', d.pageFiles ?? [])
       setFolderDraft(d.folder ?? '')
+      // Point the API console at the newest run that actually recorded something, so opening
+      // the tab shows the last exchange instead of an empty panel.
+      setConsoleRunTs((d.runs ?? []).find((r) => r.hasApiLog)?.ts ?? null)
     }
   }, [base])
 
@@ -646,9 +658,21 @@ export function AutomationHub({ app }: { app: string }) {
             <Bot className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h1 className="text-xl font-semibold leading-tight">Automation Hub</h1>
+            <h1 className="flex items-center gap-2 text-xl font-semibold leading-tight">
+              Automation Hub
+              {/* An API app behaves differently enough — no browser, no video, an editable
+                  request console instead — that saying so up front saves the confusion of
+                  looking for a trace that a browserless run never produces. */}
+              {isApiApp && (
+                <Badge variant="secondary" className="gap-1 text-[10px] uppercase tracking-wide">
+                  <ArrowLeftRight className="h-3 w-3" /> API edition
+                </Badge>
+              )}
+            </h1>
             <p className="text-sm text-muted-foreground">
-              Author, replay &amp; edit Playwright tests — recorded with video &amp; trace.
+              {isApiApp
+                ? 'Replay API cases, read every request and response, and edit one before sending it again.'
+                : 'Author, replay & edit Playwright tests — recorded with video & trace.'}
             </p>
           </div>
         </div>
@@ -668,6 +692,11 @@ export function AutomationHub({ app }: { app: string }) {
           {chatAvailable && (
             <TabsTrigger value="chat">
               <MessageSquare /> MCP Chat
+            </TabsTrigger>
+          )}
+          {isApiApp && (
+            <TabsTrigger value="api-console">
+              <ArrowLeftRight /> API Console
             </TabsTrigger>
           )}
         </TabsList>
@@ -1241,6 +1270,43 @@ export function AutomationHub({ app }: { app: string }) {
             modelName={modelName}
           />
         </TabsContent>
+
+        {/* ── API Console ───────────────────────────────────────────────── */}
+        {isApiApp && (
+          <TabsContent value="api-console" className="pt-4">
+            {!selected && (
+              <p className="text-sm text-muted-foreground">
+                Select a project on the Automations tab to read the calls it made.
+              </p>
+            )}
+            {selected && (
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-medium">{selected}</span>
+                  {/* Run picker: the console reads one run's recording at a time. */}
+                  <select
+                    value={consoleRunTs ?? ''}
+                    onChange={(e) => setConsoleRunTs(e.target.value || null)}
+                    className="h-8 rounded-md border bg-background px-2 font-mono text-xs"
+                  >
+                    <option value="">— pick a run —</option>
+                    {(detail?.runs ?? []).filter((r) => r.hasApiLog).map((r) => (
+                      <option key={r.ts} value={r.ts}>
+                        {r.ts.replace(/-/g, ':').replace('T', ' ').slice(0, 19)} · {r.status}
+                      </option>
+                    ))}
+                  </select>
+                  {(detail?.runs ?? []).every((r) => !r.hasApiLog) && (
+                    <span className="text-xs text-muted-foreground">
+                      No run of this project has a recorded exchange yet — replay it first.
+                    </span>
+                  )}
+                </div>
+                <ApiConsole app={app} project={selected} runTs={consoleRunTs} />
+              </div>
+            )}
+          </TabsContent>
+        )}
       </Tabs>
 
       {/* Bug reporting — linked to the project's test case when one is set */}
