@@ -6,10 +6,21 @@
  *
  * ── THIS FEATURE IS BLOCKED ON TEST DATA ──────────────────────────────────────
  *
- * Every one of the devsim manufacturer's 30 registered products has
- * `dispenseType: "full"`. None supports partial dispensing, so the platform has nothing
- * to partially dispense and no amount of test code can create the precondition. Filed as
- * a bug (see data/eptts-api/bugs/api-partial-dispensing/).
+ * The registry DOES hold partial-dispense products — 5 of its 662, among them
+ * 07910000000012 "LoadTest Product 0". (An earlier version of this comment said there were
+ * none; that was measured against this manufacturer's own 30-product catalogue.)
+ *
+ * They are unusable from here all the same, and for a reason that is correct behaviour
+ * rather than a gap: every one belongs to a different MAH, and the platform refuses to let
+ * one company act for another's GTIN —
+ *
+ *   "GTIN 06290009990011 is registered to 6290009990004 with no registered agent, and this
+ *    request was sent by 8435308300002. Only the marketing-authorisation holder or its
+ *    registered agent may act for a product."
+ *
+ * So the precondition still cannot be created: no partial pack can be commissioned, and
+ * without one there is nothing to partially dispense. Filed as a bug (see
+ * data/eptts-api/bugs/api-partial-dispensing/).
  *
  * How that is handled here, deliberately:
  *
@@ -23,8 +34,12 @@
  *   - The role and state negatives also run, since they are about who may dispense and
  *     from what state, not about quantity.
  *
- * To unblock: register a product with a partial/unit `dispenseType` (Registry → Products),
- * ideally with `isDawanaIntegration: false`, then remove the `skip` markers below.
+ * To unblock, smallest change first: add 8435308300002 as the `registeredAgentGln` on
+ * 06290009990011 or 05413868123456 — both partial AND non-Dawana — which is the remedy the
+ * platform's own error message proposes. Failing that, register a partial, non-Dawana product
+ * under 8435308300002. Then put its GTIN in MFG_PARTIAL_DISPENSE_GTINS and remove the `skip`
+ * markers below. Do NOT reach for LoadTest Product 0: it is Dawana-integrated, so this
+ * channel would refuse to dispense it even once ownership were solved.
  */
 import { expect } from '@playwright/test'
 import {
@@ -41,8 +56,11 @@ const FEATURE = 'api-partial-dispensing'
 const BRANCH = () => glnFor('branch')
 
 const BLOCKED =
-  'blocked on test data: all 30 registered products have dispenseType "full", so the platform ' +
-  'has nothing to partially dispense. Register a product with a partial/unit dispense type to unblock.'
+  'blocked on test data: the registry has 5 partial-dispense products but all belong to other ' +
+  'MAHs, and commissioning one is refused — "Only the marketing-authorisation holder or its ' +
+  'registered agent may act for a product". No partial pack can be created, so there is ' +
+  'nothing to partially dispense. Add 8435308300002 as registeredAgentGln on 06290009990011 ' +
+  'or 05413868123456 (both non-Dawana) to unblock.'
 
 function partialDoc(epcList: string[], quantity: number | undefined, role: Role = 'pharmacy'): EpcisDocument {
   return epcisDocument(

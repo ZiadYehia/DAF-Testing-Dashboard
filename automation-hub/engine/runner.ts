@@ -77,8 +77,16 @@ async function findFile(dir: string, match: (f: string) => boolean): Promise<str
  * setup project. `undefined` means the report couldn't be read at all
  * (malformed/absent JSON) — callers should treat that as "assume executed" so a
  * genuine parse failure doesn't also swallow a real pass/fail.
+ *
+ * `knownGap` is the one that matters for reporting honestly. A case marked `expectFail`
+ * becomes `test.fail(true, reason)`: the assertion genuinely fails, Playwright calls that an
+ * EXPECTED failure, and the process exits 0. Judging by exit code alone therefore painted
+ * every known platform gap green in the Hub -- so opening a filed bug and replaying it showed
+ * a pass, which reads as "this is fixed" when nothing had changed. Detect those explicitly.
  */
-function parseReport(stdout: string): { durationMs?: number; error?: string; executed?: boolean } {
+function parseReport(stdout: string): {
+  durationMs?: number; error?: string; executed?: boolean; knownGap?: boolean
+} {
   // The JSON reporter prints one big JSON object. Find the outermost braces.
   const start = stdout.indexOf('{')
   const end = stdout.lastIndexOf('}')
@@ -90,12 +98,15 @@ function parseReport(stdout: string): { durationMs?: number; error?: string; exe
     // non-setup tests actually ran (anything but a 'skipped' result).
     let error: string | undefined
     let ranCount = 0
+    let knownGap = false
     const visit = (node: any) => {
       for (const t of node?.specs ?? []) {
         for (const test of t?.tests ?? []) {
           if (test?.projectName !== SETUP_PROJECT) {
             for (const r of test?.results ?? []) {
               if (r?.status && r.status !== 'skipped') ranCount++
+              // failed + expectedStatus 'failed' == a declared known gap, exit code 0.
+              if (r?.status === 'failed' && test?.expectedStatus === 'failed') knownGap = true
             }
           }
           for (const r of test?.results ?? []) {
@@ -108,7 +119,10 @@ function parseReport(stdout: string): { durationMs?: number; error?: string; exe
       for (const s of node?.suites ?? []) visit(s)
     }
     for (const s of report?.suites ?? []) visit(s)
-    return { durationMs: typeof durationMs === 'number' ? durationMs : undefined, error, executed: ranCount > 0 }
+    return {
+      durationMs: typeof durationMs === 'number' ? durationMs : undefined,
+      error, executed: ranCount > 0, knownGap,
+    }
   } catch {
     return {}
   }
@@ -224,8 +238,11 @@ export async function runProject(name: string, now: string): Promise<RunResult> 
       child.on('error', (err) => { clearTimeout(watchdog); resolve({ code: 1, stdout: out + '\n' + String(err), timedOut: killed }) })
     })
 
-    const status: 'pass' | 'fail' = code === 0 ? 'pass' : 'fail'
     const parsed = parseReport(stdout)
+    // A known gap exits 0 but is NOT a pass: the platform is still wrong, which is why the
+    // case carries a filed bug. Reporting it green is how a replay talks someone out of a
+    // real defect.
+    const status: 'pass' | 'fail' = code === 0 && !parsed.knownGap ? 'pass' : 'fail'
     if (timedOut && !parsed.error) {
       parsed.error = `Run exceeded ${Math.round(RUN_TIMEOUT_MS / 1000)}s and was killed (AUTOMATION_RUN_TIMEOUT_MS)`
     }

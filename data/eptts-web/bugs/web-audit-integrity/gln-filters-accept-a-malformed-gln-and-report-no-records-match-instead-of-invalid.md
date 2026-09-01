@@ -84,6 +84,11 @@ of problem; these four filters simply do not use it.
 Regulatory events, EDA submissions, Master-data changes tabs) · tenant devsim · role admin
 (admin@devsim.local) · UI in English · Chrome 1600×1100 · via Citrix VPN · host serves a
 self-signed certificate
+
+**Evidence:** `invalid-gln-returns-no-records-match.jpg` — the Integrity tab with
+`8435308300003` in the "Chain status by GLN" box. The table reads "No records match these
+filters … Widen the date range or clear a filter to see more", and no validation message
+appears anywhere on the page. Note the summary above it: the log holds 48,074 records.
 ---
 **Priority:**
 P3 – Medium

@@ -10,8 +10,17 @@
     "testcaseId": "TC_COMM_027"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "pass",
+  "lastStatus": "fail",
   "runs": [
+    {
+      "ts": "2026-09-01T06-20-20-743Z",
+      "status": "fail",
+      "durationMs": 13232.31,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: TC_COMM_027 an empty eventTimeZoneOffset: the platform ACCEPTED input it should refuse: http=200 raw=\"S - Successful\" state=SUCCESS polls=6 logs=[I: Commission (Items) event processed successfully | I: Message processed successfully — all 1 event(s) completed]"
+    },
     {
       "ts": "2026-08-31T22-34-15-244Z",
       "status": "pass",

@@ -878,11 +878,24 @@ export const MFG_DISPENSABLE_GTINS = [
 ] as const
 
 /**
- * NO product in this manufacturer's catalogue has a `dispenseType` other than
- * "full" — all 30 are full-pack only. Partial dispensing therefore cannot be
- * exercised against this tenant at all, which blocks the whole
- * `api-partial-dispensing` feature (36 cases) regardless of how it is written.
- * Resolving it needs a product registered with a partial/unit dispense type.
+ * No product THIS MANUFACTURER holds has a `dispenseType` other than "full" — all 30 of its
+ * own are full-pack only.
+ *
+ * The registry as a whole is a different matter: it has 662 products and 5 of them are
+ * `partial`, among them 07910000000012 "LoadTest Product 0". An earlier version of this
+ * comment claimed the platform had none at all, which was measuring the manufacturer's
+ * catalogue and describing the registry.
+ *
+ * They are still unusable here, for a reason that is correct behaviour rather than a gap:
+ * every one belongs to another MAH, and commissioning is refused —
+ *
+ *   "GTIN 06290009990011 is registered to 6290009990004 with no registered agent, and this
+ *    request was sent by 8435308300002. Only the marketing-authorisation holder or its
+ *    registered agent may act for a product."
+ *
+ * So this list stays empty until 8435308300002 is added as `registeredAgentGln` on one of the
+ * non-Dawana partial products, or a partial product is registered under it. Two of the five
+ * are also Dawana-only, so any fix should target 06290009990011 or 05413868123456.
  */
 export const MFG_PARTIAL_DISPENSE_GTINS: readonly string[] = []
 
