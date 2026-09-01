@@ -23,6 +23,29 @@ npm run db:migrate      # create schema
 npm run db:seed-admin   # create admin user from SEED_ADMIN_* env
 ```
 
+### Getting disk edits into the app
+
+`npm run db:import` is **insert-only**: it creates rows that do not exist and never overwrites
+one that does. That protects anything edited in the UI from being clobbered by a stale file,
+but it means editing a file that already has a row changes nothing in the app — and because
+reads are DB-first, the dashboard keeps serving the old copy with nothing on screen to say the
+two disagree. `db:import` reports success either way.
+
+So after editing `data/` by hand or from a script, run the matching sync tool. Each takes
+`--app <slug>` and supports `--dry-run`; none is wired to an npm alias, deliberately.
+
+```bash
+npx ts-node database/src/seed/sync-bugs.ts --app eptts-api --dry-run           # bug bodies + frontmatter
+npx ts-node database/src/seed/sync-executions.ts --app eptts-api --dry-run     # execution statuses + notes
+npx ts-node database/src/seed/sync-modules.ts --app eptts-web --dry-run        # module manifests
+npx ts-node database/src/seed/sync-feature-modules.ts --app eptts-web --dry-run # feature -> module assignment
+```
+
+`sync-bugs` does not treat disk as authoritative for everything: **status, jiraKey,
+reportedAt, jiraStatus and jiraReporter belong to the app**, since reporting to Jira happens
+in the UI and is never written back to the file. It updates the authored content (title, body,
+priority, type, severity, layer) and reports where a file's frontmatter has fallen behind.
+
 ## How data is organized
 
 Markdown/JSON files under `data/` are the source of truth; the database mirrors them for

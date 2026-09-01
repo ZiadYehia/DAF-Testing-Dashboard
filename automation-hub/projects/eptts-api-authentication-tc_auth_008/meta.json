@@ -13,6 +13,15 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-01T06-29-16-821Z",
+      "status": "fail",
+      "durationMs": 2444.925,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: an empty password: a half-supplied credential should be rejected, not ignored"
+    },
+    {
       "ts": "2026-09-01T06-18-54-088Z",
       "status": "fail",
       "durationMs": 2631.322,

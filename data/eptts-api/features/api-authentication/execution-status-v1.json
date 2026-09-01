@@ -5,7 +5,7 @@
   "TC_AUTH_004": "pass",
   "TC_AUTH_005": "pass",
   "TC_AUTH_006": "pass",
-  "TC_AUTH_007": "pass",
+  "TC_AUTH_007": "fail",
   "TC_AUTH_008": "fail",
   "TC_AUTH_009": "fail",
   "TC_AUTH_010": "fail",

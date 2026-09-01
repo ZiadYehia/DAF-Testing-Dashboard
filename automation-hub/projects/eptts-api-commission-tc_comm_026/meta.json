@@ -13,6 +13,15 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-01T06-36-08-434Z",
+      "status": "fail",
+      "durationMs": 13440.238,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: TC_COMM_026 a non-ISO-8601 eventTime: the platform ACCEPTED input it should refuse: http=200 raw=\"S - Successful\" state=SUCCESS polls=6 logs=[I: Commission (Items) event processed successfully | I: Message processed successfully — all 1 event(s) completed]"
+    },
+    {
       "ts": "2026-09-01T06-19-43-584Z",
       "status": "fail",
       "durationMs": 14353.547,
