@@ -1,5 +1,5 @@
 /**
- * WEB_DSP_001 — Dispensing renders with its heading and primary controls.
+ * WEB_DSP_001 — Dispensing renders with its content and primary controls.
  *
  * Feature: web-dispensing   Route: /dispensing
  *

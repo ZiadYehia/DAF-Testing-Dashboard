@@ -1,0 +1,23 @@
+{
+  "name": "eptts-web-analytics-expiry-risk",
+  "title": "WEB_NER_001 — Expiry risk renders",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_NER_001",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-analytics-expiry-risk",
+    "testcaseId": "WEB_NER_001"
+  },
+  "createdAt": "2026-09-01T02:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "smoke",
+    "readonly",
+    "tab"
+  ],
+  "folder": "EPTTS Web / web-analytics-expiry-risk",
+  "engine": "playwright"
+}

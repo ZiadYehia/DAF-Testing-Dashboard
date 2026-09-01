@@ -1,5 +1,5 @@
 /**
- * WEB_DST_001 — Product Destruction renders with its heading and primary controls.
+ * WEB_DST_001 — Product Destruction renders with its content and primary controls.
  *
  * Feature: web-product-destruction   Route: /destruction
  *

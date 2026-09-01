@@ -10,8 +10,17 @@
     "testcaseId": "TC_DISP_015"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "never_run",
-  "runs": [],
+  "lastStatus": "pass",
+  "runs": [
+    {
+      "ts": "2026-08-31T23-15-50-293Z",
+      "status": "pass",
+      "durationMs": 65557.894,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true
+    }
+  ],
   "tags": [
     "api",
     "destructive"

@@ -1,5 +1,5 @@
 /**
- * WEB_SET_001 — Settings renders with its heading and primary controls.
+ * WEB_SET_001 — Settings renders with its content and primary controls.
  *
  * Feature: web-settings-admin   Route: /admin
  *

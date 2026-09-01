@@ -10,8 +10,17 @@
     "testcaseId": "TC_PDISP_013"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "never_run",
-  "runs": [],
+  "lastStatus": "pass",
+  "runs": [
+    {
+      "ts": "2026-08-31T23-47-10-100Z",
+      "status": "pass",
+      "durationMs": 630.6690000000001,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": false
+    }
+  ],
   "tags": [
     "api",
     "destructive",

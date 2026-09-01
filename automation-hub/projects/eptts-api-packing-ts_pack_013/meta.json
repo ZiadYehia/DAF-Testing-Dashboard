@@ -10,8 +10,17 @@
     "testcaseId": "TS_PACK_013"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "never_run",
-  "runs": [],
+  "lastStatus": "pass",
+  "runs": [
+    {
+      "ts": "2026-08-31T23-40-32-669Z",
+      "status": "pass",
+      "durationMs": 617.2149999999999,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": false
+    }
+  ],
   "tags": [
     "api",
     "write",

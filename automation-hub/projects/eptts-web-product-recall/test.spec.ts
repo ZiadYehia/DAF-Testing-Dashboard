@@ -1,5 +1,5 @@
 /**
- * WEB_RCL_001 — Product Recall renders with its heading and primary controls.
+ * WEB_RCL_001 — Product Recall renders with its content and primary controls.
  *
  * Feature: web-product-recall   Route: /recalls
  *

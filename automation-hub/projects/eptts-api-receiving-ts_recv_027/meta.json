@@ -10,8 +10,18 @@
     "testcaseId": "TS_RECV_027"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "never_run",
-  "runs": [],
+  "lastStatus": "pass",
+  "runs": [
+    {
+      "ts": "2026-09-01T00-06-18-187Z",
+      "status": "pass",
+      "durationMs": 55303.308000000005,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: apiRequestContext.post: connect ETIMEDOUT 192.168.225.195:8444"
+    }
+  ],
   "tags": [
     "api",
     "write"

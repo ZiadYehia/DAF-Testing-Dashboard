@@ -19,7 +19,7 @@
  * That keeps one project per case (individually replayable, individually reported) while
  * the logic stays in one reviewable place.
  *
- * NOT per-case, deliberately: `eptts-api-smoke` and `eptts-api-supply-chain`. Those are a
+ * NOT per-case, deliberately: `eptts-api-smoke` and `eptts-api-e2e-returns`. Those are a
  * contract smoke and an end-to-end journey — they verify that the steps compose, which is
  * a property no single test case describes, and the journey's steps must run in order
  * sharing state. They keep their own multi-test specs and are not linked to one case.

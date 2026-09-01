@@ -1,5 +1,5 @@
 /**
- * WEB_AUD_001 — Audit Console renders with its heading and primary controls.
+ * WEB_AUD_001 — Audit Console renders with its content and primary controls.
  *
  * Feature: web-audit-console   Route: /audit
  *

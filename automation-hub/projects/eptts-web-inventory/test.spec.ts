@@ -1,5 +1,5 @@
 /**
- * WEB_INV_001 — Inventory renders with its heading and primary controls.
+ * WEB_INV_001 — Inventory renders with its content and primary controls.
  *
  * Feature: web-inventory   Route: /inventory
  *

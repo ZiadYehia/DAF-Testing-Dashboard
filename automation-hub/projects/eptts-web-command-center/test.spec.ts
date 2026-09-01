@@ -1,5 +1,5 @@
 /**
- * WEB_CMD_001 — Statistics renders with its heading and primary controls.
+ * WEB_CMD_001 — Statistics renders with its content and primary controls.
  *
  * Feature: web-command-center   Route: /dashboard
  *

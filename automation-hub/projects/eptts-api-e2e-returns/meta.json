@@ -1,0 +1,29 @@
+{
+  "name": "eptts-api-e2e-returns",
+  "title": "EPTTS API — E2E Journey: Dispense & Return",
+  "app": "eptts-api",
+  "createdVia": "manual",
+  "linkedTestcaseId": null,
+  "linkedTestcase": null,
+  "createdAt": "2026-09-01T00:00:00.000Z",
+  "lastStatus": "pass",
+  "runs": [
+    {
+      "ts": "2026-08-31T23-27-25-252Z",
+      "status": "pass",
+      "durationMs": 89373.099,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true
+    }
+  ],
+  "tags": [
+    "api",
+    "write",
+    "destructive",
+    "e2e",
+    "returns"
+  ],
+  "folder": "EPTTS APIs",
+  "engine": "api"
+}

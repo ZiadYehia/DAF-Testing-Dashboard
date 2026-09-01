@@ -1,5 +1,5 @@
 /**
- * WEB_MDM_001 — MDM Registry renders with its heading and primary controls.
+ * WEB_MDM_001 — MDM Registry renders with its content and primary controls.
  *
  * Feature: web-mdm-registry   Route: /mdm-registry
  *

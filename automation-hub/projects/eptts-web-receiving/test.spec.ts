@@ -1,5 +1,5 @@
 /**
- * WEB_RCV_001 — Receiving renders with its heading and primary controls.
+ * WEB_RCV_001 — Receiving renders with its content and primary controls.
  *
  * Feature: web-receiving   Route: /shipments/receive
  *

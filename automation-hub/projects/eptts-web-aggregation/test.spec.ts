@@ -1,5 +1,5 @@
 /**
- * WEB_AGG_001 — Aggregation renders with its heading and primary controls.
+ * WEB_AGG_001 — Aggregation renders with its content and primary controls.
  *
  * Feature: web-aggregation   Route: /aggregation
  *

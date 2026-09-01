@@ -1,5 +1,5 @@
 /**
- * WEB_SHP_001 — Shipping renders with its heading and primary controls.
+ * WEB_SHP_001 — Shipping renders with its content and primary controls.
  *
  * Feature: web-shipping   Route: /shipments
  *

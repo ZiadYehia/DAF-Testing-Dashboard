@@ -1,5 +1,5 @@
 /**
- * WEB_VRF_001 — Product Verification renders with its heading and primary controls.
+ * WEB_VRF_001 — Product Verification renders with its content and primary controls.
  *
  * Feature: web-product-verification   Route: /verify
  *

@@ -1,5 +1,5 @@
 /**
- * WEB_EPC_001 — EPCIS Messages renders with its heading and primary controls.
+ * WEB_EPC_001 — EPCIS Messages renders with its content and primary controls.
  *
  * Feature: web-epcis-messages   Route: /epcis-b2b
  *

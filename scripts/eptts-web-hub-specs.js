@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Generate one Automation Hub project per P1 dashboard page, driven by the discovery manifest.
+ * Generate one Automation Hub project per P1 dashboard page AND per P1 tab.
  *
  * Usage:
  *   node scripts/eptts-web-hub-specs.js <manifest.json>            # dry run
@@ -12,19 +12,20 @@
  * That is the case worth automating first — it is the precondition for every other case on
  * the page, it is cheap, and it is the one that catches a deploy breaking a screen outright.
  *
- * Deliberately NOT automated yet:
- *   - tab features (/admin has 9, /audit 4, /analytics 2). They share a route and need the
- *     tab clicked first; PrimeNG's tab bars needed three attempts to drive reliably during
- *     discovery, so they deserve their own pass rather than being rushed in here.
- *   - anything that WRITES. Every one of these pages can submit an EPCIS event against
- *     production. A read-only render check is safe to run on any schedule; a shipping
- *     submission is not, and needs the same run-scoped-identifier discipline the API suite has.
+ * A TAB feature shares its parent's route and is reached by clicking a tab, so its spec uses
+ * DashboardPage.openTab() and its assertions are scoped to that tab's own panel.
  *
- * ASSERTIONS COME FROM THE MANIFEST, NOT FROM IMAGINATION
+ * Deliberately NOT automated: anything that WRITES. Every one of these pages can submit an
+ * EPCIS event against production. A read-only render check is safe to replay on any schedule;
+ * a shipping submission is not, and needs the same run-scoped-identifier discipline the API
+ * suite has.
  *
- * Headings, controls and table columns are whatever discovery actually saw on the page. A
- * generated spec asserting a control nobody has seen would be a test of the generator, not of
- * the product.
+ * ASSERTIONS COME FROM WHAT WAS OBSERVED, NOT FROM IMAGINATION
+ *
+ * A page's elements come from the discovery manifest. A TAB's come from its own workflow,
+ * which the tab-discovery pass authored — the manifest only knows the parent page, so using it
+ * for tabs would attribute the first tab's table to every tab on the screen. That is a mistake
+ * this project has already made once, with Pharmacies' columns recorded under Geography.
  */
 const fs = require('fs')
 const path = require('path')
@@ -58,6 +59,31 @@ function firstCaseId(feature) {
   return null
 }
 
+/**
+ * A tab feature's route and tab label, e.g. "| **Route** | `/admin` → tab **Government** |".
+ * Returns null for a plain page.
+ */
+function tabRoute(md) {
+  const m = /\| \*\*Route\*\* \| `([^`]+)` → tab \*\*([^*]+)\*\* \|/.exec(md)
+  return m ? { route: m[1], tab: m[2].trim() } : null
+}
+
+/**
+ * Elements from the workflow's UI Elements table — the tab's OWN content, captured by the
+ * earlier tab-discovery pass. Used instead of the page manifest, which only knows the parent
+ * page and would attribute the first tab's table to every tab on it.
+ */
+function elementsFromWorkflow(md) {
+  const section = md.split('## UI Elements')[1]?.split('\n## ')[0] ?? ''
+  const columns = /columns: ([^|]+)/.exec(section)?.[1].split(',').map((c) => c.trim()).filter(Boolean) ?? []
+  const buttons = []
+  for (const line of section.split('\n')) {
+    const m = /^\| ([^|]+?) \| Button \/ action \|/.exec(line)
+    if (m) buttons.push(m[1].trim())
+  }
+  return { columns, buttons }
+}
+
 // ─── pick the targets ────────────────────────────────────────────────────────
 
 const targets = []
@@ -68,21 +94,36 @@ for (const feature of fs.readdirSync(FEATURES)) {
   const md = fs.readFileSync(wf, 'utf8')
   if (field(md, 'Priority') !== 'P1') continue
 
-  const route = field(md, 'Route')
   const caseId = firstCaseId(feature)
+  if (!caseId) continue
   const name = feature.replace(/^web-/, '')
-  const page = pageByName.get(name)
-  if (!route || !caseId || !page) continue
 
-  // A tab feature shares its parent's route, so more than one feature maps to it. Those need
-  // the tab clicked first and are out of scope here — see the header.
-  targets.push({ feature, name, route, caseId, page, heading: page.headings?.[0] })
+  // A TAB feature: same route as its parent page, reached by clicking a tab. Its own content
+  // comes from its workflow, not from the page manifest.
+  const asTab = tabRoute(md)
+  if (asTab) {
+    const el = elementsFromWorkflow(md)
+    targets.push({
+      kind: 'tab', feature, name, caseId,
+      route: asTab.route, tab: asTab.tab,
+      heading: null, buttons: el.buttons, columns: el.columns,
+    })
+    continue
+  }
+
+  const route = field(md, 'Route')
+  const page = pageByName.get(name)
+  if (!route || !page) continue
+  targets.push({
+    kind: 'page', feature, name, caseId, route,
+    heading: page.headings?.[0],
+    buttons: page.buttons ?? [],
+    columns: page.tables?.[0]?.columns ?? [],
+  })
 }
 
-const byRoute = new Map()
-for (const t of targets) byRoute.set(t.route, (byRoute.get(t.route) ?? 0) + 1)
-const pages = targets.filter((t) => byRoute.get(t.route) === 1)
-const tabs = targets.filter((t) => byRoute.get(t.route) > 1)
+const pages = targets.filter((t) => t.kind === 'page')
+const tabs = targets.filter((t) => t.kind === 'tab')
 
 // ─── emit ────────────────────────────────────────────────────────────────────
 
@@ -105,15 +146,15 @@ const SPEC = (t) => {
   //    controls ("+", "−" on the command centre) and pagination digits. Asserting those
   //    produces a brittle test of chrome rather than of the page, and `getByRole(name: '+')`
   //    matches unpredictably.
-  const controls = (t.page.buttons ?? [])
+  const controls = (t.buttons ?? [])
     .filter((b) => b && b !== 'AR' && b !== 'EN' && b.length < 32 && !RAW_KEY.test(b))
     .filter((b) => b.length >= 3 && /[A-Za-z]{3}/.test(b))
     .slice(0, 3)
-  const columns = (t.page.tables?.[0]?.columns ?? []).slice(0, 5)
+  const columns = (t.columns ?? []).slice(0, 5)
 
   const lines = [
     `/**`,
-    ` * ${t.caseId} — ${t.heading ?? t.name} renders with its heading and primary controls.`,
+    ` * ${t.caseId} — ${t.heading ?? t.tab ?? t.name} renders with its content and primary controls.`,
     ` *`,
     ` * Feature: ${t.feature}   Route: ${t.route}`,
     ` *`,
@@ -130,9 +171,9 @@ const SPEC = (t) => {
     `// The cached login state carries localStorage.lang=en, so the UI opens in English.`,
     `test.use({ storageState: stateFor('eptts-web'), ignoreHTTPSErrors: true })`,
     ``,
-    `test('${t.caseId} — ${(t.heading ?? t.name).replace(/'/g, "\\'")} renders', async ({ page }) => {`,
+    `test('${t.caseId} — ${(t.heading ?? t.tab ?? t.name).replace(/'/g, "\\'")} renders', async ({ page }) => {`,
     `  test.slow()`,
-    `  await DashboardPage.open(page, '${t.route}')`,
+    `  await DashboardPage.${t.tab ? `openTab(page, '${t.route}', '${t.tab.replace(/'/g, "\\'")}')` : `open(page, '${t.route}')`}`,
     `    .expectEnglish()`,
   ]
   if (t.heading) lines.push(`    .expectHeading('${t.heading.replace(/'/g, "\\'")}')`)
@@ -153,7 +194,7 @@ const SPEC = (t) => {
 
 const META = (t) => JSON.stringify({
   name: projectName(t),
-  title: `${t.caseId} — ${t.heading ?? t.name} renders`,
+  title: `${t.caseId} — ${t.heading ?? t.tab ?? t.name} renders`,
   app: 'eptts-web',
   createdVia: 'testcase',
   linkedTestcaseId: t.caseId,
@@ -161,13 +202,13 @@ const META = (t) => JSON.stringify({
   createdAt: '2026-09-01T02:00:00.000Z',
   lastStatus: 'never_run',
   runs: [],
-  tags: ['dashboard', 'smoke', 'readonly'],
+  tags: t.tab ? ['dashboard', 'smoke', 'readonly', 'tab'] : ['dashboard', 'smoke', 'readonly'],
   folder: `EPTTS Web / ${t.feature}`,
   // Browser Playwright: this drives a real page, unlike the eptts-api projects.
   engine: 'playwright',
 }, null, 2) + '\n'
 
-for (const t of pages) {
+for (const t of [...pages, ...tabs]) {
   if (!WRITE) continue
   const dir = path.join(PROJECTS, projectName(t))
   fs.mkdirSync(dir, { recursive: true })
@@ -188,16 +229,13 @@ for (const t of pages) {
 }
 
 console.log(WRITE ? '=== WROTE ===' : '=== DRY RUN (pass --write) ===')
-for (const t of pages) {
-  const c = (t.page.buttons ?? []).filter((b) => b && b !== 'AR' && b !== 'EN').length
-  const cols = t.page.tables?.[0]?.columns?.length ?? 0
-  console.log(`  ${t.caseId.padEnd(12)} ${projectName(t).padEnd(32)} ${t.route.padEnd(22)} controls:${c} cols:${cols}`)
-}
-console.log(`\nP1 page projects: ${pages.length}`)
-if (tabs.length) {
+for (const t of [...pages, ...tabs]) {
+  const where = t.tab ? `${t.route} → ${t.tab}` : t.route
+  const c = (t.buttons ?? []).filter((b) => b && b !== 'AR' && b !== 'EN').length
   console.log(
-    `\nskipped ${tabs.length} P1 TAB feature(s) — they share a route with siblings and need the ` +
-    'tab clicked first, which is its own pass:')
-  console.log(`   ${tabs.map((t) => t.feature).join(', ')}`)
+    `  ${t.kind.padEnd(4)} ${t.caseId.padEnd(12)} ${projectName(t).padEnd(34)} ` +
+    `${where.padEnd(40)} controls:${c} cols:${(t.columns ?? []).length}`)
 }
+console.log(
+  `\nP1 projects: ${pages.length} page(s) + ${tabs.length} tab(s) = ${pages.length + tabs.length}`)
 if (!WRITE) console.log('\n(dry run — nothing written)')

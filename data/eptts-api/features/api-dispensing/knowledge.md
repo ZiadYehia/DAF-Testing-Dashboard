@@ -21,7 +21,9 @@ The terminal event of the supply chain: a pack leaves circulation as `dispensed`
   `08435308348882`, `08435308348912`, `08435308348929` work. A test that picks a GTIN at random
   fails for the wrong reason.
 - A dispensing test needs the **whole chain** first (commission → pack → ship → receive at branch →
-  ship → receive at pharmacy). `eptts-api-supply-chain` builds exactly that.
+  ship → receive at pharmacy). `atPharmacy()` in `automation-hub/lib/eptts-cases/fixtures.ts` builds
+  exactly that and is what the per-case tests use; `eptts-api-e2e-returns` walks the same chain as
+  explicit, individually-reported steps and carries it on through returns.
 - Re-dispensing is refused with a precise, assertable message:
   `"Invalid status transition for <epc>: 'dispensed' → 'dispensed'"`.
 

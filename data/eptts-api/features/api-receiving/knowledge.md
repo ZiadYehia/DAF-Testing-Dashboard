@@ -14,9 +14,11 @@ Receiving is where custody actually transfers, and where discrepancies surface: 
 
 ## What will bite you
 
-- `TS_RECV_001` is recorded `Fail` against `DW-878` in the spreadsheet. Walked end to end on
-  2026-08-31 it **succeeds** — see `automation-hub/projects/eptts-api-supply-chain/`. Confirm with the
-  DW-878 owner before closing that ticket on this evidence.
+- `TS_RECV_001` is recorded `Fail` against `DW-878` in the spreadsheet. Walked end to end it
+  **succeeds**, on 2026-08-31 and again on 2026-09-01 — see step `E2E-04` of
+  `automation-hub/projects/eptts-api-e2e-returns/`, which asserts custody actually lands
+  (`status=active`, `currentGln=0085412000008`), not merely that the event was accepted. Confirm
+  with the DW-878 owner before closing that ticket on this evidence.
 - Partial receive (fewer EPCs than shipped) raises a real question: does the shipment stay open, and
   what state do the un-received packs hold? Unverified.
 

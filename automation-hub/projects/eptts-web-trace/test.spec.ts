@@ -1,5 +1,5 @@
 /**
- * WEB_TRC_001 — Trace renders with its heading and primary controls.
+ * WEB_TRC_001 — Trace renders with its content and primary controls.
  *
  * Feature: web-trace   Route: /trace
  *
