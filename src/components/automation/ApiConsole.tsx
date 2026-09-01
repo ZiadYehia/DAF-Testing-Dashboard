@@ -76,9 +76,44 @@ function placeholderFor(headerName: string): string {
   return ''
 }
 
+/**
+ * Blank credentials before anything is rendered.
+ *
+ * eptts-api-log.ts masks credential HEADERS but not BODIES, which is fine for an EPCIS
+ * document and not fine for /auth: its response carries a live bearer and refresh token. The
+ * first working version of this console displayed both in full, and the screenshot taken to
+ * verify it captured them — which is exactly how a short-lived token ends up somewhere
+ * permanent. Everything shown here goes through this first.
+ */
+const CREDENTIAL_FIELD =
+  /("(?:password|passwd|pwd|apikey|api_key|secret|client_secret|access_token|refresh_token|id_token|token)"\s*:\s*)"[^"]*"/gi
+
+function redact(s: string): string {
+  return s
+    .replace(CREDENTIAL_FIELD, (_m, key: string) => `${key}"«redacted»"`)
+    .replace(/\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g, '«redacted JWT»')
+    .replace(/\bBearer\s+[A-Za-z0-9._~+/-]{16,}={0,2}/gi, 'Bearer «redacted»')
+}
+
+/** For DISPLAY: pretty-printed and redacted. */
 const pretty = (s: string | null): string => {
   if (!s) return ''
-  try { return JSON.stringify(JSON.parse(s), null, 2) } catch { return s }
+  try { return redact(JSON.stringify(JSON.parse(s), null, 2)) } catch { return redact(s) }
+}
+
+/**
+ * For the EDITOR: pretty-printed, with credential values emptied rather than redacted.
+ *
+ * Prefilling with the redaction marker would put the literal string "«redacted»" in the body
+ * and send it — the same trap as pasting back a masked header, and a 401 that takes a while to
+ * explain. An empty string is visibly blank, stays valid JSON, and makes it obvious the value
+ * has to be supplied. Only /auth carries credentials in a request body; an EPCIS document has
+ * none, so in practice this changes nothing for the cases people will edit.
+ */
+const forEditor = (s: string | null): string => {
+  if (!s) return ''
+  const blanked = s.replace(CREDENTIAL_FIELD, (_m, key: string) => `${key}""`)
+  try { return JSON.stringify(JSON.parse(blanked), null, 2) } catch { return blanked }
 }
 
 export function ApiConsole({
@@ -148,7 +183,7 @@ export function ApiConsole({
       })),
       { key: '', value: '' },
     ])
-    setBody(pretty(x.requestBody))
+    setBody(forEditor(x.requestBody))
     setResult(null)
     setConfirmWrite(false)
   }, [])
@@ -232,7 +267,7 @@ export function ApiConsole({
               {expanded === x.seq && (
                 <div className="space-y-2 border-t px-2 py-2">
                   <p className="break-all font-mono text-[11px] text-muted-foreground">{x.url}</p>
-                  <Detail label="Request headers" value={JSON.stringify(x.requestHeaders, null, 2)} />
+                  <Detail label="Request headers" value={redact(JSON.stringify(x.requestHeaders, null, 2))} />
                   {x.requestBody && <Detail label="Request body" value={pretty(x.requestBody)} />}
                   <Detail label="Response" value={pretty(x.responseBody)} />
                   <Button size="sm" variant="secondary" className="h-7 gap-1 text-xs"
@@ -372,7 +407,7 @@ export function ApiConsole({
                   {result.response.truncated && ' · body truncated'}
                 </span>
               </p>
-              <Detail label="Response headers" value={JSON.stringify(result.response.headers, null, 2)} />
+              <Detail label="Response headers" value={redact(JSON.stringify(result.response.headers, null, 2))} />
               <Detail label="Response body" value={pretty(result.response.body)} />
             </div>
           )}
