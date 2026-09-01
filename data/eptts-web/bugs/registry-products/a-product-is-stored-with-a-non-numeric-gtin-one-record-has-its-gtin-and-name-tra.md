@@ -28,11 +28,12 @@ found_at: '2026-08-31T10:05:00.000Z'
 Exactly 1 of the 100 products visible to admin is affected. The wider issue is that the platform accepted it at all: **a GTIN must be 14 numeric digits**, and the field is holding free text. GTIN is the key every SGTIN is derived from, so a non-numeric GTIN cannot be serialised, cannot be commissioned, and will fail EPC parsing for any partner that pulls this catalogue via the master-data snapshot.
 ---
 **Steps to Reproduce:**
-1. Obtain a bearer token (POST /registry-service/api/v1/auth with a valid apikey, or capture the dashboard token).
-2. GET https://192.168.225.195:8445/registry-service/api/v1/products?limit=100 with Authorization: Bearer <token>.
-3. Search the response for the record with mahGln 6432109999994 (Orion Corporation).
-4. Compare its `gtin` and `name` values.
-5. Optionally open the Registry portal (:8445) → Products and locate the Temodal 100 mg row.
+1. Connect the Citrix VPN.
+2. Obtain a bearer token (POST /registry-service/api/v1/auth with a valid apikey, or capture the dashboard token).
+3. GET https://192.168.225.195:8445/registry-service/api/v1/products?limit=100 with Authorization: Bearer <token>.
+4. Search the response for the record with mahGln 6432109999994 (Orion Corporation).
+5. Compare its `gtin` and `name` values.
+6. Optionally open the Registry portal (:8445) → Products and locate the Temodal 100 mg row.
 ---
 **Expected Result:**
 1. The `gtin` field contains a 14-digit numeric GTIN and `name` contains the product name.

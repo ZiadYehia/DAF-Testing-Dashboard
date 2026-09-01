@@ -5,7 +5,7 @@ jira_key: DW-889
 reported_at: '2026-07-19T11:28:07.317Z'
 feature: branch-receive-shipment
 priority: P1 – Critical
-bug_type: Access Control / Security
+bug_type: Functional (Backend/API)
 parent_key: null
 severity: ''
 layer: backend
@@ -48,4 +48,4 @@ Network state: Online
 
 ---
 
-**Bug Type:** Access Control / Security
+**Bug Type:** Functional (Backend/API)

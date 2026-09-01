@@ -48,8 +48,6 @@ about whether one or two units left the supply chain.
 Like the empty-list defect, the spread across five unrelated features points at the shared
 EPCIS event validator rather than any single handler.
 ---
-**Covers test cases:** `TS_PACK_009`, `TS_PACK_011`, `TS_UNPK_005`, `TC_DEST_008`, `TS_RECV_015`, `TS_RTN_021`
-
 **Steps to Reproduce:**
 1. Connect the Citrix VPN and authenticate as the manufacturer.
 2. Commission two packs and pack them into an SSCC so a valid aggregation exists.
@@ -360,7 +358,11 @@ Then the platform's own verdict, from `POST /MsgStatusQuery`:
 
 The same exchange shape repeats for the other case(s) this bug covers (`TC_DEST_008`, `TS_RECV_015`, `TS_RTN_021`); they are omitted here for length.
 ---
-**Environment:** Masar Platform · `:8444/masar-service/api/v1` · tenant devsim · via Citrix VPN
+**Environment:**
+- Masar Platform
+- `:8444/masar-service/api/v1`
+- tenant devsim
+- via Citrix VPN
 
 **Evidence:** the `api-log.html` artifact for each case records the submitted document and the
 poll responses. Replay `eptts-api-packing-ts_pack_011` for the two-parent case.
@@ -371,3 +373,6 @@ P1 – Critical
 ---
 **Bug Type:**
 Functional (Backend/API)
+---
+**Notes:**
+**Covers test cases:** `TS_PACK_009`, `TS_PACK_011`, `TS_UNPK_005`, `TC_DEST_008`, `TS_RECV_015`, `TS_RTN_021`

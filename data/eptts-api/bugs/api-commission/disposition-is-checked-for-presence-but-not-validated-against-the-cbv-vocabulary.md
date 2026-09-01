@@ -22,14 +22,13 @@ A commissioning event with `disposition: "teleported"` is accepted and processed
 
 The same gap should be checked for `bizStep`, which is also a CBV-controlled field.
 ---
-**Covers test cases:** `TC_COMM_034`, `TS_RECV_028`, `TS_RTRV_029`
-
 **Steps to Reproduce:**
-1. Authenticate as the manufacturer.
-2. Build a valid commissioning document for a fresh SGTIN.
-3. Set the event's `disposition` to "teleported".
-4. POST to /masar-service/api/v1/scp/SendEPCIS and poll MsgStatusQuery.
-5. Observe the terminal state.
+1. Connect the Citrix VPN.
+2. Authenticate as the manufacturer.
+3. Build a valid commissioning document for a fresh SGTIN.
+4. Set the event's `disposition` to "teleported".
+5. POST to /masar-service/api/v1/scp/SendEPCIS and poll MsgStatusQuery.
+6. Observe the terminal state.
 ---
 **Expected Result:**
 1. The event is refused because "teleported" is not a valid CBV disposition.
@@ -343,6 +342,8 @@ P3 – Medium
 Functional (Backend/API)
 ---
 **Notes:**
+**Covers test cases:** `TC_COMM_034`, `TS_RECV_028`, `TS_RTRV_029`
+
 Covered by `TC_COMM_034` (marked `test.fail()`). `TC_COMM_033` (empty disposition) passes and is unaffected. Was recorded as `Fail` in the source spreadsheet and remains broken, unlike TC_COMM_033/035/038/041/042 which now reject correctly.
 
 ---

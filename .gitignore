@@ -51,6 +51,16 @@ next-env.d.ts
 verify-*.png
 *.png
 
+# ...but evidence under data/ is the deliverable, not scratch. The blanket *.png above was
+# added for scratch captures and reached further than intended: it was silently dropping 61
+# PNGs of real bug evidence and feature screenshots across eptts-mobile, which looked present
+# on disk and simply never existed for anyone else. Nothing warns you — the file is there, the
+# bug references it, and the attachment is absent from every clone.
+!data/**/bugs/**/*.png
+!data/**/features/**/screenshots/*.png
+# eptts keeps some evidence in a top-level attachments/ tree rather than beside the bug.
+!data/**/attachments/**/*.png
+
 # automation hub — run artifacts (videos/traces) are regenerated on every replay
 automation-hub/projects/*/runs/
 # automation hub — cached login state (contains session cookies; recreated on demand)

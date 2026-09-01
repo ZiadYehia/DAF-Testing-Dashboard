@@ -1,5 +1,5 @@
 {
-  "TC_AUTH_007": "auth-silently-ignores-a-partially-supplied-username-password-instead-of-rejectin",
+  "TC_AUTH_007": "draft:auth-silently-ignores-a-partially-supplied-username-password-instead-of-rejectin",
   "TC_AUTH_008": "auth-silently-ignores-a-partially-supplied-username-password-instead-of-rejectin",
   "TC_AUTH_009": "auth-silently-ignores-a-partially-supplied-username-password-instead-of-rejectin",
   "TC_AUTH_010": "auth-silently-ignores-a-partially-supplied-username-password-instead-of-rejectin"

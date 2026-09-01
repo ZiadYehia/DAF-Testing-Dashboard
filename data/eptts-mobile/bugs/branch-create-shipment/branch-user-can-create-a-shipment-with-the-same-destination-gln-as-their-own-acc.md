@@ -7,7 +7,7 @@ jira_key: DW-885
 reported_at: '2026-07-19T09:41:15.504Z'
 feature: branch-create-shipment
 priority: P2 – High
-bug_type: Functional / Validation
+bug_type: Functional
 parent_key: null
 severity: ''
 layer: backend
@@ -50,4 +50,4 @@ Network state: Online
 
 ---
 
-**Bug Type:** Functional / Validation
+**Bug Type:** Functional

@@ -55,6 +55,16 @@ function bugsByCase(app) {
       if (!file.endsWith('.md')) continue
       const slug = file.slice(0, -3)
       const body = fs.readFileSync(path.join(dir, file), 'utf8')
+      /**
+       * The reference a failing row should carry.
+       *
+       * bug-format.md: "A test case whose Status is Fail must carry the matching DW-### key(s)
+       * in its Attachment column". Only once the bug has been filed does that key exist, so a
+       * still-draft bug falls back to its slug. Emitting `draft:<slug>` unconditionally — which
+       * this did — left DW-958's two failing rows pointing at a slug when the key was known.
+       */
+      const jiraKey = /^jira_key:\s*(DW-\d+)\s*$/m.exec(body)?.[1] ?? null
+      const ref = jiraKey ?? `draft:${slug}`
       // Only a table row or an explicit "Covers test case" line counts as coverage.
       // A bug that MENTIONS a case in prose — "related, already filed for TC_COMM_003" — is
       // not claiming to cover it, and treating it as such attaches the wrong bug to a
@@ -65,7 +75,7 @@ function bugsByCase(app) {
         if (!isTableRow && !isCoverage) continue
         for (const m of line.matchAll(CASE_ID)) {
           const list = map.get(m[1]) ?? []
-          if (!list.includes(slug)) list.push(slug)
+          if (!list.includes(ref)) list.push(ref)
           map.set(m[1], list)
         }
       }
@@ -115,7 +125,7 @@ for (const app of APPS) {
         if (!wantStatus) continue
 
         const wantAttachment = wantStatus === 'Fail'
-          ? (bugMap.get(caseId) ?? []).map((s) => `draft:${s}`).join(' ')
+          ? (bugMap.get(caseId) ?? []).join(' ')
           : ''
 
         if (wantStatus === 'Fail' && !wantAttachment && !failsWithoutBug.includes(caseId)) {

@@ -56,8 +56,6 @@ control answers a GLN it cannot check with a clear page-level toast — "GS1 ver
 enabled in this environment". So the toast mechanism exists and is used for exactly this class
 of problem; these four filters simply do not use it.
 ---
-**Covers test cases:** `WEB_AIN_007`, `WEB_ARE_007`, `WEB_AES_005`, `WEB_AMD_005`
-
 **Steps to Reproduce:**
 1. Connect the Citrix VPN and open https://192.168.225.195:8444.
 2. Log in as admin@devsim.local and switch the UI to EN.
@@ -80,10 +78,16 @@ of problem; these four filters simply do not use it.
    6 seconds of the query.
 3. All four tabs behave identically.
 ---
-**Environment:** Masar Platform · https://192.168.225.195:8444 · `/audit` (Integrity,
-Regulatory events, EDA submissions, Master-data changes tabs) · tenant devsim · role admin
-(admin@devsim.local) · UI in English · Chrome 1600×1100 · via Citrix VPN · host serves a
-self-signed certificate
+**Environment:**
+- Masar Platform
+- https://192.168.225.195:8444
+- `/audit` (Integrity, Regulatory events, EDA submissions, Master-data changes tabs)
+- tenant devsim
+- role admin (admin@devsim.local)
+- UI in English
+- Chrome 1600×1100
+- via Citrix VPN
+- host serves a self-signed certificate
 
 **Evidence:** `invalid-gln-returns-no-records-match.jpg` — the Integrity tab with
 `8435308300003` in the "Chain status by GLN" box. The table reads "No records match these
@@ -97,6 +101,8 @@ P3 – Medium
 Functional (Backend/API)
 ---
 **Notes:**
+**Covers test cases:** `WEB_AIN_007`, `WEB_ARE_007`, `WEB_AES_005`, `WEB_AMD_005`
+
 Covered by four automated cases, all of which assert that a validation message appears and
 currently fail. The assertion looks for a complaint both inline and in a page-level toast —
 scoping it to the tab panel alone would have missed the toast idiom this platform uses

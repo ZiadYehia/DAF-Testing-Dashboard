@@ -1,7 +1,7 @@
 {
-  "TC_COMM_003": "an-already-commissioned-sgtin-can-be-re-commissioned-and-re-commissioning-with-a",
+  "TC_COMM_003": "DW-958",
   "TC_COMM_004": "an-empty-epclist-is-accepted-and-an-empty-string-epc-is-misclassified-as-an-sscc",
-  "TC_COMM_012": "an-already-commissioned-sgtin-can-be-re-commissioned-and-re-commissioning-with-a",
+  "TC_COMM_012": "DW-958",
   "TC_COMM_025": "event-timestamps-are-not-validated-empty-and-malformed-eventtime-and-eventtimezo",
   "TC_COMM_026": "event-timestamps-are-not-validated-empty-and-malformed-eventtime-and-eventtimezo",
   "TC_COMM_027": "event-timestamps-are-not-validated-empty-and-malformed-eventtime-and-eventtimezo",

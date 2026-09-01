@@ -42,8 +42,6 @@ re-commissioned, and re-commissioning with a different expiry is accepted"* (`TC
 `TC_COMM_012`). That is the same missing already-in-this-state check on a third feature, which
 suggests the guard is absent generally rather than in the aggregation handler specifically.
 ---
-**Covers test cases:** `TS_PACK_016`, `TS_UNPK_011`
-
 **Steps to Reproduce:**
 1. Connect the Citrix VPN and authenticate as the manufacturer.
 2. Commission a pack and aggregate it into a fresh SSCC. Poll to `S - Successful`.
@@ -240,7 +238,11 @@ Then the platform's own verdict, from `POST /MsgStatusQuery`:
 
 </details>
 ---
-**Environment:** Masar Platform · `:8444/masar-service/api/v1` · tenant devsim · via Citrix VPN
+**Environment:**
+- Masar Platform
+- `:8444/masar-service/api/v1`
+- tenant devsim
+- via Citrix VPN
 
 **Evidence:** `api-log.html` for `eptts-api-packing-ts_pack_016` and
 `eptts-api-unpacking-ts_unpk_011` — each shows both submissions and both successful polls.
@@ -251,3 +253,6 @@ P2 – High
 ---
 **Bug Type:**
 Functional (Backend/API)
+---
+**Notes:**
+**Covers test cases:** `TS_PACK_016`, `TS_UNPK_011`

@@ -29,14 +29,13 @@ For a track-and-trace platform this is the most consequential of the validation 
 
 Contrast with the fields that ARE validated well: `readPoint.id` and `bizLocation.id` are checked for presence and for canonical SGLN form, `schemaVersion` is pinned to "2.0", and lot numbers are allow-listed.
 ---
-**Covers test cases:** `TC_COMM_025`, `TC_COMM_026`, `TC_COMM_027`, `TC_COMM_028`, `TC_DEST_019`, `TC_DEST_020`, `TS_RECV_029`, `TS_RECV_030`, `TS_RTN_032`, `TS_RTN_033`, `TS_RTRV_030`, `TS_RTRV_031`, `TC_SHIP_025`, `TC_SHIP_026`, `TC_SHIP_039`
-
 **Steps to Reproduce:**
-1. Authenticate as the manufacturer.
-2. Build a valid commissioning document for a fresh SGTIN.
-3. Set the event's `eventTime` to an empty string and POST to /masar-service/api/v1/scp/SendEPCIS.
-4. Poll MsgStatusQuery with the instanceIdentifier and observe the terminal state.
-5. Repeat with eventTime "05-05-2026 10:00", then with eventTimeZoneOffset "", then with eventTimeZoneOffset "+99:99".
+1. Connect the Citrix VPN.
+2. Authenticate as the manufacturer.
+3. Build a valid commissioning document for a fresh SGTIN.
+4. Set the event's `eventTime` to an empty string and POST to /masar-service/api/v1/scp/SendEPCIS.
+5. Poll MsgStatusQuery with the instanceIdentifier and observe the terminal state.
+6. Repeat with eventTime "05-05-2026 10:00", then with eventTimeZoneOffset "", then with eventTimeZoneOffset "+99:99".
 ---
 **Expected Result:**
 1. Each document is rejected — synchronously with 400 for a malformed field, or asynchronously with MsgStatusQuery reporting FAILED and naming the invalid timestamp.
@@ -339,6 +338,8 @@ P2 – High
 Functional (Backend/API)
 ---
 **Notes:**
+**Covers test cases:** `TC_COMM_025`, `TC_COMM_026`, `TC_COMM_027`, `TC_COMM_028`, `TC_DEST_019`, `TC_DEST_020`, `TS_RECV_029`, `TS_RECV_030`, `TS_RTN_032`, `TS_RTN_033`, `TS_RTRV_030`, `TS_RTRV_031`, `TC_SHIP_025`, `TC_SHIP_026`, `TC_SHIP_039`
+
 Covered by `TC_COMM_025`–`TC_COMM_028` in `automation-hub/projects/eptts-api-commission/`, all marked `test.fail()`. The four almost certainly share one root cause: no validation on the event time fields.
 
 ---

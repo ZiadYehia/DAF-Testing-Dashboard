@@ -54,8 +54,6 @@ Each produces a record that looks valid, reports success, and is unusable for tr
 which is the one thing this system exists to provide. A silent accept is worse than a reject
 here, because nothing downstream ever learns the data is meaningless.
 ---
-**Covers test cases:** `TC_SHIP_007`, `TC_SHIP_021`, `TS_RECV_007`, `TS_RTRV_006`, `TS_RTRV_010`, `TS_RTN_007`, `TS_RTN_009`, `TS_RTN_025`, `TC_DEST_005`
-
 **Steps to Reproduce:**
 1. Connect the Citrix VPN and authenticate as the manufacturer against
    `POST :8445/registry-service/api/v1/auth`.
@@ -377,7 +375,11 @@ Then the platform's own verdict, from `POST /MsgStatusQuery`:
 
 The same exchange shape repeats for the other case(s) this bug covers (`TS_RTRV_006`, `TS_RTRV_010`, `TS_RTN_007`, `TS_RTN_009`, `TS_RTN_025`, `TC_DEST_005`); they are omitted here for length.
 ---
-**Environment:** Masar Platform · `:8444/masar-service/api/v1` · tenant devsim · via Citrix VPN
+**Environment:**
+- Masar Platform
+- `:8444/masar-service/api/v1`
+- tenant devsim
+- via Citrix VPN
 
 **Evidence:** each case's `api-log.html` from the Automation Hub run records the exact request
 body and the poll responses. Reproduce any single case by replaying its project, e.g.
@@ -401,3 +403,6 @@ P1 – Critical
 ---
 **Bug Type:**
 Functional (Backend/API)
+---
+**Notes:**
+**Covers test cases:** `TC_SHIP_007`, `TC_SHIP_021`, `TS_RECV_007`, `TS_RTRV_006`, `TS_RTRV_010`, `TS_RTN_007`, `TS_RTN_009`, `TS_RTN_025`, `TC_DEST_005`

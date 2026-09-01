@@ -34,8 +34,6 @@ guessing at an unlabelled control on the shipping screen is a real risk, not a p
 Found during a systematic sidebar discovery pass, not while testing this page specifically —
 so it is worth checking whether other recently-added controls have the same gap.
 ---
-**Covers test case:** `WEB_SHP_001`
-
 **Steps to Reproduce:**
 1. Connect the Citrix VPN and open https://192.168.225.195:8444.
 2. Log in as admin@devsim.local.
@@ -51,8 +49,12 @@ so it is worth checking whether other recently-added controls have the same gap.
 1. The button's text is the literal key `shipments.bulkUpload`.
 2. The key is unresolved in both locales — switching EN/AR does not change it.
 ---
-**Environment:** Masar Platform · https://192.168.225.195:8444 · tenant devsim · via Citrix VPN
-· Chrome (self-signed certificate)
+**Environment:**
+- Masar Platform
+- https://192.168.225.195:8444
+- tenant devsim
+- via Citrix VPN
+- Chrome (self-signed certificate)
 
 **Evidence:** `data/eptts-web/features/web-shipping/screenshots/web-shipping.jpg` — captured
 with the UI in English, showing the unresolved key in the button row.
@@ -63,3 +65,6 @@ P3 – Medium
 ---
 **Bug Type:**
 UI/UX
+---
+**Notes:**
+**Covers test case:** `WEB_SHP_001`

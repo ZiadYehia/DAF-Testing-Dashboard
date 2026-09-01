@@ -28,11 +28,12 @@ Reproduced for two different users (`distributor@devsim.local` and `pharmacy@dev
 **This blocks test coverage**: without a known password, the dashboard cannot be exercised as the distributor or pharmacy role at all, so every role-isolation and role-specific dashboard test for those two roles is unexecutable. The B2B API path is unaffected (it authenticates by API key).
 ---
 **Steps to Reproduce:**
-1. Log in to https://192.168.225.195:8444 as admin@devsim.local and capture the bearer token.
-2. GET /masar-service/api/v1/users?limit=100&roles=distributor and note the id for distributor@devsim.local.
-3. PUT https://192.168.225.195:8445/registry-service/api/v1/users/{id}/password with body {"password":"<a policy-compliant password>"} and the admin bearer token.
-4. Observe the response.
-5. Repeat for pharmacy@devsim.local.
+1. Connect the Citrix VPN.
+2. Log in to https://192.168.225.195:8444 as admin@devsim.local and capture the bearer token.
+3. GET /masar-service/api/v1/users?limit=100&roles=distributor and note the id for distributor@devsim.local.
+4. PUT https://192.168.225.195:8445/registry-service/api/v1/users/{id}/password with body {"password":"<a policy-compliant password>"} and the admin bearer token.
+5. Observe the response.
+6. Repeat for pharmacy@devsim.local.
 ---
 **Expected Result:**
 1. The password is updated in Keycloak and the user can log in with the new password (HTTP 200/204).

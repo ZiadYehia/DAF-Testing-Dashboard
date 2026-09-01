@@ -7,7 +7,7 @@ jira_key: DW-857
 reported_at: '2026-07-13T10:41:18.669Z'
 feature: patient
 priority: P2 – High
-bug_type: Functional / Validation
+bug_type: Functional
 parent_key: null
 severity: ''
 layer: frontend
@@ -43,4 +43,4 @@ Patient users attempting to validate a pack using DataMatrix input receive a hig
 
 ---
 
-**Bug Type:** Functional / Validation
+**Bug Type:** Functional

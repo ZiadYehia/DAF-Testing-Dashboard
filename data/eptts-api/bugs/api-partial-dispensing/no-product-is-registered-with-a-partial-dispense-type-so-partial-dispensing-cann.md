@@ -56,8 +56,6 @@ channel refuses those outright: *"Dispensing is not allowed for Dawana-integrate
 this channel. These products must be dispensed through the Dawana integration."* Any fix
 should therefore target one of the **non-Dawana** partial products.
 ---
-**Covers test cases:** `TC_PDISP_001`, `TC_PDISP_002`, `TC_PDISP_003`, `TC_PDISP_004`, `TC_PDISP_010`, `TC_PDISP_011`, `TC_PDISP_013`, `TC_PDISP_017`, `TC_PDISP_018`, `TC_PDISP_019`, `TC_PDISP_020`, `TC_PDISP_021`, `TC_PDISP_022`
-
 **Steps to Reproduce:**
 1. Connect the Citrix VPN.
 2. Authenticate as the devsim manufacturer: `POST :8445/registry-service/api/v1/auth` with the
@@ -195,6 +193,8 @@ P2 – High
 Functional
 ---
 **Notes:**
+**Covers test cases:** `TC_PDISP_001`, `TC_PDISP_002`, `TC_PDISP_003`, `TC_PDISP_004`, `TC_PDISP_010`, `TC_PDISP_011`, `TC_PDISP_013`, `TC_PDISP_017`, `TC_PDISP_018`, `TC_PDISP_019`, `TC_PDISP_020`, `TC_PDISP_021`, `TC_PDISP_022`
+
 This is a test-data / environment gap, not a code defect — no part of it should be fixed in
 application code. Any one of these unblocks it:
 

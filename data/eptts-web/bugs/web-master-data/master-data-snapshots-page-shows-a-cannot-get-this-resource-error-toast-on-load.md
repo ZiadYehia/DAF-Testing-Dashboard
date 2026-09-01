@@ -22,11 +22,6 @@ A related endpoint is missing on the service the collection documents: `GET /mas
 
 This matters beyond cosmetics: this page is how integrators obtain the signed master-data manifest, and the page cannot show whether any snapshot exists.
 ---
-**Covers test cases:** `WEB_MDT_001`, `WEB_MDT_002`
-
-Both fail on the same error banner — `WEB_MDT_002` differs only in reloading the route rather
-than opening it fresh.
-
 **Steps to Reproduce:**
 1. Connect the Citrix VPN and open https://192.168.225.195:8444.
 2. Log in as admin@devsim.local.
@@ -55,6 +50,11 @@ P2 – High
 Functional (Backend/API)
 ---
 **Notes:**
+**Covers test cases:** `WEB_MDT_001`, `WEB_MDT_002`
+
+Both fail on the same error banner — `WEB_MDT_002` differs only in reloading the route rather
+than opening it fresh.
+
 Screenshot attached — the error toast is visible top-right. Reproducible on every load.
 
 Also verify whether the page should be calling registry-service rather than masar-service: `/masar-service/api/v1/master-data/snapshot/latest` is a 404 whereas `/registry-service/api/v1/master-data/versions` returns 200.

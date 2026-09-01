@@ -24,15 +24,14 @@ Two related EPC-list defects:
 
 Note the same empty-eventList behaviour also exists one level up: a well-formed envelope whose `epcisBody.eventList` is `[]` is likewise accepted with 202 / I001.
 ---
-**Covers test cases:** `TC_COMM_004`
-
 **Steps to Reproduce:**
-1. Authenticate as the manufacturer.
-2. Build a valid commissioning document, then set the event's `epcList` to an empty array.
-3. POST to /masar-service/api/v1/scp/SendEPCIS and poll MsgStatusQuery.
-4. Observe the terminal state and the logList contents.
-5. Repeat with `epcList: [""]` and read the logList carefully.
-6. Separately, POST a valid envelope whose epcisBody.eventList is [] and observe the response.
+1. Connect the Citrix VPN.
+2. Authenticate as the manufacturer.
+3. Build a valid commissioning document, then set the event's `epcList` to an empty array.
+4. POST to /masar-service/api/v1/scp/SendEPCIS and poll MsgStatusQuery.
+5. Observe the terminal state and the logList contents.
+6. Repeat with `epcList: [""]` and read the logList carefully.
+7. Separately, POST a valid envelope whose epcisBody.eventList is [] and observe the response.
 ---
 **Expected Result:**
 1. A commissioning event with no EPCs is rejected as having nothing to commission.
@@ -147,6 +146,8 @@ P2 – High
 Functional (Backend/API)
 ---
 **Notes:**
+**Covers test cases:** `TC_COMM_004`
+
 Covered by `TC_COMM_004` / `TC_COMM_004b` (both `test.fail()`), and by `SMOKE-05b` in `automation-hub/projects/eptts-api-smoke/` for the empty-eventList case. The SSCC misclassification is the part worth investigating first — it points at the EPC parser rather than at input validation.
 
 ---

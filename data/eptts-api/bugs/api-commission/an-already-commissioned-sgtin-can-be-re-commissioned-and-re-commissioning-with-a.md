@@ -2,17 +2,17 @@
 title: >-
   [Commissioning] An already-commissioned SGTIN can be re-commissioned, and
   re-commissioning with a different expiry silently overwrites the original
-status: draft
-jira_key: null
-reported_at: null
+status: reported
+jira_key: DW-958
+reported_at: '2026-09-01T05:51:29.734Z'
 feature: api-commission
 priority: P1 – Critical
 bug_type: Functional (Backend/API)
 parent_key: null
 severity: ''
 layer: unknown
-jira_status: ''
-jira_reporter: ''
+jira_status: READY
+jira_reporter: 712020:b6f2ccdf-1ea7-4b3c-85ca-0bf6ed8291ed
 found_by: Ziad Yehia
 found_at: '2026-08-31T10:05:00.000Z'
 ---
@@ -24,16 +24,15 @@ Worse, re-commissioning the same SGTIN with a **different expiry date** also suc
 
 The source test suite recorded TC_COMM_003 as a *Positive* case expecting the pack to "stay Commissioned". A reviewer had already flagged that as wrong in the spreadsheet — *"How is that positive? system should reject an already commissioned pack"* — and that reviewer is correct.
 ---
-**Covers test cases:** `TC_COMM_003`, `TC_COMM_012`
-
 **Steps to Reproduce:**
-1. Authenticate as the manufacturer (POST /registry-service/api/v1/auth with a valid apikey).
-2. POST /masar-service/api/v1/scp/SendEPCIS with a valid commissioning event for a fresh SGTIN, lot ZTG-TEST, expiry 2030-12-31.
-3. Poll POST /masar-service/api/v1/MsgStatusQuery with the instanceIdentifier until it reaches a terminal state.
-4. POST the identical commissioning document again for the same SGTIN with a new instanceIdentifier.
-5. Poll MsgStatusQuery again and observe the outcome.
-6. POST a third commissioning document for the same SGTIN but with expiry 2029-06-30.
-7. Poll MsgStatusQuery, then GET the pack state via POST /VerifyProduct.
+1. Connect the Citrix VPN.
+2. Authenticate as the manufacturer (POST /registry-service/api/v1/auth with a valid apikey).
+3. POST /masar-service/api/v1/scp/SendEPCIS with a valid commissioning event for a fresh SGTIN, lot ZTG-TEST, expiry 2030-12-31.
+4. Poll POST /masar-service/api/v1/MsgStatusQuery with the instanceIdentifier until it reaches a terminal state.
+5. POST the identical commissioning document again for the same SGTIN with a new instanceIdentifier.
+6. Poll MsgStatusQuery again and observe the outcome.
+7. POST a third commissioning document for the same SGTIN but with expiry 2029-06-30.
+8. Poll MsgStatusQuery, then GET the pack state via POST /VerifyProduct.
 ---
 **Expected Result:**
 1. The second commissioning of an existing SGTIN is refused, with MsgStatusQuery reporting a failure that names the duplicate serial.
@@ -248,4 +247,6 @@ P1 – Critical
 Functional (Backend/API)
 ---
 **Notes:**
+**Covers test cases:** `TC_COMM_003`, `TC_COMM_012`
+
 Covered by automated tests `TC_COMM_003` and `TC_COMM_012` in `automation-hub/projects/eptts-api-commission/`. Both are marked `test.fail()` so the suite stays green while the gap exists and reports an "unexpected pass" the moment it is fixed.
