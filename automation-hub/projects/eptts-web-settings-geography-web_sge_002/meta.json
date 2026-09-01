@@ -10,8 +10,18 @@
     "testcaseId": "WEB_SGE_002"
   },
   "createdAt": "2026-09-01T04:00:00.000Z",
-  "lastStatus": "never_run",
-  "runs": [],
+  "lastStatus": "fail",
+  "runs": [
+    {
+      "ts": "2026-09-01T00-53-14-049Z",
+      "status": "fail",
+      "durationMs": 25500,
+      "hasVideo": true,
+      "hasTrace": true,
+      "hasApiLog": false,
+      "error": "Error: a data table is rendered"
+    }
+  ],
   "tags": [
     "dashboard",
     "readonly",

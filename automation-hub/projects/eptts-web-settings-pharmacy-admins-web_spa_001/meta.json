@@ -10,8 +10,18 @@
     "testcaseId": "WEB_SPA_001"
   },
   "createdAt": "2026-09-01T04:00:00.000Z",
-  "lastStatus": "never_run",
-  "runs": [],
+  "lastStatus": "fail",
+  "runs": [
+    {
+      "ts": "2026-09-01T00-53-39-176Z",
+      "status": "fail",
+      "durationMs": 20069,
+      "hasVideo": true,
+      "hasTrace": true,
+      "hasApiLog": false,
+      "error": "Error: control \"Add Pharmacy Admin\" is present"
+    }
+  ],
   "tags": [
     "dashboard",
     "readonly",

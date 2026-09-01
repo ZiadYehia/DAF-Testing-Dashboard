@@ -10,8 +10,17 @@
     "testcaseId": "WEB_ANN_004"
   },
   "createdAt": "2026-09-01T04:00:00.000Z",
-  "lastStatus": "never_run",
-  "runs": [],
+  "lastStatus": "pass",
+  "runs": [
+    {
+      "ts": "2026-09-01T00-38-58-221Z",
+      "status": "pass",
+      "durationMs": 5203,
+      "hasVideo": true,
+      "hasTrace": true,
+      "hasApiLog": false
+    }
+  ],
   "tags": [
     "dashboard",
     "readonly",

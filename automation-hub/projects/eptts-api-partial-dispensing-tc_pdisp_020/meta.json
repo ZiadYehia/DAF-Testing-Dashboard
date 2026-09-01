@@ -10,7 +10,7 @@
     "testcaseId": "TC_PDISP_020"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "pass",
+  "lastStatus": "never_run",
   "runs": [
     {
       "ts": "2026-08-31T23-47-23-134Z",

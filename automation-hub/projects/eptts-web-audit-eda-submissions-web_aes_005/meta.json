@@ -10,8 +10,18 @@
     "testcaseId": "WEB_AES_005"
   },
   "createdAt": "2026-09-01T04:00:00.000Z",
-  "lastStatus": "never_run",
-  "runs": [],
+  "lastStatus": "fail",
+  "runs": [
+    {
+      "ts": "2026-09-01T05-38-32-585Z",
+      "status": "fail",
+      "durationMs": 6697,
+      "hasVideo": true,
+      "hasTrace": true,
+      "hasApiLog": false,
+      "error": "Error: entering the invalid GLN 8435308300003 produced no validation message — the page ran the lookup and reported \"No records match these filters Records exist in this log; none of them match the\", which tells the user their GLN was not found rather than that it is malformed"
+    }
+  ],
   "tags": [
     "dashboard",
     "readonly",

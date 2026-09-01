@@ -10,8 +10,18 @@
     "testcaseId": "WEB_SUL_005"
   },
   "createdAt": "2026-09-01T04:00:00.000Z",
-  "lastStatus": "never_run",
-  "runs": [],
+  "lastStatus": "fail",
+  "runs": [
+    {
+      "ts": "2026-09-01T00-59-00-585Z",
+      "status": "fail",
+      "durationMs": 25511,
+      "hasVideo": true,
+      "hasTrace": true,
+      "hasApiLog": false,
+      "error": "TimeoutError: locator.waitFor: Timeout 20000ms exceeded."
+    }
+  ],
   "tags": [
     "dashboard",
     "readonly",

@@ -10,8 +10,17 @@
     "testcaseId": "WEB_SPL_003"
   },
   "createdAt": "2026-09-01T04:00:00.000Z",
-  "lastStatus": "never_run",
-  "runs": [],
+  "lastStatus": "pass",
+  "runs": [
+    {
+      "ts": "2026-09-01T00-46-47-860Z",
+      "status": "pass",
+      "durationMs": 4627,
+      "hasVideo": true,
+      "hasTrace": true,
+      "hasApiLog": false
+    }
+  ],
   "tags": [
     "dashboard",
     "readonly",

@@ -13,6 +13,15 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-01T10-33-23-501Z",
+      "status": "fail",
+      "durationMs": 31906,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: identical second pack: the platform ACCEPTED input it should refuse — http=200 raw=\"S - Successful\" state=SUCCESS polls=6 logs=[I: Message processed successfully — all 1 event(s) completed]"
+    },
+    {
       "ts": "2026-08-31T23-42-36-129Z",
       "status": "fail",
       "durationMs": 65824.04599999999,

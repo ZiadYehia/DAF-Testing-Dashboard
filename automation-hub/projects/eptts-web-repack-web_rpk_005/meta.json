@@ -10,8 +10,17 @@
     "testcaseId": "WEB_RPK_005"
   },
   "createdAt": "2026-09-01T04:00:00.000Z",
-  "lastStatus": "never_run",
-  "runs": [],
+  "lastStatus": "pass",
+  "runs": [
+    {
+      "ts": "2026-09-01T00-43-40-859Z",
+      "status": "pass",
+      "durationMs": 3652,
+      "hasVideo": false,
+      "hasTrace": true,
+      "hasApiLog": false
+    }
+  ],
   "tags": [
     "dashboard",
     "readonly",

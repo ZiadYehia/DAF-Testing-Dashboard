@@ -10,8 +10,18 @@
     "testcaseId": "WEB_SUL_003"
   },
   "createdAt": "2026-09-01T04:00:00.000Z",
-  "lastStatus": "never_run",
-  "runs": [],
+  "lastStatus": "fail",
+  "runs": [
+    {
+      "ts": "2026-09-01T00-54-25-550Z",
+      "status": "fail",
+      "durationMs": 20034,
+      "hasVideo": true,
+      "hasTrace": true,
+      "hasApiLog": false,
+      "error": "Error: control \"Refresh\" is present"
+    }
+  ],
   "tags": [
     "dashboard",
     "readonly",

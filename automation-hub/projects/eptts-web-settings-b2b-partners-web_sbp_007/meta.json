@@ -10,8 +10,18 @@
     "testcaseId": "WEB_SBP_007"
   },
   "createdAt": "2026-09-01T04:00:00.000Z",
-  "lastStatus": "never_run",
-  "runs": [],
+  "lastStatus": "fail",
+  "runs": [
+    {
+      "ts": "2026-09-01T05-38-48-159Z",
+      "status": "fail",
+      "durationMs": 25729,
+      "hasVideo": true,
+      "hasTrace": true,
+      "hasApiLog": false,
+      "error": "TimeoutError: locator.click: Timeout 20000ms exceeded."
+    }
+  ],
   "tags": [
     "dashboard",
     "write",

@@ -10,8 +10,16 @@
     "testcaseId": "TC_COMM_030"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "fail",
+  "lastStatus": "pass",
   "runs": [
+    {
+      "ts": "2026-09-01T11-44-00-212Z",
+      "status": "pass",
+      "durationMs": 249,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true
+    },
     {
       "ts": "2026-09-01T07-35-50-196Z",
       "status": "fail",

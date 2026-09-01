@@ -10,8 +10,18 @@
     "testcaseId": "WEB_SHP_001"
   },
   "createdAt": "2026-09-01T04:00:00.000Z",
-  "lastStatus": "never_run",
-  "runs": [],
+  "lastStatus": "fail",
+  "runs": [
+    {
+      "ts": "2026-09-01T00-54-34-160Z",
+      "status": "fail",
+      "durationMs": 3734,
+      "hasVideo": true,
+      "hasTrace": true,
+      "hasApiLog": false,
+      "error": "Error: untranslated i18n key(s) rendered as UI labels instead of text: shipments.bulkUpload — the control gives the user no indication of what it does"
+    }
+  ],
   "tags": [
     "dashboard",
     "readonly",

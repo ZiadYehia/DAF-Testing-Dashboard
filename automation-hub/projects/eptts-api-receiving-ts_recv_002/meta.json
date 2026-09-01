@@ -10,7 +10,7 @@
     "testcaseId": "TS_RECV_002"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "pass",
+  "lastStatus": "never_run",
   "runs": [
     {
       "ts": "2026-08-31T23-55-36-550Z",

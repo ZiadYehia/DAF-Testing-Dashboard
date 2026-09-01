@@ -10,8 +10,17 @@
     "testcaseId": "WEB_SSY_004"
   },
   "createdAt": "2026-09-01T04:00:00.000Z",
-  "lastStatus": "never_run",
-  "runs": [],
+  "lastStatus": "pass",
+  "runs": [
+    {
+      "ts": "2026-09-01T00-47-09-098Z",
+      "status": "pass",
+      "durationMs": 5777,
+      "hasVideo": true,
+      "hasTrace": true,
+      "hasApiLog": false
+    }
+  ],
   "tags": [
     "dashboard",
     "readonly",

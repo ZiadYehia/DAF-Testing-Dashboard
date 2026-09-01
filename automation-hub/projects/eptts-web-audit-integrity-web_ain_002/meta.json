@@ -10,8 +10,17 @@
     "testcaseId": "WEB_AIN_002"
   },
   "createdAt": "2026-09-01T04:00:00.000Z",
-  "lastStatus": "never_run",
-  "runs": [],
+  "lastStatus": "pass",
+  "runs": [
+    {
+      "ts": "2026-09-01T00-39-33-462Z",
+      "status": "pass",
+      "durationMs": 5021,
+      "hasVideo": true,
+      "hasTrace": true,
+      "hasApiLog": false
+    }
+  ],
   "tags": [
     "dashboard",
     "readonly",

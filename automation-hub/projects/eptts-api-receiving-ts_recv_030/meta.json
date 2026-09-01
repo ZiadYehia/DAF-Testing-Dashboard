@@ -13,6 +13,15 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-01T10-49-36-124Z",
+      "status": "fail",
+      "durationMs": 42975,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: TS_RECV_030 an impossible eventTimeZoneOffset: the platform ACCEPTED input it should refuse — http=200 raw=\"S - Successful\" state=SUCCESS polls=6 logs=[I: Receiving event processed successfully | I: Message processed successfully — all 1 event(s) completed]"
+    },
+    {
       "ts": "2026-09-01T06-23-11-169Z",
       "status": "fail",
       "durationMs": 38870.579999999994,

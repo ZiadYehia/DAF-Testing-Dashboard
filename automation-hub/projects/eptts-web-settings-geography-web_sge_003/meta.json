@@ -10,8 +10,18 @@
     "testcaseId": "WEB_SGE_003"
   },
   "createdAt": "2026-09-01T04:00:00.000Z",
-  "lastStatus": "never_run",
-  "runs": [],
+  "lastStatus": "fail",
+  "runs": [
+    {
+      "ts": "2026-09-01T00-53-18-344Z",
+      "status": "fail",
+      "durationMs": 20286,
+      "hasVideo": true,
+      "hasTrace": true,
+      "hasApiLog": false,
+      "error": "Error: control \"Select .xlsx\" is present"
+    }
+  ],
   "tags": [
     "dashboard",
     "readonly",

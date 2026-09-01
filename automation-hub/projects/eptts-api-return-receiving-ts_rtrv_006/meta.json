@@ -10,8 +10,18 @@
     "testcaseId": "TS_RTRV_006"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "never_run",
-  "runs": [],
+  "lastStatus": "fail",
+  "runs": [
+    {
+      "ts": "2026-09-01T10-53-21-596Z",
+      "status": "fail",
+      "durationMs": 64614,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: TS_RTRV_006 an empty sourceList: the platform ACCEPTED input it should refuse — http=200 raw=\"S - Successful\" state=SUCCESS polls=6 logs=[I: Return Confirmation event processed successfully | I: Message processed successfully — all 1 event(s) completed]"
+    }
+  ],
   "tags": [
     "api",
     "write"

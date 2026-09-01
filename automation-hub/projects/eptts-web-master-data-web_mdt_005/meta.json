@@ -10,8 +10,17 @@
     "testcaseId": "WEB_MDT_005"
   },
   "createdAt": "2026-09-01T04:00:00.000Z",
-  "lastStatus": "never_run",
-  "runs": [],
+  "lastStatus": "pass",
+  "runs": [
+    {
+      "ts": "2026-09-01T00-41-34-780Z",
+      "status": "pass",
+      "durationMs": 3793,
+      "hasVideo": false,
+      "hasTrace": true,
+      "hasApiLog": false
+    }
+  ],
   "tags": [
     "dashboard",
     "readonly",

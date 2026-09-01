@@ -13,6 +13,15 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-01T10-25-22-612Z",
+      "status": "fail",
+      "durationMs": 21371,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: duplicate EPCs: the platform ACCEPTED input it should refuse — http=200 raw=\"S - Successful\" state=SUCCESS polls=6 logs=[I: Destruction event processed successfully | I: Message processed successfully — all 1 event(s) completed]"
+    },
+    {
       "ts": "2026-08-31T22-42-18-806Z",
       "status": "fail",
       "durationMs": 44540.994999999995,

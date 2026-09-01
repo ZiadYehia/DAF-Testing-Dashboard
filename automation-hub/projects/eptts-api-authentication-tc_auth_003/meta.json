@@ -13,6 +13,14 @@
   "lastStatus": "pass",
   "runs": [
     {
+      "ts": "2026-09-01T11-42-53-052Z",
+      "status": "pass",
+      "durationMs": 317,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true
+    },
+    {
       "ts": "2026-09-01T06-28-54-025Z",
       "status": "pass",
       "durationMs": 2589.962,
