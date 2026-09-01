@@ -18,13 +18,12 @@ found_at: '2026-08-31T10:05:00.000Z'
 ---
 Two related EPC-list defects:
 
-**TC_COMM_004 — `epcList: []`.** A commissioning event carrying zero EPCs is accepted and reports *"Message processed successfully — all 1 event(s) completed"*. Tellingly the log omits the *"Commission (Items) event processed successfully"* line it emits for real work, so the platform knows it commissioned nothing yet still reports success.
+**Covers test cases:** `TC_COMM_004` `TC_SEC_029`
 
-**TC_COMM_004b — `epcList: [""]`.** An empty-string EPC is accepted **and misclassified**: the log reads *"Commission (**SSCCs**) event processed successfully"*. An empty string is being parsed as an SSCC rather than rejected as an invalid EPC. That is an EPC-parsing bug, not merely a missing length check, and it means a malformed EPC can be routed down the wrong processing path.
-
-Note the same empty-eventList behaviour also exists one level up: a well-formed envelope whose `epcisBody.eventList` is `[]` is likewise accepted with 202 / I001.
 ---
+
 **Steps to Reproduce:**
+
 1. Connect the Citrix VPN.
 2. Authenticate as the manufacturer.
 3. Build a valid commissioning document, then set the event's `epcList` to an empty array.
@@ -32,45 +31,32 @@ Note the same empty-eventList behaviour also exists one level up: a well-formed 
 5. Observe the terminal state and the logList contents.
 6. Repeat with `epcList: [""]` and read the logList carefully.
 7. Separately, POST a valid envelope whose epcisBody.eventList is [] and observe the response.
+
 ---
+
 **Expected Result:**
-1. A commissioning event with no EPCs is rejected as having nothing to commission.
-2. An empty-string EPC is rejected as an invalid EPC, and never classified as an SSCC.
-3. An EPCIS document with an empty eventList is rejected.
+A commissioning event with no EPCs is rejected as having nothing to commission; an empty-string EPC is rejected as an invalid EPC, and never classified as an SSCC; an EPCIS document with an empty eventList is rejected.
+
 ---
+
 **Actual Result:**
-1. epcList [] is accepted; MsgStatusQuery reports "S - Successful" while omitting the Commission line.
-2. epcList [""] is accepted and logged as "Commission (SSCCs) event processed successfully".
-3. An empty eventList returns 202 with code I001 and is queued for processing.
+epcList [] is accepted; MsgStatusQuery reports "S - Successful" while omitting the Commission line; epcList [""] is accepted and logged as "Commission (SSCCs) event processed successfully"; an empty eventList returns 202 with code I001 and is queued for processing.
+
 ---
+
 **Environment:**
-- Masar B2B API via Citrix VPN
-- Auth: POST https://192.168.225.195:8445/registry-service/api/v1/auth (apikey header)
-- Events: POST https://192.168.225.195:8444/masar-service/api/v1/scp/SendEPCIS
-- Tenant: devsim, manufacturer INSTITUTO GRIFOLS (GLN 8435308300002)
-- TLS: self-signed certificate
+Masar B2B API via Citrix VPN
+Auth: POST https://192.168.225.195:8445/registry-service/api/v1/auth (apikey header)
+Events: POST https://192.168.225.195:8444/masar-service/api/v1/scp/SendEPCIS
+Tenant: devsim, manufacturer INSTITUTO GRIFOLS (GLN 8435308300002)
+TLS: self-signed certificate
+
 ---
+
 **Priority:**
 P2 – High
+
 ---
+
 **Bug Type:**
 Functional (Backend/API)
----
-**Notes:**
-**Exchange evidence:** `1-exchange-tc_comm_004.jpg`, `2-exchange-tc_sec_029.jpg` — the exact request, the response, and the platform's verdict from `MsgStatusQuery`. Replayable copies (`api-log.html`, `api-postman-collection.json`) are written beside each run under `automation-hub/projects/<project>/runs/`.
-
-**Covers test cases:** `TC_COMM_004` `TC_SEC_029`
-
-Covered by `TC_COMM_004` / `TC_COMM_004b` (both `test.fail()`), by `SMOKE-05b` in `automation-hub/projects/eptts-api-smoke/`, and by `TC_SEC_029` in the `api-security` feature — which re-tests the empty-`eventList` case through the security lens (input validation: a document with zero events is accepted with `202` / `I001` instead of being rejected). The SSCC misclassification is the part worth investigating first — it points at the EPC parser rather than at input validation.
-
----
-**SCOPE CORRECTION (2026-09-01): empty-list acceptance is platform-wide, not just `epcList`.**
-
-A full clean run showed the same behaviour for `sourceList`, `destinationList` and
-`bizTransactionList` across shipping, receiving and both return legs — 8 cases in total. Filed
-as *"Empty required lists are accepted across shipping, receiving and both return legs"*
-(`api-shipping`), which lists them.
-
-Keep this ticket for the commissioning `epcList` case and its separate finding that an
-empty-string EPC is misclassified as an SSCC — that part is specific to the identifier parser
-and does not appear in the wider set.

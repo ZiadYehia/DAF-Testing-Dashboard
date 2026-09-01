@@ -18,43 +18,42 @@ found_at: '2026-08-31T10:05:00.000Z'
 ---
 Opening `/master-data` renders the Master Data Snapshots page but immediately raises a red error toast reading **"Error — Cannot GET this resource"**. The page body still renders its shell (Latest version, Last generated, Auto-scheduler, Total stored) but every value is empty (`—`, `OFF`, `0 B`) and the Versions table reports "0 most recent".
 
-A related endpoint is missing on the service the collection documents: `GET /masar-service/api/v1/master-data/snapshot/latest` returns 404, while master data actually lives on registry-service (`GET /registry-service/api/v1/master-data/versions`). It is likely the page is calling the former.
+**Covers test cases:** `WEB_MDT_001`, `WEB_MDT_002`
 
-This matters beyond cosmetics: this page is how integrators obtain the signed master-data manifest, and the page cannot show whether any snapshot exists.
 ---
+
 **Steps to Reproduce:**
+
 1. Connect the Citrix VPN and open https://192.168.225.195:8444.
 2. Log in as admin@devsim.local.
 3. Enter https://192.168.225.195:8444/master-data in the address bar.
 4. Observe the top-right of the page immediately after load.
 5. Observe the four summary tiles and the Versions table.
+
 ---
+
 **Expected Result:**
-1. The page loads without an error toast and displays the current snapshot state, or shows a clear empty state when no snapshot has been generated.
+The page loads without an error toast and displays the current snapshot state, or shows a clear empty state when no snapshot has been generated.
+
 ---
+
 **Actual Result:**
-1. A red toast "Error — Cannot GET this resource" appears on load.
-2. All four summary tiles are empty (—, —, OFF, 0 B) and the Versions table shows 0 records.
-3. It cannot be distinguished from the UI whether no snapshot exists or the request simply failed.
+A red toast "Error — Cannot GET this resource" appears on load; all four summary tiles are empty (—, —, OFF, 0 B) and the Versions table shows 0 records; it cannot be distinguished from the UI whether no snapshot exists or the request simply failed.
+
 ---
+
 **Environment:**
-- Platform: Web (Chromium 149) via Citrix VPN
-- Dashboard: https://192.168.225.195:8444 (Angular SPA, Keycloak OIDC realm `masar`)
-- Tenant: devsim, logged in as admin@devsim.local (role admin, GLN 9999999999999)
-- TLS: self-signed certificate (clients must ignore certificate errors)
+Platform: Web (Chromium 149) via Citrix VPN
+Dashboard: https://192.168.225.195:8444 (Angular SPA, Keycloak OIDC realm `masar`)
+Tenant: devsim, logged in as admin@devsim.local (role admin, GLN 9999999999999)
+TLS: self-signed certificate (clients must ignore certificate errors)
+
 ---
+
 **Priority:**
 P2 – High
+
 ---
+
 **Bug Type:**
 Functional (Backend/API)
----
-**Notes:**
-**Covers test cases:** `WEB_MDT_001`, `WEB_MDT_002`
-
-Both fail on the same error banner — `WEB_MDT_002` differs only in reloading the route rather
-than opening it fresh.
-
-Screenshot attached — the error toast is visible top-right. Reproducible on every load.
-
-Also verify whether the page should be calling registry-service rather than masar-service: `/masar-service/api/v1/master-data/snapshot/latest` is a 404 whereas `/registry-service/api/v1/master-data/versions` returns 200.

@@ -1,31 +1,31 @@
 #!/usr/bin/env node
 /**
- * Bring every EPTTS bug report into line with bug-format.md.
+ * Rewrite every EPTTS bug into the shape bugs/_template.md actually specifies.
  *
  * Usage:
  *   node scripts/eptts-fix-bug-format.js            # dry run, prints a per-file plan
  *   node scripts/eptts-fix-bug-format.js --write
  *
- * WHY THIS EXISTS
+ * WHAT WAS WRONG
  *
- * The bug validator passed all 19 reports while 15 of them broke the spec, because it only
- * checked what I had thought to encode: required frontmatter, section presence and order.
- * It never checked the rules the spec actually spells out. Four classes of violation:
+ * The reports had drifted into essays. Against the template, four differences:
  *
- *  1. `Environment:` must be BULLETED (bug-format.md item 5). Most were a single "·"-joined
- *     prose line.
- *  2. `Steps to Reproduce:` must START from connecting the Citrix VPN — "since nothing is
- *     reachable without it". Seven jumped straight to an API call.
- *  3. `Covers test cases:` was invented as a top-level field. The spec has eight body
- *     sections and coverage belongs in `Notes:` ("which automated test covers it"). As a
- *     top-level field it also broke the "sections separated by --- rules" structure, since it
- *     sat between the rule and the `Steps` heading.
- *  4. A bug filed in Jira must carry its `jira_key` and `reported_at`, and its failing test
- *     cases must carry the `DW-###` key in the Attachment column. DW-958 was filed through
- *     the app, so the row knew; the file and the test cases still said `draft`.
+ *  1. No blank line either side of the `---` rules. The template has
+ *     "...text\n\n---\n\n**Steps to Reproduce:**\n\n1. ...".
+ *  2. Expected/Actual as numbered lists of two or three items. The template asks for ONE
+ *     clear sentence each.
+ *  3. Environment as a bullet list. The template uses plain lines, one fact per line.
+ *  4. A `Notes:` section, which the template does not have. It had become the place where
+ *     long-form discussion accumulated — exactly what a developer opening the bug has to
+ *     wade past to reach the defect.
  *
- * Transformations are mechanical and lossless — prose is re-flowed, never rewritten. The
- * Environment bullets are the existing fragments split on "·", so no wording is invented.
+ * The summary is trimmed to its first paragraph, and the `Covers test cases` line is kept
+ * directly beneath it: which cases produced the bug is the one piece of context worth having
+ * up front. Everything else that used to sit in the body is already in the attachments.
+ *
+ * The trimmed prose is not silently discarded — it is written to
+ * <slug>-attachments/analysis.md, so nothing that took real work to establish is lost, and
+ * anyone who wants the reasoning can still find it beside the bug.
  */
 const fs = require('fs')
 const path = require('path')
@@ -34,106 +34,90 @@ const REPO = path.join(__dirname, '..')
 const APPS = ['eptts-api', 'eptts-web']
 const WRITE = process.argv.includes('--write')
 
-/** Jira facts that live only in the app. Passed in rather than read from the DB so this
- *  script stays dependency-free; sync-bugs.ts reports them. */
-const REPORTED = {
-  'an-already-commissioned-sgtin-can-be-re-commissioned-and-re-commissioning-with-a': {
-    jira_key: 'DW-958',
-    reported_at: '2026-09-01T05:51:29.734Z',
-    status: 'reported',
-    jira_status: 'READY',
-    jira_reporter: '712020:b6f2ccdf-1ea7-4b3c-85ca-0bf6ed8291ed',
-  },
-}
+const SECTIONS = ['Steps to Reproduce', 'Expected Result', 'Actual Result', 'Environment',
+  'Priority', 'Bug Type']
 
-const VPN_STEP = 'Connect the Citrix VPN.'
-
-/** Split "**Environment:** a · b · c" into bullets, preserving every fragment verbatim. */
-function bulletEnvironment(body) {
-  const at = body.indexOf('**Environment:**')
-  if (at === -1) return { body, changed: false }
-
-  // The Environment paragraph runs to the first blank line; an Evidence paragraph or the
-  // next --- rule may follow and must be left alone.
-  const rest = body.slice(at)
-  const paraEnd = rest.search(/\n\s*\n|\n---/)
-  const para = paraEnd === -1 ? rest : rest.slice(0, paraEnd)
-
-  if (/\n\s*[-*]\s+\S/.test(para)) return { body, changed: false }   // already bulleted
-
-  const inline = para.replace('**Environment:**', '').replace(/\s+/g, ' ').trim()
-  if (!inline) return { body, changed: false }
-
-  const parts = inline.split('·').map((s) => s.trim()).filter(Boolean)
-  if (parts.length < 2) return { body, changed: false }
-
-  const bullets = `**Environment:**\n${parts.map((p) => `- ${p}`).join('\n')}`
-  return { body: body.slice(0, at) + bullets + rest.slice(para.length), changed: true }
-}
-
-/** Ensure step 1 connects the VPN, renumbering the existing steps if one is inserted. */
-function vpnFirst(body) {
-  const at = body.indexOf('**Steps to Reproduce:**')
-  if (at === -1) return { body, changed: false }
-  const end = body.indexOf('\n---', at)
-  const block = end === -1 ? body.slice(at) : body.slice(at, end)
-
-  const first = /^1\.[^\n]*/m.exec(block)
-  if (first && /vpn|citrix/i.test(first[0])) return { body, changed: false }
-
-  // Renumber from the bottom up so 1->2 cannot collide with an existing 2.
-  const nums = [...block.matchAll(/^(\d+)\.\s/gm)].map((m) => Number(m[1]))
-  if (!nums.length) return { body, changed: false }
-  let next = block
-  for (const n of nums.sort((a, b) => b - a)) {
-    next = next.replace(new RegExp(`^${n}\\.\\s`, 'm'), `${n + 1}. `)
+/** Split a body into the labelled sections the template defines. */
+function parseBody(body) {
+  const out = { summary: '', sections: {} }
+  // Every section heading, wherever it sits and however it is fenced.
+  const marks = []
+  for (const label of [...SECTIONS, 'Notes']) {
+    const re = new RegExp(`^\\s*(?:#{1,6}\\s*|\\*\\*)?${label}:(?:\\*\\*)?`, 'm')
+    const m = re.exec(body)
+    if (m) marks.push({ label, start: m.index, end: m.index + m[0].length })
   }
-  next = next.replace('**Steps to Reproduce:**', `**Steps to Reproduce:**\n1. ${VPN_STEP}`)
-  return { body: body.slice(0, at) + next + (end === -1 ? '' : body.slice(end)), changed: true }
+  marks.sort((a, b) => a.start - b.start)
+  if (!marks.length) return { summary: body.trim(), sections: {} }
+
+  out.summary = body.slice(0, marks[0].start)
+  marks.forEach((mk, i) => {
+    const stop = i + 1 < marks.length ? marks[i + 1].start : body.length
+    out.sections[mk.label] = body.slice(mk.end, stop)
+      // Drop the trailing --- rule that belonged to the next section.
+      .replace(/\n\s*---\s*$/, '').trim()
+  })
+  return out
 }
 
-/** Move `Covers test cases:` (and any paragraph attached to it) into `Notes:`. */
-function coversIntoNotes(body) {
-  const at = body.search(/\*\*Covers test cases?:\*\*/)
-  if (at === -1) return { body, changed: false }
+/** The first paragraph, plus the Covers line if one exists anywhere. */
+function trimSummary(summary, wholeBody) {
+  const covers = (wholeBody.match(/\*\*Covers test cases?:\*\*[^\n]*/) ?? [])[0] ?? null
 
-  const after = body.slice(at)
-  const stop = after.search(/\n\*\*Steps to Reproduce:\*\*|\n---/)
-  const chunk = (stop === -1 ? after : after.slice(0, stop)).trim()
+  const paragraphs = summary
+    .replace(/\*\*Covers test cases?:\*\*[^\n]*/g, '')
+    .replace(/^\s*---\s*$/gm, '')
+    .split(/\n\s*\n/)
+    .map((p) => p.trim())
+    .filter(Boolean)
+    // A blockquote correction or a markdown table is context, not the headline.
+    .filter((p) => !p.startsWith('>') && !p.startsWith('|'))
 
-  let next = body.slice(0, at) + body.slice(at + (stop === -1 ? after.length : stop) + 1)
-  // Collapse the blank space the removal leaves behind, and make sure the --- rule still
-  // sits directly before Steps.
-  next = next.replace(/\n{3,}/g, '\n\n').replace(/---\n+\*\*Steps to Reproduce:\*\*/, '---\n**Steps to Reproduce:**')
+  const kept = paragraphs.length ? paragraphs[0] : ''
+  const dropped = paragraphs.slice(1)
+  return { kept, dropped, covers }
+}
 
-  const notesAt = next.indexOf('**Notes:**')
-  if (notesAt === -1) {
-    next = `${next.replace(/\s*$/, '')}\n---\n**Notes:**\n${chunk}\n`
-  } else {
-    const insertAt = notesAt + '**Notes:**'.length
-    next = `${next.slice(0, insertAt)}\n${chunk}\n${next.slice(insertAt)}`
+/**
+ * Collapse a numbered list into one sentence.
+ *
+ * Split on the NUMBER MARKERS rather than matching item bodies with a lookahead. The earlier
+ * version used /^\s*\d+\.\s+([\s\S]*?)(?=\n\s*\d+\.\s|\s*$)/gm, where the `m` flag makes `$`
+ * match a line end — so every wrapped item was truncated at its first newline and the
+ * sentences came out cut in half ("refused — synchronously with `400`, or asynchronously
+ * with"). Losing half a sentence is worse than leaving the list alone.
+ */
+function oneSentence(text) {
+  const parts = text.split(/^\s*\d+\.\s+/m).map((s) => s.replace(/\s+/g, ' ').trim()).filter(Boolean)
+  if (parts.length <= 1) return (parts[0] ?? text).replace(/\s+/g, ' ').trim()
+  return parts
+    .map((s, i) => (i === parts.length - 1 ? s : s.replace(/[.;]\s*$/, '')))
+    // Lower-case the first word of every clause after the first, so a semicolon join reads as
+    // one sentence rather than three stitched together. Left alone when the word is an
+    // identifier or a quoted value, where capitalisation is meaningful.
+    .map((s, i) => (i === 0 || /^[`"'A-Z]{2}|^`/.test(s) ? s : s.charAt(0).toLowerCase() + s.slice(1)))
+    .join('; ')
+}
+
+/**
+ * Environment as plain lines — and ONLY the environment.
+ *
+ * Anything after the first blank line is discussion that happened to sit between Environment
+ * and Priority; the earlier version kept it, which put a stray half-paragraph and an entire
+ * argument about validator consistency inside the Environment block.
+ */
+function plainLines(text) {
+  const firstBlock = text.split(/\n\s*\n/)[0] ?? ''
+  return {
+    kept: firstBlock.split('\n')
+      .map((l) => l.replace(/^\s*[-*]\s+/, '').trim())
+      .filter(Boolean)
+      .filter((l) => !/^\*\*Evidence/i.test(l))
+      .join('\n'),
+    // Returned so the caller can park it in analysis.md instead of dropping it.
+    rest: text.split(/\n\s*\n/).slice(1).join('\n\n').trim(),
   }
-  return { body: next, changed: true }
 }
-
-/** A filed bug's frontmatter must say so. */
-function applyJira(frontmatter, slug) {
-  const facts = REPORTED[slug]
-  if (!facts) return { frontmatter, changed: false }
-  let next = frontmatter
-  let changed = false
-  for (const [k, v] of Object.entries(facts)) {
-    const re = new RegExp(`^${k}:.*$`, 'm')
-    const line = `${k}: ${k === 'reported_at' ? `'${v}'` : v}`
-    if (!re.test(next)) continue
-    if (re.exec(next)[0] === line) continue
-    next = next.replace(re, line)
-    changed = true
-  }
-  return { frontmatter: next, changed }
-}
-
-// ─── apply ───────────────────────────────────────────────────────────────────
 
 let touched = 0
 for (const app of APPS) {
@@ -147,38 +131,60 @@ for (const app of APPS) {
     for (const entry of fs.readdirSync(dir)) {
       if (!entry.endsWith('.md') || entry === '_template.md') continue
       const file = path.join(dir, entry)
-      const text = fs.readFileSync(file, 'utf8')
+      const raw = fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n')
 
-      const fmEnd = text.indexOf('\n---', 4)
-      let frontmatter = text.slice(4, fmEnd)
-      let body = text.slice(fmEnd + 4)
-      const applied = []
+      const fmEnd = raw.indexOf('\n---', 4)
+      const frontmatter = raw.slice(4, fmEnd)
+      const body = raw.slice(fmEnd + 4)
 
-      const jira = applyJira(frontmatter, entry.replace(/\.md$/, ''))
-      frontmatter = jira.frontmatter
-      if (jira.changed) applied.push('jira_key + reported_at from the app')
+      const parsed = parseBody(body)
+      const { kept, dropped, covers } = trimSummary(parsed.summary, body)
 
-      const cov = coversIntoNotes(body)
-      body = cov.body
-      if (cov.changed) applied.push('Covers test cases -> Notes')
+      const parts = [kept]
+      if (covers) parts.push('', covers.trim())
+      const strays = []
+      for (const label of SECTIONS) {
+        const content = parsed.sections[label]
+        if (content === undefined) continue
+        let shaped
+        if (label === 'Expected Result' || label === 'Actual Result') {
+          shaped = oneSentence(content)
+        } else if (label === 'Environment') {
+          const env = plainLines(content)
+          shaped = env.kept
+          if (env.rest) strays.push(env.rest)
+        } else {
+          shaped = content.trim()
+        }
+        parts.push('', '---', '', `**${label}:**`, label === 'Steps to Reproduce' ? '' : null, shaped)
+      }
+      const next = `---\n${frontmatter}\n---\n${parts.filter((p) => p !== null).join('\n')}\n`
 
-      const env = bulletEnvironment(body)
-      body = env.body
-      if (env.changed) applied.push('Environment bulleted')
-
-      const vpn = vpnFirst(body)
-      body = vpn.body
-      if (vpn.changed) applied.push('VPN inserted as step 1')
-
-      if (!applied.length) continue
+      if (next === raw) continue
       touched++
-      console.log(`${WRITE ? 'fixed' : 'would fix'}  ${feature}/${entry.slice(0, 46)}`)
-      for (const a of applied) console.log(`     - ${a}`)
+      const droppedNotes = parsed.sections.Notes ? 1 : 0
+      console.log(`${WRITE ? 'reshaped' : 'would reshape'} ${feature}/${entry.slice(0, 44)}`)
+      console.log(`     ${raw.length} -> ${next.length} chars` +
+        `${droppedNotes ? ', Notes removed' : ''}` +
+        `${dropped.length ? `, ${dropped.length} paragraph(s) moved to analysis.md` : ''}`)
 
-      if (WRITE) fs.writeFileSync(file, `---\n${frontmatter}\n---${body}`)
+      if (!WRITE) continue
+      fs.writeFileSync(file, next)
+
+      // Park the trimmed reasoning beside the bug rather than deleting it.
+      const extra = [...dropped, ...strays, parsed.sections.Notes].filter(Boolean)
+      if (extra.length) {
+        const adir = path.join(dir, `${entry.replace(/\.md$/, '')}-attachments`)
+        fs.mkdirSync(adir, { recursive: true })
+        fs.writeFileSync(path.join(adir, 'analysis.md'),
+          `# Background for ${entry.replace(/\.md$/, '')}\n\n` +
+          'Moved out of the bug body to keep the report to the point. Not an attachment the ' +
+          'platform indexes (only images and video are), just a file kept beside it.\n\n' +
+          `${extra.join('\n\n')}\n`)
+      }
     }
   }
 }
 
-console.log(`\n${touched} bug(s) ${WRITE ? 'rewritten' : 'to rewrite'}`)
+console.log(`\n${touched} bug(s) ${WRITE ? 'reshaped' : 'to reshape'}`)
 if (!WRITE) console.log('(dry run — nothing written)')

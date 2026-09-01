@@ -305,13 +305,57 @@ for (const app of APPS) {
       }
 
       if (STRICT_APPS.has(app)) {
-        // Environment must be BULLETED (bug-format.md item 5), not one "·"-joined line.
+        /**
+         * Environment is PLAIN LINES, one fact per line — what bugs/_template.md shows.
+         *
+         * This check used to demand bullets, on the strength of a bug-format.md line that did
+         * not match the template the format was actually built from. It converted 8 reports
+         * to bullets before that was noticed. The template is the authority.
+         */
         const envAt = body.indexOf('**Environment:**')
         if (envAt !== -1) {
           const rest = body.slice(envAt)
           const stop = rest.search(/\n\s*\n|\n---/)
           const para = stop === -1 ? rest : rest.slice(0, stop)
-          if (!/\n\s*[-*]\s+\S/.test(para)) add(file, 'Environment is not bulleted')
+          if (/\n\s*[-*]\s+\S/.test(para)) {
+            add(file, 'Environment uses bullets; the template uses plain lines, one fact per line')
+          }
+        }
+
+        // No Notes section: the template ends at Bug Type, and Notes had become the place
+        // long-form discussion accumulated. Evidence belongs in the attachments.
+        if (/^\s*(?:#{1,6}\s*|\*\*)?Notes:/m.test(body)) {
+          add(file, 'has a Notes section — the template ends at Bug Type; put background in the attachments')
+        }
+
+        // One sentence each, not a numbered list.
+        for (const label of ['Expected Result', 'Actual Result']) {
+          const at = body.indexOf(`**${label}:**`)
+          if (at === -1) continue
+          const stop = body.indexOf('\n---', at)
+          const block = (stop === -1 ? body.slice(at) : body.slice(at, stop))
+            .replace(`**${label}:**`, '')
+          if (/^\s*\d+\.\s/m.test(block)) {
+            add(file, `${label} is a numbered list; the template asks for one clear sentence`)
+          }
+        }
+
+        /**
+         * A --- rule needs a blank line either side, as the template has it.
+         *
+         * Checked line-wise on purpose. Matching /\n\s*---\s*\n/ does not work: `\s*` happily
+         * consumes the very blank lines being verified, so a correctly formatted file matched
+         * and then failed its own check — which is how this first reported all 19 as broken.
+         */
+        const lines = body.split('\n')
+        for (let i = 0; i < lines.length; i++) {
+          if (lines[i].trim() !== '---') continue
+          const prev = i > 0 ? lines[i - 1].trim() : ''
+          const next = i + 1 < lines.length ? lines[i + 1].trim() : ''
+          if (prev !== '' || next !== '') {
+            add(file, `the --- rule on body line ${i + 1} needs a blank line before and after it`)
+            break
+          }
         }
 
         // "Always start from connecting the Citrix VPN, since nothing is reachable without it."
@@ -336,11 +380,16 @@ for (const app of APPS) {
           }
         }
 
-        // Coverage belongs in Notes (bug-format.md item 8), not in a section of its own.
+        // Coverage sits with the summary, above the first rule: which cases produced the bug
+        // is the one piece of context worth having before the reproduction steps.
         const coversAt = body.search(/\*\*Covers test cases?:\*\*/)
-        const notesAt = body.indexOf('**Notes:**')
-        if (coversAt !== -1 && (notesAt === -1 || coversAt < notesAt)) {
-          add(file, 'the "Covers test cases" line sits outside Notes — bug-format.md puts test coverage in Notes')
+        const firstRule = body.search(/\n\s*---\s*\n/)
+        if (coversAt === -1) {
+          // A note, not a failure: some bugs were found by hand during discovery and have no
+          // automated case to name. Silence would hide the ones that simply forgot the line.
+          note(file, 'no "Covers test cases" line — expected unless the bug was found by hand')
+        } else if (firstRule !== -1 && coversAt > firstRule) {
+          add(file, 'the "Covers test cases" line is below the first --- rule; it belongs with the summary')
         }
       }
 

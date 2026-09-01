@@ -11,23 +11,24 @@ Frontmatter fields: `title`, `status` (`draft` | `reported`), `jira_key` (`DW-##
 `severity`, `layer`, `jira_status`, `jira_reporter`. This app additionally records `found_by` and
 `found_at` so a bug found by an automated run is traceable to that run.
 
-Body sections in order:
+Body sections in order, each separated by a `---` rule with a blank line on either side,
+exactly as `bugs/_template.md` shows:
 
-1. **Summary** — 1–3 paragraphs: what is broken, the context needed to understand why it matters, and
-   the consequence. For this platform that means naming the traceability impact (serialisation
-   integrity, audit chronology, custody transfer, billing arithmetic) rather than only the symptom.
-   A short table or fenced JSON block is welcome here when it makes the defect concrete.
-2. **Steps to Reproduce:** — numbered, each one atomic action. Always start from connecting the
+1. **Summary** - ONE short paragraph. What is broken, and the consequence for traceability.
+   Keep it tight: a developer opening the bug should reach the reproduction steps immediately.
+   Follow it with a single `**Covers test cases:**` line naming the cases that produced it.
+2. **Steps to Reproduce:** - numbered, each one atomic action. Always start from connecting the
    Citrix VPN, since nothing is reachable without it.
-3. **Expected Result:** — numbered; what a correct system does.
-4. **Actual Result:** — numbered; what this system does, quoting the platform's own message verbatim
-   where one exists (`"Invalid status transition for … 'dispensed' → 'dispensed'"`).
-5. **Environment:** — bulleted: platform/browser, the exact URL or endpoint, tenant and acting role
-   with its GLN, and the TLS caveat.
-6. **Priority:** — repeats the frontmatter value.
-7. **Bug Type:** — repeats the frontmatter value.
-8. **Notes:** — optional: which automated test covers it, why a test is marked `test.fail()`, related
-   documentation errors, and anything a fixer needs that is not a reproduction step.
+3. **Expected Result:** - ONE clear sentence.
+4. **Actual Result:** - ONE clear sentence, quoting the platform's own message where one exists.
+5. **Environment:** - plain lines, one fact per line: platform/browser, the exact URL or
+   endpoint, tenant and acting role with its GLN, and the TLS caveat.
+6. **Priority:** - repeats the frontmatter value.
+7. **Bug Type:** - repeats the frontmatter value.
+
+There is NO Notes section, and no long-form discussion. Evidence goes in the attachments, not
+in the body: request/response exchanges are attached as images, and the dashboard shows them
+beside the report. A bug that has to be read twice to find the defect has failed at its job.
 
 ## Severity / priority conventions
 
