@@ -1,0 +1,23 @@
+{
+  "name": "eptts-api-security-tc_sec_032",
+  "title": "TC_SEC_032 — an XML entity-expansion payload does not exhaust the parser",
+  "app": "eptts-api",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TC_SEC_032",
+  "linkedTestcase": {
+    "app": "eptts-api",
+    "feature": "api-security",
+    "testcaseId": "TC_SEC_032"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "write",
+    "blocked",
+    "security"
+  ],
+  "folder": "EPTTS APIs / api-security",
+  "engine": "api"
+}

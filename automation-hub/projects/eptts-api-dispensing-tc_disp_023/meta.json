@@ -23,8 +23,7 @@
   ],
   "tags": [
     "api",
-    "destructive",
-    "known-gap"
+    "destructive"
   ],
   "folder": "EPTTS APIs / api-dispensing",
   "engine": "api"

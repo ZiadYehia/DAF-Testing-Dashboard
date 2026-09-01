@@ -20,6 +20,7 @@ import {
   freshSgtin, freshSscc, sglnOf, glnFor, sameSscc,
   type EpcisDocument,
 } from '../eptts-api'
+import { expectRejected as expectRejectedStrict } from './field-mutations'
 import type { ApiCase } from './index'
 import { commissioned, commissionedMixed, packed, inTransitToBranch, receivedAtBranch } from './fixtures'
 
@@ -41,16 +42,15 @@ async function expectAccepted(doc: EpcisDocument, what: string): Promise<void> {
   expect(msg.state, `${what}: ${describeMsgStatus(msg)}`).toBe('SUCCESS')
 }
 
-async function expectRejected(doc: EpcisDocument, what: string): Promise<void> {
-  const { submitStatus, submitBody, msg } = await submitAndPoll('manufacturer', doc)
-  if (submitStatus >= 400) {
-    console.log(`[pack] ${what}: rejected synchronously ${submitStatus} ${JSON.stringify(submitBody).slice(0, 160)}`)
-    return
-  }
-  console.log(`[pack] ${what}: accepted (${submitStatus}) -> ${describeMsgStatus(msg)}`)
-  expect(msg.timedOut, `${what}: MsgStatusQuery never resolved — ${describeMsgStatus(msg)}`).toBe(false)
-  expect(msg.state, `${what}: the platform ACCEPTED input it should refuse — ${describeMsgStatus(msg)}`)
-    .toBe('FAILED')
+/**
+ * Assert the platform refused a document, optionally for a stated reason.
+ *
+ * Delegates to the canonical implementation. The copy that used to live here was the weakest
+ * of the three: on a synchronous 4xx it returned without asserting anything at all, so any
+ * malformed document counted as a pass.
+ */
+async function expectRejected(doc: EpcisDocument, what: string, reason?: RegExp): Promise<void> {
+  return expectRejectedStrict('manufacturer', doc, what, reason)
 }
 
 /** Assert a child now reports the given SSCC as its parent. */

@@ -1,46 +1,42 @@
 #!/usr/bin/env node
 /**
- * Embed the exact request and response into each API bug, for whoever has to fix it.
+ * Turn each API bug's recorded exchange into an IMAGE ATTACHMENT, and keep the bug body short.
  *
  * Usage:
- *   node scripts/eptts-api-bug-evidence.js <report.json> [<report.json> ...]        # dry run
+ *   node scripts/eptts-api-bug-evidence.js <report.json> [more.json ...]            # dry run
  *   node scripts/eptts-api-bug-evidence.js <report.json> ... --write
  *
- * WHY IN THE BODY RATHER THAN AS AN ATTACHMENT
+ * WHY AN IMAGE AND NOT THE JSON
  *
- * The platform only accepts images and video as attachments (ATTACHMENT_MIME in
- * src/lib/bugs.ts), so a .json of the exchange would sit on disk unrecognised. bug-format.md
- * explicitly welcomes a fenced JSON block in the body "when it makes the defect concrete",
- * which is exactly what a request/response pair does -- and it is readable in the ticket
- * without downloading anything.
+ * A bug should be readable in a few seconds; a 200-line EPCIS document pasted into the body
+ * buries the one sentence that says what is broken. So the exchange belongs in an attachment.
  *
- * WHY IT READS THE REPORT AND NOT THE OUTPUT DIRECTORY
+ * It has to be an image because of what this platform accepts. `ATTACHMENT_MIME`
+ * (src/lib/bugs.ts, mirrored in database/src/seed/import.ts) allows only images and video, and
+ * import.ts skips any other extension outright — a .json would sit on disk and never become an
+ * attachment row. The bug page then renders each attachment as `isVideo ? <video> : <img>`, so
+ * even if the MIME list were widened, a .json would draw as a broken image. Rendering the
+ * exchange to a .jpg is the form that actually appears in the dashboard, where it gets read.
  *
- * Playwright truncates long test-output directory names and appends a hash, so
- * "TS_RECV_007 -- an empty sourceList is refused" lands in a folder called
- * "projects-eptts-api-receivi-b6924-empty-sourceList-is-refused-api". The case id is simply
- * not in the path. The JSON report, on the other hand, carries the test title next to the
- * absolute path of every attachment it produced -- so that is the mapping to trust.
+ * `.jpg` rather than `.png` because that app's bug-format.md asks for it.
+ *
+ * The machine-readable copies are not lost: every run writes `api-log.html` and
+ * `api-postman-collection.json` beside the results, and the bug's Notes line points at them
+ * for anyone who wants to replay rather than read.
  *
  * WHAT IT PICKS
  *
- * A bug names the cases it covers. For each, this finds that case's recorded exchanges and
- * takes the two calls that matter: the SUBMISSION (the request that should have been refused)
- * and the FINAL POLL (the platform's verdict). The intermediate polls are noise -- they all
- * say "still processing" -- and including twelve of them would bury the two that carry the
- * answer.
- *
- * Credentials are already masked at record time (eptts-api-log.ts), and this asserts that
- * before writing: `data/` is committed, so a leaked key here would be published.
+ * The LAST business call — the one under test — plus the platform's own verdict from the poll
+ * that followed it. Earlier calls are fixture setup (commission, then pack, then ship), and
+ * quoting the first one shows an ordinary document and none of the defect.
  */
 const fs = require('fs')
 const path = require('path')
+const { spawnSync } = require('child_process')
 
 const REPO = path.join(__dirname, '..')
-// API bugs only. A dashboard bug's evidence is a screenshot, not an HTTP exchange, and
-// including eptts-web here would print a "no evidence found" line for every one of them.
 const APPS = ['eptts-api']
-/** Most exchanges to embed per bug. One bug covers 15 cases; 15 dumps would bury the point. */
+/** Most exchanges to attach per bug. One bug covers 15 cases; 15 images would bury the point. */
 const MAX_PER_BUG = 3
 const WRITE = process.argv.includes('--write')
 const REPORTS = process.argv.slice(2).filter((a) => !a.startsWith('--'))
@@ -51,12 +47,11 @@ if (!REPORTS.length || REPORTS.some((r) => !fs.existsSync(r))) {
 }
 
 const CASE_ID = /\b((?:TC|TS)_[A-Z]+_\d+)\b/g
-const SECTION = '**Request / Response (for debugging):**'
+const NOTES_MARK = '**Exchange evidence:**'
 
 /** case id -> its recorded exchanges, taken from the reports' attachment paths. */
 function exchangesByCase(reportPaths) {
   const byCase = new Map()
-
   const visit = (suite) => {
     for (const spec of suite.specs ?? []) {
       const id = (spec.title.match(/(?:TC|TS)_[A-Z]+_[0-9]+/) ?? [])[0]
@@ -68,12 +63,11 @@ function exchangesByCase(reportPaths) {
         try {
           const list = JSON.parse(fs.readFileSync(att.path, 'utf8'))
           if (Array.isArray(list) && list.length) byCase.set(id, list)
-        } catch { /* a truncated artifact is not worth failing the whole run over */ }
+        } catch { /* a truncated artifact is not worth failing the run over */ }
       }
     }
     for (const child of suite.suites ?? []) visit(child)
   }
-
   for (const p of reportPaths) {
     const report = JSON.parse(fs.readFileSync(p, 'utf8'))
     for (const suite of report.suites ?? []) visit(suite)
@@ -81,14 +75,6 @@ function exchangesByCase(reportPaths) {
   return byCase
 }
 
-/**
- * The submission and the final verdict — the two calls a fixer needs.
- *
- * Take the LAST business call, not the first. A case like TC_SHIP_007 ("an empty sourceList
- * is refused") has to commission a pack and aggregate it before it can ship anything, so its
- * recording holds three SendEPCIS calls and the first one is a fixture. Quoting that one
- * shows the developer a perfectly ordinary commissioning document and none of the defect.
- */
 function keyExchanges(list) {
   const isPoll = (e) => /MsgStatusQuery/i.test(e.url)
   const isBusiness = (e) => /SendEPCIS|Dispensation|epcis\/json/i.test(e.url)
@@ -96,27 +82,23 @@ function keyExchanges(list) {
 
   let idx = -1
   for (let i = 0; i < list.length; i++) if (isBusiness(list[i])) idx = i
-  // The authentication bugs have no business call — /auth IS the subject. Only reached when
-  // nothing else qualifies, so it never displaces a real submission.
+  // The authentication bugs have no business call — /auth IS the subject.
   if (idx === -1) for (let i = 0; i < list.length; i++) if (/auth/i.test(list[i].url)) idx = i
   if (idx === -1) return { submission: null, verdict: null, fixtures: 0 }
 
   return {
     submission: list[idx],
-    // The verdict must come AFTER the submission, or it is a fixture's status.
     verdict: list.slice(idx + 1).filter(isPoll).pop() ?? null,
     fixtures: list.slice(0, idx).filter(isBusiness).length,
   }
 }
 
 /**
- * Blank anything that could BE a credential before it is written into a committed file.
+ * Blank anything that could BE a credential before it is rendered into a committed image.
  *
- * eptts-api-log.ts masks credential HEADERS but not bodies. That is harmless for an EPCIS
- * document and emphatically not harmless for /auth, whose request carries a password and
- * whose response carries a live bearer token. `data/` is committed, so an unredacted token
- * here would be published — and unlike the keys in .env, a freshly minted token is not
- * something the secrets guard below could recognise.
+ * eptts-api-log.ts masks credential HEADERS but not bodies. Harmless for an EPCIS document,
+ * not harmless for /auth, whose request carries a password and whose response carries a live
+ * bearer token. An image is just as public as text once committed.
  */
 const CREDENTIAL_FIELD =
   /("(?:password|passwd|pwd|apikey|api_key|secret|client_secret|access_token|refresh_token|id_token|token)"\s*:\s*)"[^"]*"/gi
@@ -125,7 +107,6 @@ function redact(body) {
   if (!body) return body
   return String(body)
     .replace(CREDENTIAL_FIELD, (_m, key) => `${key}"«redacted»"`)
-    // A JWT or bearer value not sitting behind a name we recognise.
     .replace(/\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g, '«redacted JWT»')
     .replace(/\bBearer\s+[A-Za-z0-9._~+/-]{16,}={0,2}/gi, 'Bearer «redacted»')
 }
@@ -136,58 +117,64 @@ const trim = (s, n) => {
   return t.length > n ? `${t.slice(0, n)}\n… (${t.length - n} more characters)` : t
 }
 
-function block(caseId, list) {
+const esc = (s) => String(s ?? '')
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+/** The HTML that becomes the attachment image. */
+function exchangeHtml(caseId, list) {
   const { submission, verdict, fixtures } = keyExchanges(list)
   if (!submission) return null
 
-  const lines = [`<details><summary><code>${caseId}</code> — the exact exchange</summary>`, '']
-  if (fixtures) {
-    // Otherwise the request below looks like it arrived out of nowhere.
-    lines.push(`Preceded by ${fixtures} successful setup call(s) that built the stock this ` +
-      'request acts on. The call below is the one under test.', '')
-  }
-  lines.push('```http')
-  lines.push(`${submission.method} ${submission.url}`)
-  for (const [k, v] of Object.entries(submission.requestHeaders ?? {})) lines.push(`${k}: ${v}`)
-  lines.push('')
-  if (submission.requestBody) lines.push(trim(redact(submission.requestBody), 2200))
-  lines.push('```')
-  lines.push('')
-  lines.push(`Response — **${submission.status} ${submission.statusText}** in ${Math.round(submission.durationMs)} ms:`)
-  lines.push('```json')
-  lines.push(trim(redact(submission.responseBody), 900) ?? '(no body)')
-  lines.push('```')
+  const headers = Object.entries(submission.requestHeaders ?? {})
+    .map(([k, v]) => `${esc(k)}: ${esc(v)}`).join('\n')
+  const ok = submission.status < 400
 
-  if (verdict) {
-    lines.push('')
-    lines.push('Then the platform\'s own verdict, from `POST /MsgStatusQuery`:')
-    lines.push('```json')
-    lines.push(trim(redact(verdict.responseBody), 1200) ?? '(no body)')
-    lines.push('```')
-  }
-  lines.push('')
-  lines.push('</details>')
-  return lines.join('\n')
+  return `<div class="wrap">
+  <h1>${esc(caseId)}</h1>
+  ${fixtures ? `<p class="note">Preceded by ${fixtures} successful setup call(s) that built the
+     stock this request acts on. The call below is the one under test.</p>` : ''}
+
+  <h2>Request</h2>
+  <pre class="req">${esc(submission.method)} ${esc(submission.url)}
+${headers}
+
+${esc(trim(redact(submission.requestBody), 2600) ?? '(no body)')}</pre>
+
+  <h2>Response <span class="${ok ? 'ok' : 'bad'}">${submission.status} ${esc(submission.statusText)}</span>
+    <span class="ms">${Math.round(submission.durationMs)} ms</span></h2>
+  <pre>${esc(trim(redact(submission.responseBody), 1000) ?? '(no body)')}</pre>
+
+  ${verdict ? `<h2>Platform verdict <span class="ms">POST /MsgStatusQuery</span></h2>
+  <pre>${esc(trim(redact(verdict.responseBody), 1400) ?? '(no body)')}</pre>` : ''}
+
+  <p class="foot">Credentials masked. Intermediate "still processing" polls omitted.</p>
+</div>`
 }
 
-// ─── secrets guard ───────────────────────────────────────────────────────────
+const PAGE_CSS = `
+  :root { color-scheme: light }
+  body { margin:0; background:#f8fafc; font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; color:#0f172a }
+  .wrap { padding:22px 26px; max-width:1100px }
+  h1 { font:600 17px/1.3 system-ui,sans-serif; margin:0 0 4px }
+  h2 { font:600 12px/1.4 system-ui,sans-serif; text-transform:uppercase; letter-spacing:.06em;
+       color:#475569; margin:18px 0 6px }
+  pre { margin:0; padding:12px 14px; background:#fff; border:1px solid #e2e8f0; border-radius:6px;
+        white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere }
+  pre.req { background:#0f172a; color:#e2e8f0; border-color:#0f172a }
+  .ok  { color:#15803d; font-weight:700 }
+  .bad { color:#b91c1c; font-weight:700 }
+  .ms  { color:#94a3b8; font-weight:400; text-transform:none; letter-spacing:0 }
+  .note, .foot { font:12px/1.5 system-ui,sans-serif; color:#64748b; margin:8px 0 0 }
+`
 
-function secretValues() {
-  const p = path.join(REPO, 'automation-hub', '.env')
-  if (!fs.existsSync(p)) return []
-  return [...fs.readFileSync(p, 'utf8').matchAll(/^\s*\w*(?:APIKEY|PASSWORD|SECRET|TOKEN)\w*=(.+)$/gm)]
-    .map((m) => m[1].trim().replace(/^["']|["']$/g, ''))
-    .filter((v) => v.length > 7 && !/^(UNKNOWN|TODO|CHANGEME)/i.test(v))
-}
-const SECRETS = secretValues()
-
-// ─── apply ───────────────────────────────────────────────────────────────────
+// ─── collect the work ────────────────────────────────────────────────────────
 
 const byCase = exchangesByCase(REPORTS)
 console.log(`recorded exchanges found for ${byCase.size} case(s)`)
 
-let updated = 0
+const jobs = []       // { html, out, bug, caseId }
 const noEvidence = []
+const bodyEdits = []  // { file, next }
 
 for (const app of APPS) {
   const root = path.join(REPO, 'data', app, 'bugs')
@@ -198,66 +185,116 @@ for (const app of APPS) {
     if (!fs.statSync(dir).isDirectory()) continue
 
     for (const entry of fs.readdirSync(dir)) {
-      if (!entry.endsWith('.md')) continue
+      if (!entry.endsWith('.md') || entry === '_template.md') continue
       const file = path.join(dir, entry)
-      const text = fs.readFileSync(file, 'utf8')
+      const slug = entry.replace(/\.md$/, '')
+      let text = fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n')
 
-      // Only the cases the bug CLAIMS to cover — a prose mention is not coverage.
       const covers = [...(text.match(/\*\*Covers test cases?:\*\*[^\n]*/g) ?? []).join(' ')
         .matchAll(CASE_ID)].map((m) => m[1])
       if (!covers.length) continue
 
       const withEvidence = covers.filter((id) => byCase.has(id))
-      if (!withEvidence.length) { noEvidence.push(`${feature}/${entry.slice(0, 46)} (${covers.join(', ')})`); continue }
+      if (!withEvidence.length) { noEvidence.push(`${feature}/${slug.slice(0, 46)}`); continue }
 
       const shown = withEvidence.slice(0, MAX_PER_BUG)
+      const adir = path.join(dir, `${slug}-attachments`)
+      const names = []
+
+      shown.forEach((id, i) => {
+        const html = exchangeHtml(id, byCase.get(id))
+        if (!html) return
+        // Numbered in reproduction order, which bug-format.md asks for.
+        const name = `${i + 1}-exchange-${id.toLowerCase()}.jpg`
+        names.push(name)
+        jobs.push({ html, out: path.join(adir, name), bug: `${feature}/${slug}`, caseId: id })
+      })
+      if (!names.length) { noEvidence.push(`${feature}/${slug.slice(0, 46)}`); continue }
+
+      /**
+       * Remove the inline block and leave one short pointer in Notes.
+       *
+       * The section ran to 10,000 characters on some bugs — the defect was three sentences and
+       * the rest was an EPCIS document. The attachment carries that now.
+       */
+      const inlineAt = text.indexOf('---\n**Request / Response (for debugging):**')
+      if (inlineAt !== -1) {
+        const after = text.indexOf('\n---\n', inlineAt + 10)
+        text = text.slice(0, inlineAt) + (after === -1 ? '' : text.slice(after + 1))
+      }
+
       const omitted = withEvidence.slice(MAX_PER_BUG)
-      const blocks = shown.map((id) => block(id, byCase.get(id))).filter(Boolean)
-      if (!blocks.length) { noEvidence.push(`${feature}/${entry.slice(0, 46)} (${covers.join(', ')})`); continue }
+      const pointer = `${NOTES_MARK} ${names.map((n) => `\`${n}\``).join(', ')} — the exact ` +
+        'request, the response, and the platform\'s verdict from `MsgStatusQuery`. ' +
+        `Replayable copies (\`api-log.html\`, \`api-postman-collection.json\`) are written beside ` +
+        `each run under \`automation-hub/projects/<project>/runs/\`.` +
+        (omitted.length
+          ? ` The same shape repeats for ${omitted.map((id) => `\`${id}\``).join(', ')}.`
+          : '')
 
-      // Say what was left out. A truncated list with no note reads as "this is all of it".
-      const tail = omitted.length
-        ? `\n\nThe same exchange shape repeats for the other case(s) this bug covers ` +
-          `(${omitted.map((id) => `\`${id}\``).join(', ')}); they are omitted here for length.\n`
-        : '\n'
+      // Replace an existing pointer rather than stacking duplicates.
+      text = text.replace(new RegExp(`${NOTES_MARK.replace(/[*]/g, '\\$&')}[^\\n]*\\n?`), '')
+      const notesAt = text.indexOf('**Notes:**')
+      text = notesAt === -1
+        ? `${text.replace(/\s*$/, '')}\n---\n**Notes:**\n${pointer}\n`
+        : `${text.slice(0, notesAt + '**Notes:**'.length)}\n${pointer}\n${text.slice(notesAt + '**Notes:**'.length)}`
 
-      const section = `---\n${SECTION}\n\nCaptured from the automated run. Credentials are masked; ` +
-        `intermediate "still processing" polls are omitted so the submission and the verdict ` +
-        `stand out.\n\n${blocks.join('\n\n')}${tail}`
-
-      let next = text
-      if (next.includes(SECTION)) {
-        // Replace the existing block so re-running does not stack duplicates.
-        const start = next.indexOf(`---\n${SECTION}`)
-        const after = next.indexOf('\n---\n', start + 10)
-        next = next.slice(0, start) + section + (after === -1 ? '' : next.slice(after + 1))
-      } else {
-        const anchor = next.indexOf('---\n**Environment:**')
-        next = anchor === -1
-          ? `${next.replace(/\s*$/, '')}\n\n${section}`
-          : next.slice(0, anchor) + section + next.slice(anchor)
-      }
-
-      for (const s of SECRETS) {
-        if (next.includes(s)) {
-          console.error(`REFUSING to write ${entry}: a credential from .env appears in the evidence`)
-          process.exitCode = 1
-          next = text
-        }
-      }
-      if (next === text) continue
-
-      if (WRITE) fs.writeFileSync(file, next)
-      updated++
-      console.log(`  ${WRITE ? 'embedded' : 'would embed'} ${blocks.length} exchange(s): ${feature}/${entry.slice(0, 48)}`)
+      text = text.replace(/\n{3,}/g, '\n\n')
+      bodyEdits.push({ file, next: text, label: `${feature}/${slug.slice(0, 46)}`, names })
     }
   }
 }
 
-console.log(`\n${updated} bug(s) ${WRITE ? 'updated' : 'to update'}`)
+for (const e of bodyEdits) {
+  console.log(`  ${WRITE ? 'simplified' : 'would simplify'} ${e.label} -> ${e.names.length} attachment(s)`)
+}
+console.log(`\n${bodyEdits.length} bug(s) ${WRITE ? 'updated' : 'to update'}, ${jobs.length} image(s) to render`)
 if (noEvidence.length) {
-  console.log(`\nno recorded exchange for the covered case(s) of ${noEvidence.length} bug(s) — ` +
-    'run those cases and re-run this:')
+  console.log(`\nno recorded exchange for ${noEvidence.length} bug(s):`)
   for (const n of noEvidence) console.log(`   ${n}`)
 }
-if (!WRITE) console.log('\n(dry run — nothing written)')
+if (!WRITE) { console.log('\n(dry run — nothing written)'); process.exit(0) }
+
+// ─── render the images ───────────────────────────────────────────────────────
+
+const spec = path.join(REPO, 'automation-hub', 'projects', 'zz-render-evidence')
+fs.mkdirSync(spec, { recursive: true })
+fs.writeFileSync(path.join(spec, 'meta.json'),
+  JSON.stringify({ name: 'zz-render-evidence', app: 'eptts-web', engine: 'playwright' }, null, 2))
+fs.writeFileSync(path.join(spec, 'jobs.json'), JSON.stringify({ css: PAGE_CSS, jobs }, null, 2))
+fs.writeFileSync(path.join(spec, 'test.spec.ts'), `
+import { test } from '@playwright/test'
+import fs from 'fs'
+import path from 'path'
+
+// Renders each recorded exchange to a .jpg attachment. No navigation, no login — setContent
+// only, so it needs nothing from the platform and cannot touch it.
+test('render exchange evidence', async ({ page }) => {
+  test.slow()
+  const { css, jobs } = JSON.parse(fs.readFileSync(path.join(__dirname, 'jobs.json'), 'utf8'))
+  await page.setViewportSize({ width: 1140, height: 900 })
+  for (const job of jobs) {
+    await page.setContent('<style>' + css + '</style>' + job.html)
+    fs.mkdirSync(path.dirname(job.out), { recursive: true })
+    await page.locator('.wrap').screenshot({ path: job.out, type: 'jpeg', quality: 95 })
+    console.log('rendered ' + job.out)
+  }
+})
+`)
+
+const res = spawnSync('npx', ['playwright', 'test', 'projects/zz-render-evidence/test.spec.ts',
+  '--config=playwright.config.ts', '--project=chromium', '--workers=1', '--retries=0', '--reporter=line'],
+{ cwd: path.join(REPO, 'automation-hub'), encoding: 'utf8', shell: true })
+console.log(res.stdout?.split('\n').filter((l) => /rendered|passed|failed|Error/.test(l)).join('\n'))
+fs.rmSync(spec, { recursive: true, force: true })
+
+const missing = jobs.filter((j) => !fs.existsSync(j.out))
+if (missing.length) {
+  console.error(`\n${missing.length} image(s) were NOT rendered — bodies left untouched so the ` +
+    'bug never points at an attachment that does not exist:')
+  for (const m of missing) console.error(`   ${m.out}`)
+  process.exit(1)
+}
+
+for (const e of bodyEdits) fs.writeFileSync(e.file, e.next)
+console.log(`\n${jobs.length} image(s) rendered, ${bodyEdits.length} bug body(ies) simplified`)

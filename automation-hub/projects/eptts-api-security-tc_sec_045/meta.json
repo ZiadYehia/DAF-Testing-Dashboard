@@ -1,0 +1,22 @@
+{
+  "name": "eptts-api-security-tc_sec_045",
+  "title": "TC_SEC_045 — a validation failure body exposes no internal detail",
+  "app": "eptts-api",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TC_SEC_045",
+  "linkedTestcase": {
+    "app": "eptts-api",
+    "feature": "api-security",
+    "testcaseId": "TC_SEC_045"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "write",
+    "security"
+  ],
+  "folder": "EPTTS APIs / api-security",
+  "engine": "api"
+}

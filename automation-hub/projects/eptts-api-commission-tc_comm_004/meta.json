@@ -13,6 +13,15 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-01T07-18-16-237Z",
+      "status": "fail",
+      "durationMs": 23537.793,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": false,
+      "error": "Error: apiRequestContext.post: connect ETIMEDOUT 192.168.225.195:8445"
+    },
+    {
       "ts": "2026-09-01T06-31-41-264Z",
       "status": "fail",
       "durationMs": 13630.629,

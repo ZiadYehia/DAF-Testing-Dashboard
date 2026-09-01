@@ -9,7 +9,7 @@
   "TC_COMM_008": "pass",
   "TC_COMM_009": "pass",
   "TC_COMM_010": "pass",
-  "TC_COMM_011": "pass",
+  "TC_COMM_011": "fail",
   "TC_COMM_012": "fail",
   "TC_COMM_013": "pass",
   "TC_COMM_014": "pass",

@@ -2,8 +2,9 @@
 
 ## Required sections
 
-Bug files live at `data/eptts-web/bugs/<feature>/<slug>.md` and use YAML frontmatter followed by a
-markdown body whose sections are separated by `---` horizontal rules.
+Bug files live at `data/eptts-api/bugs/<feature>/<slug>.md` and use YAML frontmatter followed by a
+markdown body whose sections are separated by `---` horizontal rules. (This is the EPTTS API copy of
+the format; the dashboard copy at `data/eptts-web/bug-format.md` files under `data/eptts-web/bugs/`.)
 
 Frontmatter fields: `title`, `status` (`draft` | `reported`), `jira_key` (`DW-###` or `null`),
 `reported_at` (ISO timestamp or `null`), `feature` (must match the feature folder name, e.g.
@@ -53,8 +54,10 @@ matching `DW-###` key(s) in its Attachment column, space-separated.
 
 ## Attachments
 
-Evidence goes in `data/eptts-web/bugs/<feature>/<slug>-attachments/`. Accepted types include
-`.jpg`, `.png`, `.gif`, `.webp`, `.mp4`, `.webm`, `.mov`, up to 25 MB each.
+Evidence goes in `data/eptts-api/bugs/<feature>/<slug>-attachments/`. Accepted types include
+`.jpg`, `.png`, `.gif`, `.webp`, `.mp4`, `.webm`, `.mov`, up to 25 MB each. For API bugs the
+request/response pair belongs **in the body** (the platform accepts only images/video, so a `.json`
+attachment would sit unrecognised) — `scripts/eptts-api-bug-evidence.js` embeds the masked exchange.
 
 Two conventions specific to this app:
 

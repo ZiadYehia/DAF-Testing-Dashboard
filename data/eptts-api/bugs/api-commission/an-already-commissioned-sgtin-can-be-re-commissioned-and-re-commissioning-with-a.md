@@ -20,7 +20,9 @@ Commissioning is the act of bringing a serial number into existence. It must be 
 
 Submitting the same commissioning event twice for the same SGTIN returns `202` and then `messagestatus: "S - Successful"` with *"Commission (Items) event processed successfully"* both times (**TC_COMM_003**).
 
-Worse, re-commissioning the same SGTIN with a **different expiry date** also succeeds (**TC_COMM_012**), which means a caller can silently rewrite an existing pack's master data after the fact. Notably, re-commissioning with a different *batch* IS correctly refused (*"Document rejected before any chunk was committed"*), so the expiry path looks like an oversight rather than a deliberate difference.
+Worse, re-commissioning the same SGTIN with a **different expiry date** also succeeds (**TC_COMM_012**), which means a caller can silently rewrite an existing pack's master data after the fact. The same is true of a **different batch** (**TC_COMM_011**): with a lot number inside the platform's 20-character limit, the platform answers `S - Successful`. **No ilmd change is checked at all** — there is no partial guard, so a fix must cover plain duplicates, batch and expiry together.
+
+> **Correction (2026-09-01), and this widened the bug after it was filed.** An earlier version of this report said a different batch "IS correctly refused", quoting *"Document rejected before any chunk was committed"*. That was wrong. The test built its second document with a 24-character lot, and the platform was rejecting it with *"batch exceeds 20 characters"* — a length complaint, nothing to do with re-commissioning. Re-run with a 14-character lot, the same submission succeeds. Anyone who read the earlier version and concluded "the guard exists, it just misses expiry" should discard that: there is no guard.
 
 The source test suite recorded TC_COMM_003 as a *Positive* case expecting the pack to "stay Commissioned". A reviewer had already flagged that as wrong in the spreadsheet — *"How is that positive? system should reject an already commissioned pack"* — and that reviewer is correct.
 ---
@@ -41,197 +43,7 @@ The source test suite recorded TC_COMM_003 as a *Positive* case expecting the pa
 **Actual Result:**
 1. The second commissioning returns 202 and MsgStatusQuery reports "S - Successful" — "Commission (Items) event processed successfully".
 2. The third commissioning with a different expiry also succeeds, overwriting the pack's expiry date.
-3. Re-commissioning with a different batch is correctly refused, showing the guard exists but does not cover expiry or plain duplicates.
----
-**Request / Response (for debugging):**
-
-Captured from the automated run. Credentials are masked; intermediate "still processing" polls are omitted so the submission and the verdict stand out.
-
-<details><summary><code>TC_COMM_003</code> — the exact exchange</summary>
-
-Preceded by 1 successful setup call(s) that built the stock this request acts on. The call below is the one under test.
-
-```http
-POST https://192.168.225.195:8444/masar-service/api/v1/scp/SendEPCIS
-Authorization: «masked, 448 chars»
-
-{
-  "@context": [
-    "https://ref.gs1.org/standards/epcis/2.0.0/epcis-context.jsonld"
-  ],
-  "type": "EPCISDocument",
-  "schemaVersion": "2.0",
-  "creationDate": "2026-09-01T02:15:19+03:00",
-  "sbdh": {
-    "headerVersion": "1.3",
-    "sender": {
-      "identifier": "8435308300002"
-    },
-    "receiver": {
-      "identifier": "8435308300002"
-    },
-    "documentIdentification": {
-      "standard": "EPCGlobal",
-      "typeVersion": "1.0",
-      "instanceIdentifier": "ztg-mti1bkok1cd-0003",
-      "type": "Events",
-      "creationDateAndTime": "2026-09-01T02:15:19+03:00"
-    }
-  },
-  "epcisBody": {
-    "eventList": [
-      {
-        "type": "ObjectEvent",
-        "eventTime": "2026-09-01T02:15:19+03:00",
-        "eventTimeZoneOffset": "+03:00",
-        "readPoint": {
-          "id": "urn:epc:id:sgln:84353083.0000.0"
-        },
-        "bizLocation": {
-          "id": "urn:epc:id:sgln:84353083.0000.0"
-        },
-        "action": "ADD",
-        "bizStep": "commissioning",
-        "disposition": "active",
-        "epcList": [
-          "urn:epc:id:sgtin:84353083.05448.ZTGMTI1BKOK1CD0001"
-        ],
-        "ilmd": {
-          "cbvmda:lotNumber": "ZTG-MTI1BKOK1CD",
-          "cbvmda:itemExpirationDate": "2030-12-31"
-        }
-      }
-    ]
-  }
-}
-```
-
-Response — **202 Accepted** in 92 ms:
-```json
-{
-  "statustype": "I",
-  "code": 202,
-  "date": "2026-09-01T02:15:17.427Z",
-  "messageid": "ztg-mti1bkok1cd-0003",
-  "status": {
-    "reason": "Message accepted for EPTTS Processing, the message status can be viewed in the message status query",
-    "code": "I001"
-  }
-}
-```
-
-Then the platform's own verdict, from `POST /MsgStatusQuery`:
-```json
-{
-  "instanceIdentifier": "ztg-mti1bkok1cd-0003",
-  "messagestatus": "S - Successful",
-  "logList": [
-    {
-      "type": "I",
-      "message": "Commission (Items) event processed successfully"
-    },
-    {
-      "type": "I",
-      "message": "Message processed successfully — all 1 event(s) completed"
-    }
-  ]
-}
-```
-
-</details>
-
-<details><summary><code>TC_COMM_012</code> — the exact exchange</summary>
-
-Preceded by 1 successful setup call(s) that built the stock this request acts on. The call below is the one under test.
-
-```http
-POST https://192.168.225.195:8444/masar-service/api/v1/scp/SendEPCIS
-Authorization: «masked, 448 chars»
-
-{
-  "@context": [
-    "https://ref.gs1.org/standards/epcis/2.0.0/epcis-context.jsonld"
-  ],
-  "type": "EPCISDocument",
-  "schemaVersion": "2.0",
-  "creationDate": "2026-09-01T02:15:11+03:00",
-  "sbdh": {
-    "headerVersion": "1.3",
-    "sender": {
-      "identifier": "8435308300002"
-    },
-    "receiver": {
-      "identifier": "8435308300002"
-    },
-    "documentIdentification": {
-      "standard": "EPCGlobal",
-      "typeVersion": "1.0",
-      "instanceIdentifier": "ztg-mti1bknb372-0003",
-      "type": "Events",
-      "creationDateAndTime": "2026-09-01T02:15:11+03:00"
-    }
-  },
-  "epcisBody": {
-    "eventList": [
-      {
-        "type": "ObjectEvent",
-        "eventTime": "2026-09-01T02:15:11+03:00",
-        "eventTimeZoneOffset": "+03:00",
-        "readPoint": {
-          "id": "urn:epc:id:sgln:84353083.0000.0"
-        },
-        "bizLocation": {
-          "id": "urn:epc:id:sgln:84353083.0000.0"
-        },
-        "action": "ADD",
-        "bizStep": "commissioning",
-        "disposition": "active",
-        "epcList": [
-          "urn:epc:id:sgtin:84353083.05448.ZTGMTI1BKNB3720001"
-        ],
-        "ilmd": {
-          "cbvmda:lotNumber": "ZTG-MTI1BKNB372",
-          "cbvmda:itemExpirationDate": "2029-06-30"
-        }
-      }
-    ]
-  }
-}
-```
-
-Response — **202 Accepted** in 84 ms:
-```json
-{
-  "statustype": "I",
-  "code": 202,
-  "date": "2026-09-01T02:15:09.136Z",
-  "messageid": "ztg-mti1bknb372-0003",
-  "status": {
-    "reason": "Message accepted for EPTTS Processing, the message status can be viewed in the message status query",
-    "code": "I001"
-  }
-}
-```
-
-Then the platform's own verdict, from `POST /MsgStatusQuery`:
-```json
-{
-  "instanceIdentifier": "ztg-mti1bknb372-0003",
-  "messagestatus": "S - Successful",
-  "logList": [
-    {
-      "type": "I",
-      "message": "Commission (Items) event processed successfully"
-    },
-    {
-      "type": "I",
-      "message": "Message processed successfully — all 1 event(s) completed"
-    }
-  ]
-}
-```
-
-</details>
+3. Re-commissioning with a different batch also succeeds, provided the lot number is within the platform's 20-character limit. No ilmd change is validated.
 ---
 **Environment:**
 - Masar B2B API via Citrix VPN
@@ -247,6 +59,8 @@ P1 – Critical
 Functional (Backend/API)
 ---
 **Notes:**
-**Covers test cases:** `TC_COMM_003`, `TC_COMM_012`
+**Exchange evidence:** `1-exchange-tc_comm_003.jpg`, `2-exchange-tc_comm_011.jpg`, `3-exchange-tc_comm_012.jpg` — the exact request, the response, and the platform's verdict from `MsgStatusQuery`. Replayable copies (`api-log.html`, `api-postman-collection.json`) are written beside each run under `automation-hub/projects/<project>/runs/`.
 
-Covered by automated tests `TC_COMM_003` and `TC_COMM_012` in `automation-hub/projects/eptts-api-commission/`. Both are marked `test.fail()` so the suite stays green while the gap exists and reports an "unexpected pass" the moment it is fixed.
+**Covers test cases:** `TC_COMM_003`, `TC_COMM_011`, `TC_COMM_012`
+
+Covered by automated tests `TC_COMM_003`, `TC_COMM_011` (different batch) and `TC_COMM_012` (different expiry) in `automation-hub/projects/eptts-api-commission/`. All are marked `test.fail()` so the suite stays green while the gap exists and reports an "unexpected pass" the moment it is fixed.

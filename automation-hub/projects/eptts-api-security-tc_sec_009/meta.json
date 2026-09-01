@@ -1,0 +1,22 @@
+{
+  "name": "eptts-api-security-tc_sec_009",
+  "title": "TC_SEC_009 — a minted token is scoped only to the authenticating entity",
+  "app": "eptts-api",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TC_SEC_009",
+  "linkedTestcase": {
+    "app": "eptts-api",
+    "feature": "api-security",
+    "testcaseId": "TC_SEC_009"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "write",
+    "security"
+  ],
+  "folder": "EPTTS APIs / api-security",
+  "engine": "api"
+}

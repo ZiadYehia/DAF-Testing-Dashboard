@@ -1,0 +1,22 @@
+{
+  "name": "eptts-api-security-tc_sec_023",
+  "title": "TC_SEC_023 — dispensing a pack not received at the pharmacy is refused",
+  "app": "eptts-api",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TC_SEC_023",
+  "linkedTestcase": {
+    "app": "eptts-api",
+    "feature": "api-security",
+    "testcaseId": "TC_SEC_023"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "write",
+    "security"
+  ],
+  "folder": "EPTTS APIs / api-security",
+  "engine": "api"
+}

@@ -215,17 +215,70 @@ export const KNOWN_GAPS: Partial<Record<MutationName, string>> = {
  * asynchronously (202 then MsgStatusQuery FAILED). Both count as a refusal; only
  * acceptance is a failure.
  */
-export async function expectRejected(role: Role, doc: EpcisDocument, what: string): Promise<void> {
+/**
+ * Rejections that are almost certainly NOT the rule under test.
+ *
+ * A refusal only proves something if it is a refusal for the right reason. TC_COMM_011
+ * ("re-commissioning the same SGTIN with a different batch is refused") built its second
+ * document with `OTHER-${uniqueSerial()}` — 24 characters — and the platform answered
+ * "batch exceeds 20 characters". The assertion saw a rejection and passed, so the case
+ * reported green for months without ever exercising re-commissioning. Worse, it produced a
+ * positive finding that was then written into a comment and into a filed Jira bug: with a
+ * short lot the platform ACCEPTS the re-commission.
+ *
+ * These patterns mean the TEST malformed its own document. Matching one is a failure unless
+ * the caller passes an explicit `reason` saying that is the rule being tested.
+ */
+const INCIDENTAL_REJECTION = [
+  /exceeds \d+ characters/i,
+  /must not exceed/i,
+  /too long/i,
+  /unpersistable row/i,
+]
+
+/**
+ * Assert the platform refused a document — and, when `reason` is given, that it refused it
+ * for the stated reason rather than incidentally.
+ *
+ * Pass `reason` for any case that names a specific rule. Without it, only the incidental
+ * tripwire above applies.
+ */
+export async function expectRejected(
+  role: Role,
+  doc: EpcisDocument,
+  what: string,
+  reason?: RegExp,
+): Promise<void> {
   const { submitStatus, submitBody, msg } = await submitAndPoll(role, doc)
-  if (submitStatus >= 400) {
-    console.log(`[neg] ${what}: rejected synchronously ${submitStatus} ${JSON.stringify(submitBody).slice(0, 170)}`)
-    expect(JSON.stringify(submitBody), `${what}: the rejection states a reason`).toBeTruthy()
-    return
+
+  /** Everything the platform said, for matching a reason against. */
+  const said = submitStatus >= 400
+    ? JSON.stringify(submitBody)
+    : `${msg.raw ?? ''} ${(msg.logs ?? []).map((l) => l.message).join(' | ')}`
+
+  const incidental = INCIDENTAL_REJECTION.find((re) => re.test(said))
+  if (incidental && !(reason && reason.test(said))) {
+    throw new Error(
+      `${what}: refused, but for an INCIDENTAL reason — the document was malformed by the ` +
+      `test, not by the rule under test. Matched ${incidental}. The platform said: ` +
+      `${said.slice(0, 400)}`,
+    )
   }
-  console.log(`[neg] ${what}: accepted (${submitStatus}) -> ${describeMsgStatus(msg)}`)
-  expect(msg.timedOut, `${what}: MsgStatusQuery never resolved — ${describeMsgStatus(msg)}`).toBe(false)
-  expect(msg.state, `${what}: the platform ACCEPTED input it should refuse — ${describeMsgStatus(msg)}`)
-    .toBe('FAILED')
+
+  if (submitStatus >= 400) {
+    console.log(`[neg] ${what}: rejected synchronously ${submitStatus} ${said.slice(0, 170)}`)
+    expect(said, `${what}: the rejection states a reason`).toBeTruthy()
+  } else {
+    console.log(`[neg] ${what}: accepted (${submitStatus}) -> ${describeMsgStatus(msg)}`)
+    expect(msg.timedOut, `${what}: MsgStatusQuery never resolved — ${describeMsgStatus(msg)}`).toBe(false)
+    expect(msg.state, `${what}: the platform ACCEPTED input it should refuse — ${describeMsgStatus(msg)}`)
+      .toBe('FAILED')
+  }
+
+  if (reason) {
+    expect(said, `${what}: refused, but not for the reason under test — expected the platform ` +
+      `to complain about ${reason}. It said: ${said.slice(0, 400)}`).toMatch(reason)
+  }
 }
 
 /** Assert the platform accepted and successfully processed a document. */

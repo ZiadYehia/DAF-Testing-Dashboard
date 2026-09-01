@@ -26,6 +26,11 @@ an inconsistency: some areas use a `TC_` prefix and others use `TS_`.
 | `api-return-receiving` | `TS_RTRV_###` |
 | `api-dispensing` | `TC_DISP_###` |
 | `api-partial-dispensing` | `TC_PDISP_###` |
+| `api-security` | `TC_SEC_###` |
+
+`api-security` is the one API feature **not** inherited from the spreadsheet — it is the security
+cross-cut added for the QA & Security Testing Work Package, so its `TC_SEC_###` counter is ours to
+assign (sequential, gapless) rather than mirrored from the sheet.
 
 Do **not** "fix" `TS_` to `TC_`. When adding new API cases, continue the existing prefix and counter
 for that feature.
@@ -106,6 +111,7 @@ consistent in length.
 | `web-analytics-inventory` | `WEB_NIV_###` |
 | `web-analytics-shipments` | `WEB_NSH_###` |
 | `web-analytics-expiry-risk` | `WEB_NER_###` |
+| `web-security` | `WEB_SEC_###` |
 
 Tabs are features too: a tab has its own table, controls and endpoints, so each of the
 Settings, Audit Console and Analytics tabs is a separate feature rather than a section of
@@ -115,9 +121,9 @@ and tab switching.
 The prefix belongs to the feature, not the module: two features in the same module never share a
 prefix, so a test-case ID always identifies exactly one feature file.
 
-**Feature ID** column references the feature's own registered ID (`EPTTS_API_01` … `EPTTS_API_11` for
-the API module; `EPTTS_WEB_##` for dashboard features), space-separated when a case covers more than
-one.
+**Feature ID** column references the feature's own registered ID (`EPTTS_API_01` … `EPTTS_API_12` for
+the API module, where `EPTTS_API_12` is `api-security`; `EPTTS_WEB_##` for dashboard features),
+space-separated when a case covers more than one.
 
 ## A known platform gap: assert what SHOULD happen, never what does
 

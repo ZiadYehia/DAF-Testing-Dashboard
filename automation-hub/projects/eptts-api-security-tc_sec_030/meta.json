@@ -1,0 +1,22 @@
+{
+  "name": "eptts-api-security-tc_sec_030",
+  "title": "TC_SEC_030 — an oversized payload is rejected without an unhandled error",
+  "app": "eptts-api",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TC_SEC_030",
+  "linkedTestcase": {
+    "app": "eptts-api",
+    "feature": "api-security",
+    "testcaseId": "TC_SEC_030"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "write",
+    "security"
+  ],
+  "folder": "EPTTS APIs / api-security",
+  "engine": "api"
+}

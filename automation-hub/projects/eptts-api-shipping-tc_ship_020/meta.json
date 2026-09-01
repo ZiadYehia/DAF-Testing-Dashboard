@@ -14,8 +14,7 @@
   "runs": [],
   "tags": [
     "api",
-    "write",
-    "known-gap"
+    "write"
   ],
   "folder": "EPTTS APIs / api-shipping",
   "engine": "api"

@@ -45,83 +45,6 @@ The source suite expected 400 for these four cases (TC_AUTH_007–TC_AUTH_010).
 1. All four partial-credential variants return 200 with a valid access token.
 2. Only a fully-supplied, incorrect pair returns 401.
 ---
-**Request / Response (for debugging):**
-
-Captured from the automated run. Credentials are masked; intermediate "still processing" polls are omitted so the submission and the verdict stand out.
-
-<details><summary><code>TC_AUTH_007</code> — the exact exchange</summary>
-
-```http
-POST https://192.168.225.195:8445/registry-service/api/v1/auth
-apikey: «masked, 64 chars»
-
-{
-  "username": "",
-  "password": "«redacted»"
-}
-```
-
-Response — **200 OK** in 364 ms:
-```json
-{
-  "access_token": "«redacted»",
-  "refresh_token": "«redacted»",
-  "token_type": "Bearer",
-  "expires_in": 900
-}
-```
-
-</details>
-
-<details><summary><code>TC_AUTH_008</code> — the exact exchange</summary>
-
-```http
-POST https://192.168.225.195:8445/registry-service/api/v1/auth
-apikey: «masked, 64 chars»
-
-{
-  "username": "someone@example.invalid",
-  "password": "«redacted»"
-}
-```
-
-Response — **200 OK** in 339 ms:
-```json
-{
-  "access_token": "«redacted»",
-  "refresh_token": "«redacted»",
-  "token_type": "Bearer",
-  "expires_in": 900
-}
-```
-
-</details>
-
-<details><summary><code>TC_AUTH_009</code> — the exact exchange</summary>
-
-```http
-POST https://192.168.225.195:8445/registry-service/api/v1/auth
-apikey: «masked, 64 chars»
-
-{
-  "password": "«redacted»"
-}
-```
-
-Response — **200 OK** in 337 ms:
-```json
-{
-  "access_token": "«redacted»",
-  "refresh_token": "«redacted»",
-  "token_type": "Bearer",
-  "expires_in": 900
-}
-```
-
-</details>
-
-The same exchange shape repeats for the other case(s) this bug covers (`TC_AUTH_010`); they are omitted here for length.
----
 **Environment:**
 - Masar B2B API via Citrix VPN
 - POST https://192.168.225.195:8445/registry-service/api/v1/auth
@@ -134,6 +57,8 @@ P3 – Medium
 Functional (Backend/API)
 ---
 **Notes:**
+**Exchange evidence:** `1-exchange-tc_auth_007.jpg`, `2-exchange-tc_auth_008.jpg`, `3-exchange-tc_auth_009.jpg` — the exact request, the response, and the platform's verdict from `MsgStatusQuery`. Replayable copies (`api-log.html`, `api-postman-collection.json`) are written beside each run under `automation-hub/projects/<project>/runs/`. The same shape repeats for `TC_AUTH_010`.
+
 **Covers test cases:** `TC_AUTH_007`, `TC_AUTH_008`, `TC_AUTH_009`, `TC_AUTH_010`
 
 Covered by `TC_AUTH_007`–`TC_AUTH_010` in `automation-hub/projects/eptts-api-authentication/`, which assert the real behaviour and name the divergence from the sheet's expectation so a fix surfaces as a test update.

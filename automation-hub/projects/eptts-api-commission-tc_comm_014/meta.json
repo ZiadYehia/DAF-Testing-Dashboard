@@ -10,8 +10,17 @@
     "testcaseId": "TC_COMM_014"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "pass",
+  "lastStatus": "fail",
   "runs": [
+    {
+      "ts": "2026-09-01T07-25-26-899Z",
+      "status": "fail",
+      "durationMs": 45441.703,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": false,
+      "error": "Error: apiRequestContext.post: connect ETIMEDOUT 192.168.225.195:8445"
+    },
     {
       "ts": "2026-09-01T06-34-55-269Z",
       "status": "pass",

@@ -258,6 +258,45 @@ export async function getMasar(role: Role, path: string): Promise<APIResponse> {
   return res
 }
 
+/**
+ * A fully raw request with caller-controlled headers — the primitive the security feature
+ * needs. Unlike postMasar/getMasar it injects NO Authorization of its own, so a case can
+ * present a forged token, a garbage bearer, or no credential at all, and can hit either
+ * service. The exchange is still recorded, so the request/response evidence lands in the
+ * run's api-log.html exactly like every other call. `apikey` and `Authorization` remain
+ * masked by the recorder.
+ */
+export async function rawRequest(
+  method: 'GET' | 'POST',
+  service: 'masar' | 'registry',
+  path: string,
+  opts: { headers?: Record<string, string>; data?: unknown; label?: string } = {},
+): Promise<APIResponse> {
+  const ctx = await sharedCtx()
+  const base = service === 'masar' ? masarBase() : registryBase()
+  const target = url(base, path)
+  const headers = { ...(opts.headers ?? {}) }
+  const startedAt = Date.now()
+  const label = opts.label ?? path.replace(/^\//, '').split('?')[0]
+  const res =
+    method === 'GET'
+      ? await ctx.get(target, { headers, timeout: API_TIMEOUT_MS })
+      : await ctx.post(target, {
+          headers,
+          timeout: API_TIMEOUT_MS,
+          ...(opts.data !== undefined
+            ? typeof opts.data === 'string'
+              ? { data: opts.data }
+              : { data: opts.data }
+            : {}),
+        })
+  await recordExchange({
+    method, url: target, requestHeaders: headers,
+    requestBody: opts.data, label, startedAt, res,
+  })
+  return res
+}
+
 /** POST an EPCIS document. Defaults to /scp/SendEPCIS (what all 348 cases describe). */
 export async function sendEpcis(
   role: Role,

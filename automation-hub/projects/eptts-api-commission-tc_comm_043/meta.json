@@ -13,6 +13,15 @@
   "lastStatus": "pass",
   "runs": [
     {
+      "ts": "2026-09-01T09-59-23-021Z",
+      "status": "pass",
+      "durationMs": 36353.195,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: apiRequestContext.post: connect ETIMEDOUT 192.168.225.195:8445"
+    },
+    {
       "ts": "2026-08-31T22-39-08-533Z",
       "status": "pass",
       "durationMs": 11641.001,

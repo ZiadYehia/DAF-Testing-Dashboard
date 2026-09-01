@@ -1,0 +1,8 @@
+{
+  "TC_SEC_017": "export endpoint contract unverified on this environment; needs a foreign-owned SSCC to probe",
+  "TC_SEC_019": "single tenant on this environment (devsim only) — no second tenant to isolate against",
+  "TC_SEC_029": "platform validation gap: an empty eventList is accepted (202 I001) instead of rejected",
+  "TC_SEC_031": "no verified XML submission endpoint on the B2B API; XML/XXE upload is a dashboard feature (Phase 5)",
+  "TC_SEC_032": "no verified XML submission endpoint on the B2B API; covered on the dashboard EPCIS XML upload (Phase 5)",
+  "TC_SEC_038": "would push 2000+ requests/window at a shared platform; needs an agreed maintenance window"
+}

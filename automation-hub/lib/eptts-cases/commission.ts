@@ -23,6 +23,7 @@ import {
   freshSgtin, sglnOf, glnFor, uniqueSerial, runId,
   type EpcisDocument, type Role,
 } from '../eptts-api'
+import { expectRejected as expectRejectedStrict } from './field-mutations'
 import type { ApiCase } from './index'
 
 const FEATURE = 'api-commission'
@@ -49,21 +50,17 @@ function ilmd(doc: EpcisDocument): Record<string, unknown> {
   return ev(doc).ilmd as Record<string, unknown>
 }
 
-/** Assert the platform refused a document, synchronously or asynchronously. */
-async function expectRejected(role: Role, doc: EpcisDocument, label: string): Promise<void> {
-  const { submitStatus, submitBody, msg } = await submitAndPoll(role, doc)
-
-  if (submitStatus >= 400) {
-    const detail = JSON.stringify(submitBody)
-    console.log(`[comm] ${label}: rejected synchronously ${submitStatus} ${detail.slice(0, 180)}`)
-    expect(detail, `${label}: the rejection states a reason`).toBeTruthy()
-    return
-  }
-
-  console.log(`[comm] ${label}: accepted (${submitStatus}) -> ${describeMsgStatus(msg)}`)
-  expect(msg.timedOut, `${label}: MsgStatusQuery never resolved: ${describeMsgStatus(msg)}`).toBe(false)
-  expect(msg.state, `${label}: the platform ACCEPTED input it should refuse: ${describeMsgStatus(msg)}`)
-    .toBe('FAILED')
+/**
+ * Assert the platform refused a document, optionally for a stated reason.
+ *
+ * Delegates to the one in field-mutations.ts. There used to be three near-identical copies of
+ * this — here, in packing.ts, and there — so hardening one left the other two accepting any
+ * refusal at all. That is how TC_COMM_011 passed on "batch exceeds 20 characters".
+ */
+async function expectRejected(
+  role: Role, doc: EpcisDocument, label: string, reason?: RegExp,
+): Promise<void> {
+  return expectRejectedStrict(role, doc, label, reason)
 }
 
 /** Assert the platform accepted and successfully processed a document. */
@@ -243,19 +240,36 @@ const specialCases: ApiCase[] = [
   {
     id: 'TC_COMM_011', feature: FEATURE, slow: true,
     title: 're-commissioning the same SGTIN with a different batch is refused',
+    /**
+     * This case reported PASS while proving nothing.
+     *
+     * It used to set the second lot to `OTHER-${uniqueSerial()}` — 24 characters — and the
+     * platform answered "batch exceeds 20 characters". expectRejected saw a rejection and was
+     * satisfied, so the re-commissioning rule was never reached. With a lot inside the limit
+     * the platform returns "S - Successful": the re-commission IS accepted.
+     *
+     * The lot is now short enough to stay clear of that limit, and the rejection has to name
+     * the pack or the duplicate for the assertion to count.
+     */
+    expectFail: 'platform validation gap: re-commissioning with a different batch succeeds',
     run: async () => {
       const sgtin = freshSgtin()
       await expectAccepted('manufacturer', validDoc([sgtin]), 'first commission')
       const doc = validDoc([sgtin])
-      ilmd(doc)['cbvmda:lotNumber'] = `OTHER-${uniqueSerial()}`
-      await expectRejected('manufacturer', doc, 'same SGTIN, different batch')
+      // 20 characters is the platform's limit; keep well inside it so a length complaint
+      // cannot stand in for the rule under test.
+      ilmd(doc)['cbvmda:lotNumber'] = `OTHER-${runId().slice(0, 8)}`
+      await expectRejected('manufacturer', doc, 'same SGTIN, different batch',
+        /already|exists|duplicate|commission|sgtin|pack/i)
     },
   },
   {
     id: 'TC_COMM_012', feature: FEATURE, slow: true,
     title: 're-commissioning the same SGTIN with a different expiry is refused',
     // Worse than a plain duplicate: this silently REWRITES an existing pack's expiry.
-    // Note a different *batch* IS correctly refused, so this looks like an oversight.
+    // This used to add "note a different *batch* IS correctly refused, so this looks like an
+    // oversight". That was wrong, and it came from TC_COMM_011's false pass: a different batch
+    // is accepted too. The gap is not an oversight in one field — no ilmd change is checked.
     expectFail: 'platform validation gap: re-commissioning with a different expiry succeeds',
     run: async () => {
       const sgtin = freshSgtin()

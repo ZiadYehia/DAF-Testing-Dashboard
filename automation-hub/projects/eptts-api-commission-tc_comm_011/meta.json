@@ -13,6 +13,23 @@
   "lastStatus": "pass",
   "runs": [
     {
+      "ts": "2026-09-01T10-02-04-593Z",
+      "status": "pass",
+      "durationMs": 26127.692,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true
+    },
+    {
+      "ts": "2026-09-01T07-23-26-628Z",
+      "status": "fail",
+      "durationMs": 45636.274,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": false,
+      "error": "Error: apiRequestContext.post: connect ETIMEDOUT 192.168.225.195:8445"
+    },
+    {
       "ts": "2026-09-01T06-33-44-698Z",
       "status": "pass",
       "durationMs": 26434.994000000002,
@@ -31,7 +48,8 @@
   ],
   "tags": [
     "api",
-    "write"
+    "write",
+    "known-gap"
   ],
   "folder": "EPTTS APIs / api-commission",
   "engine": "api"

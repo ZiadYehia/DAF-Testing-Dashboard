@@ -13,6 +13,23 @@
   "lastStatus": "pass",
   "runs": [
     {
+      "ts": "2026-09-01T10-01-25-689Z",
+      "status": "pass",
+      "durationMs": 14320.536999999998,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true
+    },
+    {
+      "ts": "2026-09-01T07-17-02-695Z",
+      "status": "fail",
+      "durationMs": 45538.799999999996,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": false,
+      "error": "Error: apiRequestContext.post: connect ETIMEDOUT 192.168.225.195:8445"
+    },
+    {
       "ts": "2026-09-01T06-30-59-730Z",
       "status": "pass",
       "durationMs": 13549.793,

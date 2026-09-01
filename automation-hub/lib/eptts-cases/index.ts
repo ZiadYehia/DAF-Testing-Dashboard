@@ -35,6 +35,7 @@ import { DISPENSING_CASES } from './dispensing'
 import { PARTIAL_DISPENSING_CASES } from './partial-dispensing'
 import { SHIPPING_CASES, RECEIVING_CASES } from './shipping'
 import { RETURN_CASES, RETURN_RECEIVING_CASES } from './returns'
+import { SECURITY_CASES } from './security'
 
 /** One executable test case, keyed by its spreadsheet ID. */
 export interface ApiCase {
@@ -78,6 +79,7 @@ register(SHIPPING_CASES)
 register(RECEIVING_CASES)
 register(RETURN_CASES)
 register(RETURN_RECEIVING_CASES)
+register(SECURITY_CASES)
 
 /** Ids of every registered case — used by the project generator. */
 export function registeredIds(): string[] {
