@@ -1,8 +1,12 @@
 {
-  "TC_SEC_017": "export endpoint contract unverified on this environment; needs a foreign-owned SSCC to probe",
+  "TC_SEC_017": "Blocked by a live platform EPCIS storage outage on 2026-09-02: POST /scp/SendEPCIS returns 503 E003 \"EPCIS accept temporarily unavailable — durable object storage not confirmed. Please retry.\" after ~60s, so the commission/ship/receive fixtures cannot commit. Case logic is complete and wired to the second-entity (EF) accounts; re-run when the EPCIS write path recovers.",
   "TC_SEC_019": "single tenant on this environment (devsim only) — no second tenant to isolate against",
   "TC_SEC_029": "platform validation gap: an empty eventList is accepted (202 I001) instead of rejected",
   "TC_SEC_031": "no verified XML submission endpoint on the B2B API; XML/XXE upload is a dashboard feature (Phase 5)",
   "TC_SEC_032": "no verified XML submission endpoint on the B2B API; covered on the dashboard EPCIS XML upload (Phase 5)",
-  "TC_SEC_038": "would push 2000+ requests/window at a shared platform; needs an agreed maintenance window"
+  "TC_SEC_038": "would push 2000+ requests/window at a shared platform; needs an agreed maintenance window",
+  "TC_SEC_018": "Blocked by a live platform EPCIS storage outage on 2026-09-02: POST /scp/SendEPCIS returns 503 E003 \"EPCIS accept temporarily unavailable — durable object storage not confirmed. Please retry.\" after ~60s, so the commission/ship/receive fixtures cannot commit. Case logic is complete and wired to the second-entity (EF) accounts; re-run when the EPCIS write path recovers.",
+  "TC_SEC_046": "Blocked by a live platform EPCIS storage outage on 2026-09-02: POST /scp/SendEPCIS returns 503 E003 \"EPCIS accept temporarily unavailable — durable object storage not confirmed. Please retry.\" after ~60s, so the commission/ship/receive fixtures cannot commit. Case logic is complete and wired to the second-entity (EF) accounts; re-run when the EPCIS write path recovers.",
+  "TC_SEC_047": "Blocked by a live platform EPCIS storage outage on 2026-09-02: POST /scp/SendEPCIS returns 503 E003 \"EPCIS accept temporarily unavailable — durable object storage not confirmed. Please retry.\" after ~60s, so the commission/ship/receive fixtures cannot commit. Case logic is complete and wired to the second-entity (EF) accounts; re-run when the EPCIS write path recovers.",
+  "TC_SEC_048": "Blocked by a live platform EPCIS storage outage on 2026-09-02: POST /scp/SendEPCIS returns 503 E003 \"EPCIS accept temporarily unavailable — durable object storage not confirmed. Please retry.\" after ~60s, so the commission/ship/receive fixtures cannot commit. Case logic is complete and wired to the second-entity (EF) accounts; re-run when the EPCIS write path recovers."
 }

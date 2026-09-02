@@ -15,9 +15,9 @@
   "TC_SEC_014": "pass",
   "TC_SEC_015": "pass",
   "TC_SEC_016": "pass",
-  "TC_SEC_017": "new_added",
-  "TC_SEC_018": "new_added",
-  "TC_SEC_019": "new_added",
+  "TC_SEC_017": "blocked",
+  "TC_SEC_018": "blocked",
+  "TC_SEC_019": "pass",
   "TC_SEC_020": "pass",
   "TC_SEC_021": "pass",
   "TC_SEC_022": "pass",
@@ -44,7 +44,7 @@
   "TC_SEC_043": "pass",
   "TC_SEC_044": "pass",
   "TC_SEC_045": "pass",
-  "TC_SEC_046": "new_added",
-  "TC_SEC_047": "new_added",
-  "TC_SEC_048": "new_added"
+  "TC_SEC_046": "blocked",
+  "TC_SEC_047": "blocked",
+  "TC_SEC_048": "blocked"
 }

@@ -13,6 +13,15 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-02T04-14-11-841Z",
+      "status": "fail",
+      "durationMs": 125763.826,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: single commission: accepted for processing"
+    },
+    {
       "ts": "2026-09-02T03-43-49-688Z",
       "status": "fail",
       "durationMs": 5168.4310000000005,

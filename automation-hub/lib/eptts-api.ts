@@ -122,21 +122,25 @@ function url(base: string, path: string): string {
  * loosening actionTimeout globally, which would slacken every other app's UI specs.
  * Override with EPTTS_API_TIMEOUT_MS.
  *
- * WHY 75 s AND NOT 45 s
+ * 45 s IS DELIBERATE, AND IT COSTS ONE THING
  *
- * When SendEPCIS cannot persist a document it holds the request for ~60 s and then answers
- * with a precise diagnosis of its own:
+ * When SendEPCIS cannot persist a document it holds the request for ~60 s before answering
+ * with a diagnosis of its own:
  *
  *   503 {"code":"E003","reason":"EPCIS accept temporarily unavailable — durable object
  *        storage not confirmed. Please retry."}
  *
- * At 45 s we timed out four seconds-worth of patience short of that, so every affected case
- * failed with an opaque "apiRequestContext.post: Timeout 45000ms exceeded" and the platform's
- * explanation was thrown away — it read as our client hanging rather than a named storage
- * outage. Sitting past the platform's own failure window means the run records what the
- * platform actually said.
+ * So at 45 s we give up first, and the run records "apiRequestContext.post: Timeout 45000ms
+ * exceeded" rather than that sentence. Failing fast is worth more than the wording across a
+ * 417-case suite — three workers each waiting 60 s on a wedged write path is a very long run
+ * for no extra information.
+ *
+ * What matters is that the timeout is not mistaken for a defect: isInfrastructureFailure() in
+ * scripts/eptts-record-run.js matches this exact message, so an outage is held back from the
+ * results instead of being recorded as 46 real failures. If you ever need the platform's own
+ * reason, raise it past 60 s for that run only: EPTTS_API_TIMEOUT_MS=75000.
  */
-const API_TIMEOUT_MS = Number(process.env.EPTTS_API_TIMEOUT_MS ?? 75_000)
+const API_TIMEOUT_MS = Number(process.env.EPTTS_API_TIMEOUT_MS ?? 45_000)
 
 /** Dispose every cached context + token. Call from an afterAll hook. */
 export async function disposeApi(): Promise<void> {
