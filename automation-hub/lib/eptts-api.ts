@@ -122,23 +122,31 @@ function url(base: string, path: string): string {
  * loosening actionTimeout globally, which would slacken every other app's UI specs.
  * Override with EPTTS_API_TIMEOUT_MS.
  *
- * 45 s IS DELIBERATE, AND IT COSTS ONE THING
+ * 75 s IS DELIBERATE: IT SITS PAST THE PLATFORM'S OWN FAILURE WINDOW
  *
- * When SendEPCIS cannot persist a document it holds the request for ~60 s before answering
+ * When SendEPCIS cannot persist a document it holds the request for ~60 s and then answers
  * with a diagnosis of its own:
  *
  *   503 {"code":"E003","reason":"EPCIS accept temporarily unavailable — durable object
  *        storage not confirmed. Please retry."}
  *
- * So at 45 s we give up first, and the run records "apiRequestContext.post: Timeout 45000ms
- * exceeded" rather than that sentence. Failing fast is worth more than the wording across a
- * 417-case suite — three workers each waiting 60 s on a wedged write path is a very long run
- * for no extra information.
+ * At 45 s we gave up first, so the run recorded "apiRequestContext.post: Timeout 45000ms
+ * exceeded" and that sentence was lost. The difference is not academic — it cost real time:
+ * a storage outage looked like our client hanging, and several probes went into proving the
+ * network was fine before anyone thought to let the request finish. Measured either way on
+ * the same wedged endpoint:
  *
- * What matters is that the timeout is not mistaken for a defect: isInfrastructureFailure() in
- * scripts/eptts-record-run.js matches this exact message, so an outage is held back from the
- * results instead of being recorded as 46 real failures. If you ever need the platform's own
- * reason, raise it past 60 s for that run only: EPTTS_API_TIMEOUT_MS=75000.
+ *   45 s ->  TimeoutError, no status, nothing about storage
+ *   75 s ->  503 in 60424 ms, with the reason above, recorded in the run's api-log.html
+ *
+ * The cost is bounded: this only bites when the platform is already broken, and a healthy
+ * SendEPCIS answers in well under a second. A cheaper timeout mainly buys a faster route to
+ * a less useful answer.
+ *
+ * Either way the timeout is not mistaken for a defect — isInfrastructureFailure() in
+ * scripts/eptts-record-run.js matches both this message and the E003 wording, so an outage is
+ * held back from the results instead of being recorded as 46 real failures. Lower it for a
+ * single run with EPTTS_API_TIMEOUT_MS if you want the suite to fail fast instead.
  */
 const API_TIMEOUT_MS = Number(process.env.EPTTS_API_TIMEOUT_MS ?? 75_000)
 
