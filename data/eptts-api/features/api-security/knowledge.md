@@ -64,9 +64,18 @@ coverage line now also lists `TC_SEC_029`, so no duplicate bug was raised. See `
 for the full result and the LoadTesting carry-over.
 
 Notable positive confirmations on devsim, contrary to the LoadTesting cloud-staging findings:
-**product ownership IS enforced** at commission (`TC_SEC_018`), and the **over-length lot number
-does NOT leak a raw DB error** (`TC_SEC_035`). Both are worth re-checking with the platform owner
+the **over-length lot number does NOT leak a raw DB error** (`TC_SEC_035`), and an earlier pass
+showed **product ownership enforced** at commission. Worth re-checking with the platform owner
 before closing the corresponding staging tickets.
+
+**Second entities (2026-09-02).** A second independent entity of each role — the `EF` set
+(`ef_manufacturer` 7910000000005, `ef_distributor` 5413868000108, `ef_pharmacy` 6220000000013),
+wired into `automation-hub/lib/eptts-api.ts` — lets horizontal isolation be tested for real.
+`TC_SEC_019` (cross-entity read isolation) passes. Five cross-entity *write* cases (`TC_SEC_017`,
+`018`, `046`, `047`, `048`) are complete and wired to the EF accounts but are blocked by a live
+**EPCIS storage outage** (`POST /scp/SendEPCIS` → `503 E003 "durable object storage not confirmed"`
+after ~60 s). Re-run all five — plus `TC_COMM_001`, blocked by the same outage — once the write path
+recovers. The read surfaces (`/epcis`, `/scp/invoices`, `/VerifyProduct`) are unaffected.
 
 ## The single-tenant limitation
 

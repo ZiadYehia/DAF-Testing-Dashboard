@@ -1,5 +1,5 @@
 {
-  "TC_COMM_001": "blocked",
+  "TC_COMM_001": "fail",
   "TC_COMM_002": "pass",
   "TC_COMM_003": "fail",
   "TC_COMM_004": "fail",

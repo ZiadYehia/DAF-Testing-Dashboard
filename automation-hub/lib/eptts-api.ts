@@ -22,7 +22,7 @@
  */
 import { request as pwRequest, type APIRequestContext, type APIResponse } from '@playwright/test'
 import { requireEnv } from './env'
-import { recordExchange } from './eptts-api-log'
+import { recordExchange, recordFailedExchange } from './eptts-api-log'
 
 // ─── roles ───────────────────────────────────────────────────────────────────
 
@@ -267,11 +267,21 @@ export async function postMasar(
   const startedAt = Date.now()
   // A string payload goes through untouched, so malformed-JSON and XML cases work.
   const common = { headers, timeout: API_TIMEOUT_MS }
-  const res = await ctx.post(target, typeof data === 'string' ? { ...common, data } : { ...common, data })
-  await recordExchange({
+  const meta = {
     role, method: 'POST', url: target, requestHeaders: headers, requestBody: data,
-    label: path.replace(/^\//, ''), startedAt, res,
-  })
+    label: path.replace(/^\//, ''), startedAt,
+  }
+  let res: APIResponse
+  try {
+    res = await ctx.post(target, typeof data === 'string' ? { ...common, data } : { ...common, data })
+  } catch (error) {
+    // Log the attempt before rethrowing. A request that times out used to leave no trace, so
+    // a run against a wedged SendEPCIS produced a log holding only the `auth` call — which
+    // reads as "the test never submitted anything" rather than "it waited 45 s".
+    recordFailedExchange({ ...meta, error })
+    throw error
+  }
+  await recordExchange({ ...meta, res })
   return res
 }
 
@@ -280,11 +290,18 @@ export async function getMasar(role: Role, path: string): Promise<APIResponse> {
   const target = url(masarBase(), path)
   const headers = await bearer(role)
   const startedAt = Date.now()
-  const res = await ctx.get(target, { headers, timeout: API_TIMEOUT_MS })
-  await recordExchange({
+  const meta = {
     role, method: 'GET', url: target, requestHeaders: headers,
-    label: path.replace(/^\//, '').split('?')[0], startedAt, res,
-  })
+    label: path.replace(/^\//, '').split('?')[0], startedAt,
+  }
+  let res: APIResponse
+  try {
+    res = await ctx.get(target, { headers, timeout: API_TIMEOUT_MS })
+  } catch (error) {
+    recordFailedExchange({ ...meta, error })
+    throw error
+  }
+  await recordExchange({ ...meta, res })
   return res
 }
 
@@ -308,22 +325,28 @@ export async function rawRequest(
   const headers = { ...(opts.headers ?? {}) }
   const startedAt = Date.now()
   const label = opts.label ?? path.replace(/^\//, '').split('?')[0]
-  const res =
-    method === 'GET'
-      ? await ctx.get(target, { headers, timeout: API_TIMEOUT_MS })
-      : await ctx.post(target, {
-          headers,
-          timeout: API_TIMEOUT_MS,
-          ...(opts.data !== undefined
-            ? typeof opts.data === 'string'
-              ? { data: opts.data }
-              : { data: opts.data }
-            : {}),
-        })
-  await recordExchange({
-    method, url: target, requestHeaders: headers,
-    requestBody: opts.data, label, startedAt, res,
-  })
+  const meta = {
+    method, url: target, requestHeaders: headers, requestBody: opts.data, label, startedAt,
+  }
+  let res: APIResponse
+  try {
+    res =
+      method === 'GET'
+        ? await ctx.get(target, { headers, timeout: API_TIMEOUT_MS })
+        : await ctx.post(target, {
+            headers,
+            timeout: API_TIMEOUT_MS,
+            ...(opts.data !== undefined
+              ? typeof opts.data === 'string'
+                ? { data: opts.data }
+                : { data: opts.data }
+              : {}),
+          })
+  } catch (error) {
+    recordFailedExchange({ ...meta, error })
+    throw error
+  }
+  await recordExchange({ ...meta, res })
   return res
 }
 

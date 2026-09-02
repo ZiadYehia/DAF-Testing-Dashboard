@@ -7,18 +7,34 @@ Severity uses the bug scale: `P1 – Critical` | `P2 – High` | `P3 – Medium`
 Status: `open` | `retest` (fix claimed, re-run pending) | `closed` | `accepted` (risk accepted with
 owner + deadline) | `not-confirmed` (observed on another environment, not yet reproduced here).
 
-## Confirmed on devsim (this pass — executed 2026-09-01)
+## Confirmed on devsim (this pass — executed 2026-09-01, extended 2026-09-02)
 
-**Headline: the B2B API is clean on every control that could be tested.** 39 of 45 `TC_SEC` cases
-pass; 5 are blocked by environment/data limits (below); 1 is a known validation gap already on file.
-No new authentication, authorization, ownership, lifecycle, transport or disclosure defect was found.
+**Headline: the B2B API is clean on every control that could be tested.** Of 48 `TC_SEC` cases,
+39 pass, 1 is a known validation gap already on file, and 8 are blocked (3 by environment, 5 by a
+live platform outage — see below). No new authentication, authorization, ownership, lifecycle,
+transport or disclosure defect was found.
+
+**Second entities added 2026-09-02.** A second independent entity of each role (the `EF` accounts)
+was provisioned, so horizontal isolation is now tested for real rather than deferred. `TC_SEC_019`
+(a second same-role entity sees only its own event/invoice history) **passes** — cross-entity read
+isolation is confirmed. Five cross-entity *write* cases (`TC_SEC_017`, `018`, `046`, `047`, `048`)
+are ready and wired to the EF accounts but currently blocked by the EPCIS storage outage below;
+they will complete on a re-run once the write path recovers.
+
+**Platform availability note (not a security finding):** on 2026-09-02 the EPCIS write path was
+down — `POST /scp/SendEPCIS` returns `503 E003 "EPCIS accept temporarily unavailable — durable object
+storage not confirmed. Please retry."` after ~60 s. Any case (or fixture) that commits an event is
+blocked until it recovers. Transient infrastructure, surfaced here so the blocked statuses are
+traceable to it.
 
 What the pass positively confirmed on devsim:
 - **JWT verification is enforced** (`TC_SEC_001`–`010`): `alg:none`, tampered-claim, empty/garbage
   signature, expired, apikey-only and refresh-as-access all return `401`.
-- **Role & object authorization hold** (`TC_SEC_011`–`020`): the guard matrix is enforced, a spoofed
-  SBDH sender is refused `403`, and — notably — **product ownership IS enforced on devsim**
-  (`TC_SEC_018` refused a foreign-owned GTIN), unlike the LoadTesting cloud-staging finding.
+- **Role & object authorization hold** (`TC_SEC_011`–`016`, `020`): the guard matrix is enforced, a
+  spoofed SBDH sender is refused `403`, ownership is token-derived, and each entity reads only its own
+  invoices/history. The stronger cross-entity *write* ownership checks (`017`, `018`, `046`–`048`) are
+  wired to the second entities and pending a re-run after the EPCIS outage. (An earlier pass with a
+  guessed foreign catalogue GTIN showed ownership enforced; the EF-prefix version supersedes it.)
 - **Lifecycle integrity holds** (`TC_SEC_021`–`026`): out-of-order events are refused and a pack
   cannot be dispensed twice — captured verbatim: `Invalid status transition … 'dispensed' → 'dispensed'`.
 - **Input validation is sound and non-leaking** (`TC_SEC_027`,`030`,`033`–`036`): injection/XSS in
@@ -35,8 +51,11 @@ What the pass positively confirmed on devsim:
 
 | ID | Reason |
 |---|---|
-| `TC_SEC_017` | `/scp/sscc/{sscc}/export` contract unverified on this environment; needs a foreign-owned SSCC to probe |
-| `TC_SEC_019` | single tenant (`devsim` only) — no second tenant for horizontal cross-tenant isolation |
+| `TC_SEC_017` | ready (EF distributor ships a primary-owned SSCC) — blocked by the 2026-09-02 EPCIS write outage; re-run when storage recovers |
+| `TC_SEC_018` | ready (commission under the EF MAH GS1 prefix) — blocked by the EPCIS write outage |
+| `TC_SEC_046` | ready (EF distributor receives another's shipment) — blocked by the EPCIS write outage |
+| `TC_SEC_047` | ready (EF pharmacy dispenses another's pack) — blocked by the EPCIS write outage |
+| `TC_SEC_048` | ready (fresh pack not visible in a foreign entity history) — blocked by the EPCIS write outage |
 | `TC_SEC_031` | no verified XML submission endpoint on the B2B API — XXE belongs to the dashboard EPCIS XML upload (Phase 5) |
 | `TC_SEC_032` | same — XML entity-expansion belongs to the dashboard upload path |
 | `TC_SEC_038` | `429` trigger would push 2000+ req/window at a shared platform; needs an agreed maintenance window |

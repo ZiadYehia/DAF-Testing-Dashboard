@@ -125,6 +125,35 @@ export async function recordExchange(input: RecordInput): Promise<void> {
   })
 }
 
+/**
+ * Record an attempt that never got a response — a timeout, a reset, a refused connection.
+ *
+ * recordExchange() needs an APIResponse, so a request that throws was logged as nothing at
+ * all. That is the worst case for reading a run afterwards: two commission runs against a
+ * wedged SendEPCIS produced a log containing ONE entry, the `auth` call, and the API Console
+ * showed no EPCIS exchange. It looked as though the test had never tried to submit, when in
+ * fact it had waited 45 s and given up. The attempt is the evidence.
+ */
+export function recordFailedExchange(input: Omit<RecordInput, 'res'> & { error: unknown }): void {
+  const reason = input.error instanceof Error ? input.error.message : String(input.error)
+  exchanges.push({
+    seq: ++seq,
+    startedAt: new Date(input.startedAt).toISOString(),
+    role: input.role ?? null,
+    method: input.method,
+    url: input.url,
+    requestHeaders: maskHeaders(input.requestHeaders ?? {}),
+    requestBody: formatBody(input.requestBody),
+    // 0 is "no HTTP response", distinct from any status the platform could return.
+    status: 0,
+    statusText: 'no response',
+    responseHeaders: {},
+    responseBody: `The request did not complete: ${reason.split('\n')[0]}`,
+    durationMs: Date.now() - input.startedAt,
+    label: input.label ?? '',
+  })
+}
+
 export function recordedExchanges(): Exchange[] {
   return exchanges
 }
