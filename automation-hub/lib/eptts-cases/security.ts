@@ -23,12 +23,13 @@ import {
   apiKeyFor, glnFor, getMasar, postMasar, dispensation, verifyProduct, packOf,
   submitAndPoll, pollMsgStatus, describeMsgStatus,
   epcisDocument, commissionEvent, shippingEvent, receivingEvent, dispensingEvent,
-  sglnOf, freshSgtin, freshDispensableSgtin, freshSscc, uniqueInstanceId, runId,
+  sglnOf, freshSgtin, freshDispensableSgtin, freshSscc, uniqueInstanceId,
+  uniqueBizTransaction, uniqueSerial, runId, GCP_LENGTH,
   MFG_GTINS,
   type MsgStatus,
 } from '../eptts-api'
 import {
-  commissioned, inTransitToBranch, atPharmacy, MFG, BRANCH, PHARMACY,
+  commissioned, packed, inTransitToBranch, atPharmacy, MFG, BRANCH, PHARMACY,
 } from './fixtures'
 import type { ApiCase } from './index'
 
@@ -240,35 +241,59 @@ const AUTHZ: ApiCase[] = [
     },
   },
   {
-    id: 'TC_SEC_017', feature: FEATURE, title: 'a role cannot export an SSCC it does not own',
-    // The /scp/sscc/{sscc}/export contract is not verified live, and proving denial needs a
-    // second-owner SSCC the pharmacy can request. Deferred rather than asserted on an
-    // unverified endpoint (which would test nothing).
-    skip: 'export endpoint contract unverified on this environment; needs a foreign-owned SSCC to probe',
-    run: async () => {},
-  },
-  {
-    id: 'TC_SEC_018', feature: FEATURE, title: 'commissioning a product the entity does not own is refused',
+    id: 'TC_SEC_017', feature: FEATURE, title: 'a foreign entity cannot ship an SSCC it does not own',
     slow: true,
     run: async () => {
-      // A GTIN from the live catalogue that does NOT belong to INSTITUTO GRIFOLS. The
-      // platform is expected to refuse it on ownership grounds; the LoadTesting suite saw
-      // this NOT enforced on cloud staging, so a success here is the finding we want surfaced.
-      const foreignGtin = '00300020007554' // Human Insulin — a different MAH
-      const sgtin = freshSgtin(foreignGtin)
+      // Primary MAH commissions and packs an SSCC it owns and holds.
+      const p = await packed(1)
+      // A DIFFERENT distributor entity (EF) tries to ship that SSCC as if it were its own.
       const doc = epcisDocument(
-        [commissionEvent({ epcList: [sgtin], lotNumber: `ZTG-${runId()}`, expiryDate: '2030-12-31', readPointSgln: sglnOf('manufacturer') })],
-        { senderGln: MFG(), receiverGln: MFG() },
+        [shippingEvent({
+          epcList: [p.sscc], sourceSgln: sglnOf('ef_distributor'), destinationSgln: sglnOf('pharmacy'),
+          bizTransaction: uniqueBizTransaction(), readPointSgln: sglnOf('ef_distributor'),
+        })],
+        { senderGln: glnFor('ef_distributor'), receiverGln: glnFor('pharmacy') },
       )
-      const { submitStatus, msg } = await submitAndPoll('manufacturer', doc)
-      console.log(`[sec] foreign-GTIN commission → submit ${submitStatus}, ${describeMsgStatus(msg)}`)
-      assertRefused(msg, submitStatus, 'commissioning a foreign-owned product')
+      const { submitStatus, msg } = await submitAndPoll('ef_distributor', doc)
+      console.log(`[sec] EF distributor ships primary's SSCC → submit ${submitStatus}, ${describeMsgStatus(msg)}`)
+      assertRefused(msg, submitStatus, 'a foreign entity shipping an SSCC it does not own')
     },
   },
   {
-    id: 'TC_SEC_019', feature: FEATURE, title: 'cross-tenant isolation across a second tenant',
-    skip: 'single tenant on this environment (devsim only) — no second tenant to isolate against',
-    run: async () => {},
+    id: 'TC_SEC_018', feature: FEATURE, title: 'commissioning under another manufacturer GS1 prefix is refused',
+    slow: true,
+    run: async () => {
+      // Build an SGTIN under the EF MAH's OWN company prefix (its GLN's leading gcpLength
+      // digits) and try to commission it as the PRIMARY MAH. A GS1 company prefix identifies
+      // the owning manufacturer, so the primary MAH declaring serials under EF's prefix must
+      // be refused. The LoadTesting suite saw ownership NOT enforced on staging, so a success
+      // here is the finding to surface.
+      const efPrefix = glnFor('ef_manufacturer').slice(0, GCP_LENGTH.ef_manufacturer) // 9 digits
+      const itemRef = '0'.repeat(13 - efPrefix.length) // pad companyPrefix+itemRef to 13
+      const foreignSgtin = `urn:epc:id:sgtin:${efPrefix}.${itemRef}.${uniqueSerial()}`
+      const doc = epcisDocument(
+        [commissionEvent({ epcList: [foreignSgtin], lotNumber: `ZTG-${runId()}`, expiryDate: '2030-12-31', readPointSgln: sglnOf('manufacturer') })],
+        { senderGln: MFG(), receiverGln: MFG() },
+      )
+      const { submitStatus, msg } = await submitAndPoll('manufacturer', doc)
+      console.log(`[sec] primary MAH commissions under EF prefix ${efPrefix} → submit ${submitStatus}, ${describeMsgStatus(msg)}`)
+      assertRefused(msg, submitStatus, 'commissioning under another manufacturer GS1 prefix')
+    },
+  },
+  {
+    id: 'TC_SEC_019', feature: FEATURE, title: 'a second entity of the same role is isolated from the first',
+    run: async () => {
+      // The B2B token carries no tenant claim: the API's isolation boundary is the ENTITY.
+      // A second, independent pharmacy entity (EF) must see only its own data — never the
+      // primary pharmacy's — across the entity-scoped read surfaces.
+      const efEpcis = await (await getMasar('ef_pharmacy', '/epcis?limit=50')).text()
+      expect(efEpcis, 'the EF pharmacy history does not disclose the primary pharmacy')
+        .not.toContain(glnFor('pharmacy'))
+      const efInv = await getMasar('ef_pharmacy', '/scp/invoices')
+      expect(efInv.status(), 'the EF pharmacy can list its own invoices').toBe(200)
+      expect(await efInv.text(), 'the EF pharmacy invoice list does not disclose the primary pharmacy')
+        .not.toContain(glnFor('pharmacy'))
+    },
   },
   {
     id: 'TC_SEC_020', feature: FEATURE, title: 'an entity event history returns only its own messages',
@@ -278,6 +303,63 @@ const AUTHZ: ApiCase[] = [
       // The manufacturer's own history must not surface the pharmacy's GLN, and vice-versa.
       expect(mfg, 'manufacturer history does not disclose pharmacy events').not.toContain(glnFor('pharmacy'))
       expect(pha, 'pharmacy history does not disclose manufacturer events').not.toContain(glnFor('manufacturer'))
+    },
+  },
+  {
+    id: 'TC_SEC_046', feature: FEATURE, title: 'a foreign entity cannot receive a shipment addressed to another',
+    slow: true,
+    run: async () => {
+      // Primary MAH ships an SSCC to the PRIMARY distributor (in transit to it, not to EF).
+      const t = await inTransitToBranch(1)
+      // The EF distributor tries to receive that shipment as if it were the addressee.
+      const doc = epcisDocument(
+        [receivingEvent({ epcList: [t.sscc], sourceSgln: sglnOf('manufacturer'), readPointSgln: sglnOf('ef_distributor') })],
+        { senderGln: glnFor('ef_distributor'), receiverGln: MFG() },
+      )
+      const { submitStatus, msg } = await submitAndPoll('ef_distributor', doc)
+      console.log(`[sec] EF distributor receives another's shipment → submit ${submitStatus}, ${describeMsgStatus(msg)}`)
+      assertRefused(msg, submitStatus, 'a foreign entity receiving a shipment addressed to another')
+      // And custody must NOT have moved to the EF distributor.
+      const v = await packOf('manufacturer', t.sgtins[0])
+      expect(v.pack?.currentGln, 'custody did not transfer to the foreign entity').not.toBe(glnFor('ef_distributor'))
+    },
+  },
+  {
+    id: 'TC_SEC_047', feature: FEATURE, title: 'a foreign pharmacy cannot dispense a pack held by another',
+    slow: true,
+    run: async () => {
+      // A pack is received and held at the PRIMARY pharmacy.
+      const r = await atPharmacy(1)
+      // The EF pharmacy tries to dispense one of its child SGTINs.
+      const doc = epcisDocument(
+        [dispensingEvent({ epcList: [r.sgtins[0]], readPointSgln: sglnOf('ef_pharmacy') })],
+        { senderGln: glnFor('ef_pharmacy'), receiverGln: glnFor('ef_pharmacy') },
+      )
+      const res = await dispensation('ef_pharmacy', doc)
+      if (res.status() >= 400) {
+        expect(res.status(), 'a foreign pharmacy dispense is refused').toBeGreaterThanOrEqual(400)
+      } else {
+        const msg = await pollMsgStatus('ef_pharmacy', doc.sbdh.documentIdentification.instanceIdentifier)
+        console.log(`[sec] EF pharmacy dispenses another's pack → ${describeMsgStatus(msg)}`)
+        expect(msg.state, `a foreign pharmacy must not dispense — ${describeMsgStatus(msg)}`).not.toBe('SUCCESS')
+      }
+      // The pack must not read as dispensed by the foreign pharmacy.
+      const v = await packOf('manufacturer', r.sgtins[0])
+      expect(v.pack?.status, 'the pack was not dispensed by the foreign pharmacy').not.toBe('dispensed')
+    },
+  },
+  {
+    id: 'TC_SEC_048', feature: FEATURE, title: 'a fresh pack is not visible in a foreign entity history',
+    slow: true,
+    run: async () => {
+      // Primary MAH commissions a fresh, uniquely-identifiable serial.
+      const c = await commissioned(1)
+      const serial = c.sgtins[0].split('.').pop()!
+      // A different manufacturer entity (EF MAH) must not see it in its own event history.
+      const efHist = await (await getMasar('ef_manufacturer', '/epcis?limit=50')).text()
+      expect(efHist, 'the EF manufacturer history does not disclose the primary’s fresh serial')
+        .not.toContain(serial)
+      expect(efHist, 'nor the primary manufacturer GLN').not.toContain(glnFor('manufacturer'))
     },
   },
 ]

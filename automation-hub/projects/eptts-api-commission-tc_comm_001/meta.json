@@ -10,8 +10,25 @@
     "testcaseId": "TC_COMM_001"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "pass",
+  "lastStatus": "fail",
   "runs": [
+    {
+      "ts": "2026-09-02T03-43-49-688Z",
+      "status": "fail",
+      "durationMs": 5168.4310000000005,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: single commission: accepted for processing"
+    },
+    {
+      "ts": "2026-09-01T13-23-21-919Z",
+      "status": "pass",
+      "durationMs": 14630.062,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true
+    },
     {
       "ts": "2026-09-01T11-42-53-726Z",
       "status": "pass",

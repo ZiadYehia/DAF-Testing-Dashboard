@@ -57,8 +57,14 @@ export async function commissioned(
 ): Promise<Commissioned> {
   const expiry = opts.expiry ?? '2030-12-31'
   const lot = `ZTG-${runId()}`
-  const sgtins = Array.from({ length: count }, () =>
-    opts.dispensable ? freshDispensableSgtin() : freshSgtin(opts.gtin ?? MFG_GTINS[0]))
+  // An explicit gtin wins over `dispensable`. The partial-dispense product is BOTH specific
+  // and dispensable, and the old precedence silently dropped the gtin whenever dispensable
+  // was set — which would have quietly tested a full-pack product instead.
+  const sgtins = Array.from({ length: count }, () => (
+    opts.gtin
+      ? freshSgtin(opts.gtin)
+      : opts.dispensable ? freshDispensableSgtin() : freshSgtin(MFG_GTINS[0])
+  ))
 
   await step('manufacturer', epcisDocument(
     [commissionEvent({ epcList: sgtins, lotNumber: lot, expiryDate: expiry, readPointSgln: sglnOf('manufacturer') })],
@@ -89,7 +95,7 @@ export interface Packed extends Commissioned {
 /** Commission then pack into a fresh SSCC. */
 export async function packed(
   count = 1,
-  opts: { dispensable?: boolean } = {},
+  opts: { gtin?: string; dispensable?: boolean } = {},
 ): Promise<Packed> {
   const c = await commissioned(count, opts)
   const sscc = freshSscc()
@@ -109,7 +115,7 @@ export interface InTransit extends Packed {
 /** Commission, pack, and ship to the branch — leaves the SSCC `in_transit`. */
 export async function inTransitToBranch(
   count = 1,
-  opts: { dispensable?: boolean } = {},
+  opts: { gtin?: string; dispensable?: boolean } = {},
 ): Promise<InTransit> {
   const p = await packed(count, opts)
   // Unique PER SHIPMENT — the platform refuses a reused invoice number, and runId() is
@@ -128,7 +134,7 @@ export async function inTransitToBranch(
 /** …and receive it at the branch — custody becomes the branch, status back to `active`. */
 export async function receivedAtBranch(
   count = 1,
-  opts: { dispensable?: boolean } = {},
+  opts: { gtin?: string; dispensable?: boolean } = {},
 ): Promise<InTransit> {
   const t = await inTransitToBranch(count, opts)
   await step('branch', epcisDocument(
@@ -145,7 +151,7 @@ export async function receivedAtBranch(
  */
 export async function atPharmacy(
   count = 1,
-  opts: { dispensable?: boolean } = {},
+  opts: { gtin?: string; dispensable?: boolean } = {},
 ): Promise<InTransit> {
   // Defaults to dispensable, but a caller can force a Dawana-integrated product when the
   // point of the test IS the Dawana refusal — that rule can only be observed on a pack the

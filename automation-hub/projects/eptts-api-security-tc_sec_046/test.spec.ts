@@ -1,5 +1,5 @@
 /**
- * TC_SEC_017 — a foreign entity cannot ship an SSCC it does not own
+ * TC_SEC_046 — a foreign entity cannot receive a shipment addressed to another
  *
  * Feature: api-security
  *
@@ -9,4 +9,4 @@
  */
 import { defineCase } from '../../lib/eptts-cases'
 
-defineCase('TC_SEC_017')
+defineCase('TC_SEC_046')

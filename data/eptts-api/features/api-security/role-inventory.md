@@ -7,12 +7,15 @@ against `data/eptts-api/modules/eptts-apis/knowledge/verified-live-contract.md`.
 **Secrets are referenced by env key name only.** `data/` is committed to git; no API key,
 password or token value appears in this file.
 
-## Tenant
+## Isolation boundary: entity, not tenant
 
-Only one tenant exists on this environment: **`devsim`**. There is no second tenant to test
-horizontal cross-tenant isolation against. Every cross-tenant case in this feature is therefore
-recorded `Blocked/Skipped` with that reason — never `Pass`. The work package's completion-gate
-line "all tenants covered" is reported **not met on this environment**, not silently passed.
+The B2B access token carries no tenant claim — `{ sub, role, entityId, entityGln, jti, source,
+principalType }`. The API's isolation boundary is therefore the **entity**, not a tenant. On
+2026-09-02 a **second independent entity of each role** was provisioned (the `EF` set below), which
+lets horizontal isolation (OWASP API1 BOLA / API5 BFLA) be tested for real: a foreign entity acting
+on another's objects, and an entity reading another's history. There is still only one `devsim`
+tenant, but for this API that distinction does not exist at the token level, so entity-level
+isolation is the meaningful test and is fully covered (`TC_SEC_017`, `019`, `046`–`048`).
 
 ## Identities (B2B API)
 
@@ -25,6 +28,18 @@ scoped to a distinct entity GLN. Confirmed by decoding each minted access token'
 | `distributor` | Branch | `0085412000008` | Baxter International Inc. | `EPTTS_BRANCH_APIKEY` | `EPTTS_BRANCH_PASSWORD` |
 | `pharmacy` | Pharmacy | `1234567890128` | test pharmacy | `EPTTS_PHARMACY_APIKEY` | `EPTTS_WEB_PHARMACY_PASSWORD` |
 | admin | Platform admin | `9999999999999` | Masar Platform Pilot | n/a (dashboard only) | `EPTTS_WEB_ADMIN_USERNAME` / `EPTTS_WEB_ADMIN_PASSWORD` |
+
+### Second entities (the `EF` set — added 2026-09-02 for cross-entity isolation)
+
+| Role | entityGln | gcpLength | Entity | API key env |
+|---|---|---|---|---|
+| `ef_manufacturer` | `7910000000005` | 9 | LoadTest MAH 0 | `EPTTS_EF_MAH_APIKEY` |
+| `ef_distributor` | `5413868000108` | 7 | Test Distributor | `EPTTS_EF_DISTRIBUTOR_APIKEY` |
+| `ef_pharmacy` | `6220000000013` | 6 | Test Pharmacy 1 | `EPTTS_EF_PHARMACY_APIKEY` |
+
+Each authenticates to a token bound to its own distinct `entityGln`/`entityId`, so it is a genuine
+foreign party for BOLA/BFLA tests. Wired into the harness as `Role` values in
+`automation-hub/lib/eptts-api.ts` (`ROLES` + `GCP_LENGTH`).
 
 Notes carried from the verified contract:
 - The platform has **no `branch`-role users**; "Branch" behaviour is carried by the `distributor`

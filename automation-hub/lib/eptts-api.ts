@@ -33,7 +33,16 @@ import { recordExchange } from './eptts-api-log'
  * `branch`-role users, even though `branch` exists as an entity type. Test cases
  * written as "Authenticated as Branch" belong here.
  */
-export type Role = 'manufacturer' | 'branch' | 'pharmacy'
+export type Role =
+  | 'manufacturer' | 'branch' | 'pharmacy'
+  // Second, independent entity of each role — the "EF" set. Distinct GLNs and entityIds
+  // from the primaries, so they are the genuine foreign parties horizontal-isolation and
+  // cross-entity ownership (OWASP API1 BOLA / API5 BFLA) cases need. Added 2026-09-02 when
+  // the second accounts were provisioned; used by the api-security feature.
+  | 'ef_manufacturer' | 'ef_distributor' | 'ef_pharmacy'
+
+/** The three primary trade-partner identities — the supply-chain suites act only as these. */
+export type PrimaryRole = 'manufacturer' | 'branch' | 'pharmacy'
 
 interface RoleConfig {
   apiKeyEnv: string
@@ -46,6 +55,9 @@ const ROLES: Record<Role, RoleConfig> = {
   manufacturer: { apiKeyEnv: 'EPTTS_MFG_APIKEY', glnEnv: 'EPTTS_MFG_GLN', platformRole: 'manufacturer' },
   branch: { apiKeyEnv: 'EPTTS_BRANCH_APIKEY', glnEnv: 'EPTTS_BRANCH_GLN', platformRole: 'distributor' },
   pharmacy: { apiKeyEnv: 'EPTTS_PHARMACY_APIKEY', glnEnv: 'EPTTS_PHARMACY_GLN', platformRole: 'pharmacy' },
+  ef_manufacturer: { apiKeyEnv: 'EPTTS_EF_MAH_APIKEY', glnEnv: 'EPTTS_EF_MAH_GLN', platformRole: 'manufacturer' },
+  ef_distributor: { apiKeyEnv: 'EPTTS_EF_DISTRIBUTOR_APIKEY', glnEnv: 'EPTTS_EF_DISTRIBUTOR_GLN', platformRole: 'distributor' },
+  ef_pharmacy: { apiKeyEnv: 'EPTTS_EF_PHARMACY_APIKEY', glnEnv: 'EPTTS_EF_PHARMACY_GLN', platformRole: 'pharmacy' },
 }
 
 export function apiKeyFor(role: Role): string {
@@ -109,8 +121,22 @@ function url(base: string, path: string): string {
  * suggests retrying after 10 s. Every helper call passes this explicitly rather than
  * loosening actionTimeout globally, which would slacken every other app's UI specs.
  * Override with EPTTS_API_TIMEOUT_MS.
+ *
+ * WHY 75 s AND NOT 45 s
+ *
+ * When SendEPCIS cannot persist a document it holds the request for ~60 s and then answers
+ * with a precise diagnosis of its own:
+ *
+ *   503 {"code":"E003","reason":"EPCIS accept temporarily unavailable — durable object
+ *        storage not confirmed. Please retry."}
+ *
+ * At 45 s we timed out four seconds-worth of patience short of that, so every affected case
+ * failed with an opaque "apiRequestContext.post: Timeout 45000ms exceeded" and the platform's
+ * explanation was thrown away — it read as our client hanging rather than a named storage
+ * outage. Sitting past the platform's own failure window means the run records what the
+ * platform actually said.
  */
-const API_TIMEOUT_MS = Number(process.env.EPTTS_API_TIMEOUT_MS ?? 45_000)
+const API_TIMEOUT_MS = Number(process.env.EPTTS_API_TIMEOUT_MS ?? 75_000)
 
 /** Dispose every cached context + token. Call from an afterAll hook. */
 export async function disposeApi(): Promise<void> {
@@ -936,7 +962,25 @@ export const MFG_DISPENSABLE_GTINS = [
  * non-Dawana partial products, or a partial product is registered under it. Two of the five
  * are also Dawana-only, so any fix should target 06290009990011 or 05413868123456.
  */
-export const MFG_PARTIAL_DISPENSE_GTINS: readonly string[] = []
+export const MFG_PARTIAL_DISPENSE_GTINS: readonly string[] = [
+  // Fanhdi 50 IU FVIII/60 IU VWF per ml (MQ). Made `dispenseType: partial` on 2026-09-01 so
+  // partial dispensing could be exercised at all. It is the ONE partial product this
+  // manufacturer holds, and it is non-Dawana, so this channel will actually dispense it.
+  '08435308348882',
+]
+
+/**
+ * Units in one pack of the partial-dispense product: 10 pills per strip x 3 strips.
+ *
+ * Read from the registry rather than assumed — the quantity cases turn on it, and a wrong
+ * pack size makes "over-dispense is refused" pass for the wrong reason.
+ */
+export const MFG_PARTIAL_PACK_UNITS = 30
+
+/** A fresh SGTIN of the partial-dispense product. */
+export function freshPartialSgtin(): string {
+  return sgtinFor(MFG_PARTIAL_DISPENSE_GTINS[0], MFG_GCP_LENGTH, uniqueSerial())
+}
 
 export const MFG_GCP_LENGTH = 8
 /** The manufacturer's GS1 Company Prefix, for minting SSCCs. */
@@ -953,6 +997,13 @@ export const GCP_LENGTH: Record<Role, number> = {
   manufacturer: 8,
   branch: 7,
   pharmacy: 7,
+  // Second-entity GCP lengths, read from the registry's `gcpLength` field 2026-09-02:
+  //   ef_manufacturer 7910000000005 gcp 9 (LoadTest MAH 0)
+  //   ef_distributor  5413868000108 gcp 7 (Test Distributor)
+  //   ef_pharmacy     6220000000013 gcp 6 (Test Pharmacy 1)
+  ef_manufacturer: 9,
+  ef_distributor: 7,
+  ef_pharmacy: 6,
 }
 
 /** The SGLN for a role, used as readPoint / bizLocation and in source/destination lists. */

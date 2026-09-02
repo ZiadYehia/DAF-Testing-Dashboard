@@ -1,5 +1,5 @@
 /**
- * TC_SEC_019 — cross-tenant isolation across a second tenant
+ * TC_SEC_019 — a second entity of the same role is isolated from the first
  *
  * Feature: api-security
  *

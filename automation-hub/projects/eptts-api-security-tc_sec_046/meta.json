@@ -1,13 +1,13 @@
 {
-  "name": "eptts-api-security-tc_sec_019",
-  "title": "TC_SEC_019 — a second entity of the same role is isolated from the first",
+  "name": "eptts-api-security-tc_sec_046",
+  "title": "TC_SEC_046 — a foreign entity cannot receive a shipment addressed to another",
   "app": "eptts-api",
   "createdVia": "testcase",
-  "linkedTestcaseId": "TC_SEC_019",
+  "linkedTestcaseId": "TC_SEC_046",
   "linkedTestcase": {
     "app": "eptts-api",
     "feature": "api-security",
-    "testcaseId": "TC_SEC_019"
+    "testcaseId": "TC_SEC_046"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
   "lastStatus": "never_run",

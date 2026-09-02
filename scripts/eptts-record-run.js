@@ -100,8 +100,17 @@ function flatten(report) {
  */
 function isInfrastructureFailure(error) {
   if (!error) return false
-  return /\b(50[234])\b|Bad Gateway|Service Unavailable|Gateway Time-?out|ECONNRESET|ECONNREFUSED|ETIMEDOUT|EAI_AGAIN|socket hang up|connect Timeout|auth failed for role/i
-    .test(error)
+  return (
+    /\b(50[234])\b|Bad Gateway|Service Unavailable|Gateway Time-?out|ECONNRESET|ECONNREFUSED|ETIMEDOUT|EAI_AGAIN|socket hang up|connect Timeout|auth failed for role/i
+      .test(error)
+    // A request that never came back is the platform being unreachable or wedged, not a
+    // defect in the thing under test. Missing this meant a storage outage on SendEPCIS —
+    // which the platform reports as 503 E003 "durable object storage not confirmed" — was
+    // recorded as a genuine failure for every case that touched the write path, because our
+    // own timeout fired first and all we kept was "Timeout 45000ms exceeded".
+    || /apiRequestContext\.\w+: Timeout \d+ms exceeded|durable object storage not confirmed|temporarily unavailable/i
+      .test(error)
+  )
 }
 
 /** Reduce a Playwright error blob to the sentence that says what is wrong. */

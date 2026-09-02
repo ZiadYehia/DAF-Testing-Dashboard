@@ -1,13 +1,13 @@
 {
-  "name": "eptts-api-security-tc_sec_019",
-  "title": "TC_SEC_019 — a second entity of the same role is isolated from the first",
+  "name": "eptts-api-security-tc_sec_048",
+  "title": "TC_SEC_048 — a fresh pack is not visible in a foreign entity history",
   "app": "eptts-api",
   "createdVia": "testcase",
-  "linkedTestcaseId": "TC_SEC_019",
+  "linkedTestcaseId": "TC_SEC_048",
   "linkedTestcase": {
     "app": "eptts-api",
     "feature": "api-security",
-    "testcaseId": "TC_SEC_019"
+    "testcaseId": "TC_SEC_048"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
   "lastStatus": "never_run",

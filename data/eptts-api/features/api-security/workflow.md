@@ -11,7 +11,7 @@
 | **Endpoint** | cross-cutting — `/auth`, `/scp/SendEPCIS`, `/epcis/json`, `/VerifyProduct`, `/Dispensation`, `/MsgStatusQuery`, `/scp/invoices`, `GET /epcis` |
 | **Response mode** | mixed — synchronous auth/authz/validation, asynchronous submit-and-poll for lifecycle |
 | **Priority** | P1 |
-| **Test cases** | 45 |
+| **Test cases** | 48 |
 
 ## Business Purpose
 
@@ -52,9 +52,11 @@ The "happy path" for a security feature is a correct refusal. A representative p
 1. **Authentication & session** (`TC_SEC_001`–`010`) — token forgery (`alg:none`, tampered claims,
    stripped/garbage signature), expiry, missing/garbage bearer, `apikey`-only rejection, refresh
    token not usable as an access token, and per-role claim binding.
-2. **Authorization & tenant isolation** (`TC_SEC_011`–`020`) — the role-by-operation matrix executed
-   as assertions, object-ownership (BOLA/BFLA), protected-property injection, cross-entity read
-   scoping, and the single-tenant limitation recorded explicitly.
+2. **Authorization & entity isolation** (`TC_SEC_011`–`020`, `046`–`048`) — the role-by-operation
+   matrix executed as assertions, object-ownership (BOLA/BFLA), protected-property injection, and
+   genuine cross-entity isolation using a **second, independent entity of each role** (the `EF` set):
+   a foreign entity cannot ship/receive/dispense a pack it does not own, cannot commission under
+   another manufacturer's GS1 prefix, and sees only its own event/invoice history.
 3. **Lifecycle & workflow** (`TC_SEC_021`–`026`) — invalid transition ordering, duplicate
    `instanceIdentifier` exactly-once, replay, and the refused `dispensed → dispensed` transition.
 4. **Input, payload & file** (`TC_SEC_027`–`036`) — malformed/oversized JSON and EPCIS XML, XXE,
@@ -76,7 +78,9 @@ The "happy path" for a security feature is a correct refusal. A representative p
 
 ## Notes
 
-- **Single tenant.** `devsim` is the only tenant; horizontal cross-tenant cases are `Blocked/Skipped`.
+- **Isolation boundary is the entity, not a tenant.** The B2B token carries no tenant claim, so the
+  API isolates by entity. Horizontal isolation is tested with a second independent entity of each
+  role (the `EF` accounts, added 2026-09-02), not a second tenant.
 - **Rate limiting is header-verified, not load-tested here.** Progressive-burst / saturation
   behaviour was measured by the `LoadTesting` k6 suite on a different environment (cloud staging
   behind Cloudflare); this feature cites that evidence rather than re-generating load against the

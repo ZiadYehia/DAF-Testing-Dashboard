@@ -1,6 +1,6 @@
 {
   "name": "eptts-api-security-tc_sec_017",
-  "title": "TC_SEC_017 — a role cannot export an SSCC it does not own",
+  "title": "TC_SEC_017 — a foreign entity cannot ship an SSCC it does not own",
   "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TC_SEC_017",
@@ -15,7 +15,6 @@
   "tags": [
     "api",
     "write",
-    "blocked",
     "security"
   ],
   "folder": "EPTTS APIs / api-security",

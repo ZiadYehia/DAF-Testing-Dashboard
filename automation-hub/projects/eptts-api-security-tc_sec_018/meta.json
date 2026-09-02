@@ -1,6 +1,6 @@
 {
   "name": "eptts-api-security-tc_sec_018",
-  "title": "TC_SEC_018 — commissioning a product the entity does not own is refused",
+  "title": "TC_SEC_018 — commissioning under another manufacturer GS1 prefix is refused",
   "app": "eptts-api",
   "createdVia": "testcase",
   "linkedTestcaseId": "TC_SEC_018",

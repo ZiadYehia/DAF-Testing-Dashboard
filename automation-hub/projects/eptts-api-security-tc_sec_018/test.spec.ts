@@ -1,5 +1,5 @@
 /**
- * TC_SEC_018 — commissioning a product the entity does not own is refused
+ * TC_SEC_018 — commissioning under another manufacturer GS1 prefix is refused
  *
  * Feature: api-security
  *

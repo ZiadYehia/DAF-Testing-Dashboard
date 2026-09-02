@@ -1,5 +1,5 @@
 /**
- * TC_SEC_017 — a foreign entity cannot ship an SSCC it does not own
+ * TC_SEC_047 — a foreign pharmacy cannot dispense a pack held by another
  *
  * Feature: api-security
  *
@@ -9,4 +9,4 @@
  */
 import { defineCase } from '../../lib/eptts-cases'
 
-defineCase('TC_SEC_017')
+defineCase('TC_SEC_047')
