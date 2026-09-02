@@ -42,8 +42,6 @@ const ALLOWED_METHODS = new Set([...SAFE_METHODS, 'POST', 'PUT', 'PATCH', 'DELET
 const MAX_RESPONSE_BYTES = 2 * 1024 * 1024
 const REQUEST_TIMEOUT_MS = 60_000
 
-/** Headers whose value must never be echoed back to the browser. */
-const SECRET_HEADERS = new Set(['authorization', 'apikey', 'cookie', 'set-cookie', 'proxy-authorization'])
 
 const HUB_ENV = path.join(process.cwd(), 'automation-hub', '.env')
 
@@ -132,12 +130,13 @@ function send(
         const finish = () => resolve({
           status: res.statusCode ?? 0,
           statusText: res.statusMessage ?? '',
+          // Response headers as received, including any Set-Cookie or credential the platform
+          // sends back. Masking them was hiding the answer to a request the user composed
+          // themselves, and these are their own tenant's credentials.
           headers: Object.fromEntries(
             Object.entries(res.headers).map(([k, v]) => [
               k,
-              SECRET_HEADERS.has(k.toLowerCase())
-                ? `«masked, ${String(v).length} chars»`
-                : Array.isArray(v) ? v.join(', ') : String(v ?? ''),
+              Array.isArray(v) ? v.join(', ') : String(v ?? ''),
             ]),
           ),
           body: Buffer.concat(chunks).toString('utf8'),

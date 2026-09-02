@@ -140,7 +140,7 @@ function url(base: string, path: string): string {
  * results instead of being recorded as 46 real failures. If you ever need the platform's own
  * reason, raise it past 60 s for that run only: EPTTS_API_TIMEOUT_MS=75000.
  */
-const API_TIMEOUT_MS = Number(process.env.EPTTS_API_TIMEOUT_MS ?? 45_000)
+const API_TIMEOUT_MS = Number(process.env.EPTTS_API_TIMEOUT_MS ?? 75_000)
 
 /** Dispose every cached context + token. Call from an afterAll hook. */
 export async function disposeApi(): Promise<void> {

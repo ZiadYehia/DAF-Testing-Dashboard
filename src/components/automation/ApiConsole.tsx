@@ -7,8 +7,10 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
-  AlertTriangle, ArrowLeftRight, ChevronDown, ChevronRight, Loader2, Pencil, Send, Trash2, Plus,
+  AlertTriangle, ArrowLeftRight, Check, ChevronDown, ChevronRight, Copy, Loader2, Pencil,
+  Send, Trash2, Plus,
 } from 'lucide-react'
+import { toast } from 'sonner'
 
 /**
  * The API console: read the exchanges a run produced, edit one, send it again.
@@ -77,44 +79,27 @@ function placeholderFor(headerName: string): string {
 }
 
 /**
- * Blank credentials before anything is rendered.
+ * Bodies are shown and copied AS RECORDED, credentials included.
  *
- * eptts-api-log.ts masks credential HEADERS but not BODIES, which is fine for an EPCIS
- * document and not fine for /auth: its response carries a live bearer and refresh token. The
- * first working version of this console displayed both in full, and the screenshot taken to
- * verify it captured them — which is exactly how a short-lived token ends up somewhere
- * permanent. Everything shown here goes through this first.
+ * An earlier version redacted tokens here. Removed on request: this console exists to debug
+ * against a live platform, and a masked bearer cannot be pasted into anything that works.
+ * The recordings hold the real values anyway (see eptts-api-log.ts), so redacting only at the
+ * point of reading cost the reader and protected nothing.
+ *
+ * What it means in practice: this panel will display a live bearer token, and Copy will put
+ * one on the clipboard. They are 15-minute credentials for your own tenant, so the exposure
+ * that matters is a screenshot or a paste that outlives them.
+ *
+ * Evidence bound for a ticket should come from scripts/eptts-api-bug-evidence.js instead —
+ * that one still redacts, because it writes into `data/`, which is committed and goes to Jira.
  */
-const CREDENTIAL_FIELD =
-  /("(?:password|passwd|pwd|apikey|api_key|secret|client_secret|access_token|refresh_token|id_token|token)"\s*:\s*)"[^"]*"/gi
-
-function redact(s: string): string {
-  return s
-    .replace(CREDENTIAL_FIELD, (_m, key: string) => `${key}"«redacted»"`)
-    .replace(/\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g, '«redacted JWT»')
-    .replace(/\bBearer\s+[A-Za-z0-9._~+/-]{16,}={0,2}/gi, 'Bearer «redacted»')
-}
-
-/** For DISPLAY: pretty-printed and redacted. */
 const pretty = (s: string | null): string => {
   if (!s) return ''
-  try { return redact(JSON.stringify(JSON.parse(s), null, 2)) } catch { return redact(s) }
+  try { return JSON.stringify(JSON.parse(s), null, 2) } catch { return s }
 }
 
-/**
- * For the EDITOR: pretty-printed, with credential values emptied rather than redacted.
- *
- * Prefilling with the redaction marker would put the literal string "«redacted»" in the body
- * and send it — the same trap as pasting back a masked header, and a 401 that takes a while to
- * explain. An empty string is visibly blank, stays valid JSON, and makes it obvious the value
- * has to be supplied. Only /auth carries credentials in a request body; an EPCIS document has
- * none, so in practice this changes nothing for the cases people will edit.
- */
-const forEditor = (s: string | null): string => {
-  if (!s) return ''
-  const blanked = s.replace(CREDENTIAL_FIELD, (_m, key: string) => `${key}""`)
-  try { return JSON.stringify(JSON.parse(blanked), null, 2) } catch { return blanked }
-}
+/** The editor gets the same text: a real value is what makes a resend work. */
+const forEditor = pretty
 
 export function ApiConsole({
   app, project, runTs,
@@ -267,13 +252,17 @@ export function ApiConsole({
               {expanded === x.seq && (
                 <div className="space-y-2 border-t px-2 py-2">
                   <p className="break-all font-mono text-[11px] text-muted-foreground">{x.url}</p>
-                  <Detail label="Request headers" value={redact(JSON.stringify(x.requestHeaders, null, 2))} />
+                  <Detail label="Request headers" value={JSON.stringify(x.requestHeaders, null, 2)} />
                   {x.requestBody && <Detail label="Request body" value={pretty(x.requestBody)} />}
                   <Detail label="Response" value={pretty(x.responseBody)} />
-                  <Button size="sm" variant="secondary" className="h-7 gap-1 text-xs"
-                          onClick={() => loadIntoEditor(x)}>
-                    <Pencil className="h-3 w-3" /> Edit &amp; resend
-                  </Button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button size="sm" variant="secondary" className="h-7 gap-1 text-xs"
+                            onClick={() => loadIntoEditor(x)}>
+                      <Pencil className="h-3 w-3" /> Edit &amp; resend
+                    </Button>
+                    {/* The whole round trip in one go — what you want when pasting into a bug. */}
+                    <CopyButton text={transcriptOf(x)} what="the whole exchange" />
+                  </div>
                 </div>
               )}
             </div>
@@ -407,7 +396,7 @@ export function ApiConsole({
                   {result.response.truncated && ' · body truncated'}
                 </span>
               </p>
-              <Detail label="Response headers" value={redact(JSON.stringify(result.response.headers, null, 2))} />
+              <Detail label="Response headers" value={JSON.stringify(result.response.headers, null, 2)} />
               <Detail label="Response body" value={pretty(result.response.body)} />
             </div>
           )}
@@ -420,10 +409,72 @@ export function ApiConsole({
 function Detail({ label, value }: { label: string, value: string }) {
   return (
     <div className="space-y-0.5">
-      <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+        {value ? <CopyButton text={value} what={label.toLowerCase()} /> : null}
+      </div>
       <pre className="max-h-64 overflow-auto rounded bg-muted/50 p-2 text-[11px] leading-relaxed">
         {value || '(empty)'}
       </pre>
     </div>
   )
+}
+
+/**
+ * Copy exactly what is on screen — which means the REDACTED text, not the raw recording.
+ *
+ * The console redacts bearer tokens and credential fields before rendering. Copying the
+ * underlying value instead would put a live token on the clipboard and straight into whatever
+ * the user pastes it into, quietly undoing that. So this takes the same string the reader sees.
+ */
+function CopyButton({ text, what }: { text: string, what: string }) {
+  const [copied, setCopied] = useState(false)
+  return (
+    <button
+      type="button"
+      title={`Copy ${what}`}
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(text)
+          setCopied(true)
+          window.setTimeout(() => setCopied(false), 1400)
+        } catch {
+          // Clipboard access can be refused (permissions, or a non-secure context). Say so
+          // rather than showing a tick for something that did not happen.
+          toast.error('Could not copy — the browser refused clipboard access')
+        }
+      }}
+      className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-muted hover:text-foreground"
+    >
+      {copied
+        ? <><Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400" /> Copied</>
+        : <><Copy className="h-3 w-3" /> Copy</>}
+    </button>
+  )
+}
+
+/**
+ * One exchange as a paste-able transcript.
+ *
+ * Formatted as an HTTP exchange rather than JSON so it can go straight into a bug, a chat
+ * message or a terminal without reshaping. Same redaction as the panels above.
+ */
+function transcriptOf(x: Exchange): string {
+  const reqHeaders = Object.entries(x.requestHeaders ?? {})
+    .map(([k, v]) => `${k}: ${v}`).join('\n')
+  const resHeaders = Object.entries(x.responseHeaders ?? {})
+    .map(([k, v]) => `${k}: ${v}`).join('\n')
+  return [
+    `# ${x.label || x.url}${x.role ? ` (as ${x.role})` : ''}`,
+    '',
+    `${x.method} ${x.url}`,
+    reqHeaders,
+    '',
+    pretty(x.requestBody) || '(no request body)',
+    '',
+    `--- ${x.status === 0 ? 'NO RESPONSE' : `${x.status} ${x.statusText}`} in ${Math.round(x.durationMs)}ms ---`,
+    resHeaders,
+    '',
+    pretty(x.responseBody) || '(no response body)',
+  ].join('\n')
 }

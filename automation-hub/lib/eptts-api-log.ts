@@ -19,8 +19,14 @@
  * The runner lifts these out of Playwright's output dir into runs/<ts>/ alongside
  * video.webm and trace.zip.
  *
- * SECRETS: `apikey` and `Authorization` are masked in every artifact. These files are
- * meant to be opened and shared, and a bearer token would otherwise be sitting in them.
+ * SECRETS: recorded AS SENT, unmasked — headers and bodies both. That is deliberate: an
+ * artifact you cannot replay is not worth much, and the Postman collection and the viewer's
+ * Copy buttons only work if the credential is really there. The bearer lives 15 minutes.
+ *
+ * The consequence: `runs/<ts>/` and `test-results/` hold real credentials. Both are gitignored
+ * so nothing reaches the repository, but DO NOT attach these files to a ticket or send them
+ * outside the team. For evidence that leaves the machine, use
+ * scripts/eptts-api-bug-evidence.js — it writes into the committed `data/` tree and redacts.
  */
 import { test } from '@playwright/test'
 import type { APIResponse } from '@playwright/test'
@@ -34,7 +40,7 @@ export interface Exchange {
   role: string | null
   method: string
   url: string
-  /** Request headers, secrets masked. */
+  /** Request headers, exactly as sent. */
   requestHeaders: Record<string, string>
   /** Request body, pretty-printed when JSON. */
   requestBody: string | null
@@ -52,15 +58,23 @@ let seq = 0
 
 const SECRET_HEADERS = new Set(['apikey', 'authorization', 'cookie', 'set-cookie'])
 
-/** Mask credential headers — these artifacts are meant to be opened and shared. */
+/**
+ * Headers are recorded AS SENT, credentials included.
+ *
+ * These artifacts exist to be replayed — the Postman collection is meant to be imported and
+ * re-sent, and the Copy buttons in api-log.html are meant to produce something that works
+ * when pasted. A masked `Authorization` makes all of that require hand-editing, and the
+ * bearer it hides lives 15 minutes anyway.
+ *
+ * WHERE THE SECRETS NOW ARE: every run's `runs/<ts>/` folder and `test-results/`. Both are
+ * gitignored, so nothing reaches the repository — but these files are no longer safe to
+ * attach to a ticket or send to anyone outside the team.
+ *
+ * Still redacted, deliberately: scripts/eptts-api-bug-evidence.js, which writes into `data/`.
+ * That directory IS committed and its contents go to Jira.
+ */
 function maskHeaders(h: Record<string, string>): Record<string, string> {
-  const out: Record<string, string> = {}
-  for (const [k, v] of Object.entries(h)) {
-    out[k] = SECRET_HEADERS.has(k.toLowerCase())
-      ? `«masked, ${String(v).length} chars»`
-      : v
-  }
-  return out
+  return { ...h }
 }
 
 /** Pretty-print JSON bodies, cap anything huge so an artifact stays openable. */
@@ -176,6 +190,49 @@ function statusClass(status: number): string {
   return 'err'
 }
 
+/**
+ * Escape for an HTML *attribute*.
+ *
+ * The copy buttons carry their payload in `data-copy`, and an EPCIS document is full of `"`
+ * — one unescaped quote closes the attribute early and the rest of the JSON becomes stray
+ * markup. Newlines are encoded too, so a multi-line body survives as one attribute value and
+ * comes back off the clipboard with its line breaks intact.
+ */
+const attr = (s: unknown) =>
+  String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\r?\n/g, '&#10;')
+
+/** The request half as plain text, shaped like an HTTP request so it pastes anywhere. */
+function requestText(e: Exchange): string {
+  const headers = Object.entries(e.requestHeaders ?? {}).map(([k, v]) => `${k}: ${v}`).join('\n')
+  return [
+    `${e.method} ${e.url}`,
+    headers,
+    '',
+    e.requestBody ?? '(no request body)',
+  ].join('\n')
+}
+
+/** The response half, including the "no response" case a timeout records. */
+function responseText(e: Exchange): string {
+  const headers = Object.entries(e.responseHeaders ?? {}).map(([k, v]) => `${k}: ${v}`).join('\n')
+  return [
+    e.status === 0 ? 'NO RESPONSE' : `HTTP ${e.status} ${e.statusText}`,
+    `(${e.durationMs} ms)`,
+    headers,
+    '',
+    e.responseBody ?? '(no response body)',
+  ].join('\n')
+}
+
+/** Both halves, for the "Copy all" on the summary row. */
+const transcript = (e: Exchange) =>
+  `# ${e.label || e.url}${e.role ? ` (as ${e.role})` : ''}\n\n${requestText(e)}\n\n--- response ---\n${responseText(e)}`
+
 /** A self-contained request/response viewer — no external assets, opens from the Hub. */
 function renderHtml(title: string, list: Exchange[]): string {
   const rows = list.map((e) => `
@@ -188,17 +245,20 @@ function renderHtml(title: string, list: Exchange[]): string {
     ${e.role ? `<span class="role">${esc(e.role)}</span>` : ''}
     ${e.label ? `<span class="label">${esc(e.label)}</span>` : ''}
     <span class="ms">${e.durationMs} ms</span>
+    <button class="copy" data-copy="${attr(transcript(e))}"
+            title="Copy the whole exchange">Copy all</button>
   </summary>
   <div class="body">
     <div class="pane">
-      <h4>Request</h4>
+      <h4>Request <button class="copy" data-copy="${attr(requestText(e))}">Copy</button></h4>
       <div class="url">${esc(e.url)}</div>
       <table class="hdrs">${Object.entries(e.requestHeaders).map(([k, v]) =>
         `<tr><th>${esc(k)}</th><td>${esc(v)}</td></tr>`).join('')}</table>
       ${e.requestBody ? `<pre>${esc(e.requestBody)}</pre>` : '<p class="none">no body</p>'}
     </div>
     <div class="pane">
-      <h4>Response <span class="s-${statusClass(e.status)}">${e.status} ${esc(e.statusText)}</span></h4>
+      <h4>Response <span class="s-${statusClass(e.status)}">${e.status} ${esc(e.statusText)}</span>
+        <button class="copy" data-copy="${attr(responseText(e))}">Copy</button></h4>
       <table class="hdrs">${Object.entries(e.responseHeaders)
         .filter(([k]) => /content-type|content-length|date/i.test(k))
         .map(([k, v]) => `<tr><th>${esc(k)}</th><td>${esc(v)}</td></tr>`).join('')}</table>
@@ -240,11 +300,52 @@ h4{margin:6px 0;font-size:12px;text-transform:uppercase;letter-spacing:.05em;col
 pre{background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:10px;
   overflow-x:auto;max-height:420px;margin:0;font-size:12px}
 .none{color:var(--dim);font-style:italic;margin:0}
+.copy{margin-left:8px;padding:1px 7px;font:inherit;font-size:11px;color:var(--dim);
+  background:transparent;border:1px solid var(--line);border-radius:4px;cursor:pointer}
+.copy:hover{color:var(--fg);border-color:var(--dim)}
+.copy.done{color:#22c55e;border-color:#22c55e}
+summary .copy{float:right}
 </style></head><body>
 <h1>${esc(title)}</h1>
 <div class="meta">${list.length} exchange(s)${failed ? ` · ${failed} with status ≥ 400 (expanded below)` : ''}
- · credential headers are masked · generated by automation-hub/lib/eptts-api-log.ts</div>
+ · <strong>contains real credentials — do not share this file</strong>
+ · generated by automation-hub/lib/eptts-api-log.ts</div>
 ${rows || '<p class="none">No HTTP exchanges were recorded for this run.</p>'}
+<script>
+// One listener on the document rather than one per button: a run can record dozens of
+// exchanges, and this file is opened straight from disk with no bundler to help.
+document.addEventListener('click', function (ev) {
+  var btn = ev.target.closest && ev.target.closest('.copy')
+  if (!btn) return
+  // Inside a <summary>, a click would also toggle the <details> open or shut.
+  ev.preventDefault()
+  ev.stopPropagation()
+  var text = btn.getAttribute('data-copy') || ''
+  var done = function () {
+    var was = btn.textContent
+    btn.textContent = 'Copied'
+    btn.classList.add('done')
+    setTimeout(function () { btn.textContent = was; btn.classList.remove('done') }, 1400)
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done, fallback)
+  } else {
+    fallback()
+  }
+  // file:// and older browsers refuse the async clipboard API; a hidden textarea still works.
+  function fallback() {
+    var ta = document.createElement('textarea')
+    ta.value = text
+    ta.setAttribute('readonly', '')
+    ta.style.position = 'fixed'
+    ta.style.left = '-9999px'
+    document.body.appendChild(ta)
+    ta.select()
+    try { document.execCommand('copy'); done() } catch (e) { btn.textContent = 'Copy failed' }
+    document.body.removeChild(ta)
+  }
+})
+</script>
 </body></html>`
 }
 
