@@ -14,6 +14,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "verify:filters": "node scripts/verify-automation-filters.mjs",
     "db:generate": "typeorm-ts-node-commonjs -d database/src/data-source.ts migration:generate database/src/migrations/AutoMigration",
     "db:migrate": "typeorm-ts-node-commonjs -d database/src/data-source.ts migration:run",
     "db:revert": "typeorm-ts-node-commonjs -d database/src/data-source.ts migration:revert",
