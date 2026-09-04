@@ -1,0 +1,31 @@
+{
+  "name": "eptts-web-information-center-web_inf_005",
+  "title": "WEB_INF_005 — Validate that an announcement flagged as an urgent banner renders above the panels",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_INF_005",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-information-center",
+    "testcaseId": "WEB_INF_005"
+  },
+  "createdAt": "2026-09-02T12:00:00.000Z",
+  "lastStatus": "pass",
+  "runs": [
+    {
+      "ts": "2026-09-02T12-06-26-935Z",
+      "status": "pass",
+      "durationMs": 3542,
+      "hasVideo": true,
+      "hasTrace": true,
+      "hasApiLog": false
+    }
+  ],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "content"
+  ],
+  "folder": "EPTTS Web / web-information-center",
+  "engine": "playwright"
+}

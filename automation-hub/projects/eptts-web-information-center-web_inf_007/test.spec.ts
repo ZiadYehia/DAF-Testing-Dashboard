@@ -1,23 +1,24 @@
 /**
- * WEB_INF_007 — Validate that the page surfaces a backend failure instead of failing silently
+ * WEB_INF_007 — Validate that Guides and Resources lists the training and user-guide categories
  *
  * Feature: web-information-center   Route: /information-center
  *
- * Checks that a failing API is reported to the user; an empty table after a 500 is indistinguishable from genuinely having no data.
+ * Checks the panel aggregates exactly the training and user_guides categories.
  *
- * Read-only: navigates and asserts, submits nothing. Elements asserted are what discovery
- * observed on the page, not a specification.
+ * Read-only: navigates and asserts, submits nothing. Depends on the QA-20260902 fixtures
+ * described in data/eptts-web/features/web-information-center/knowledge.md.
  */
-import { test } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 import { DashboardPage } from '../../pages/eptts-web/dashboard.page'
+import * as ic from '../../pages/eptts-web/information-center'
 import { stateFor } from '../../lib/apps'
 
 // The cached login state carries localStorage.lang=en, so the UI opens in English.
 test.use({ storageState: stateFor('eptts-web'), ignoreHTTPSErrors: true })
 
-test('WEB_INF_007 — Validate that the page surfaces a backend failure instead of failing silently', async ({ page }) => {
+test('WEB_INF_007 — Validate that Guides and Resources lists the training and user-guide categories', async ({ page }) => {
   test.slow()
   await DashboardPage.open(page, '/information-center')
-    .expectEnglish()
-    .expectBackendFailureHandled('information-center/announcements')
+  await ic.expectPanelHolds(page, 'Guides and Resources',
+    [ic.FIXTURES.TRN_002, ic.FIXTURES.UGD_005])
 })

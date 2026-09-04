@@ -1,0 +1,31 @@
+{
+  "name": "eptts-web-information-center-web_inf_018",
+  "title": "WEB_INF_018 — Validate that the category clear icon resets the filter to All categories",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_INF_018",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-information-center",
+    "testcaseId": "WEB_INF_018"
+  },
+  "createdAt": "2026-09-02T12:00:00.000Z",
+  "lastStatus": "pass",
+  "runs": [
+    {
+      "ts": "2026-09-02T12-07-23-732Z",
+      "status": "pass",
+      "durationMs": 5758,
+      "hasVideo": true,
+      "hasTrace": true,
+      "hasApiLog": false
+    }
+  ],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "filter"
+  ],
+  "folder": "EPTTS Web / web-information-center",
+  "engine": "playwright"
+}

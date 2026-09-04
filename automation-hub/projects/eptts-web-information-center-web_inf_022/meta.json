@@ -1,0 +1,31 @@
+{
+  "name": "eptts-web-information-center-web_inf_022",
+  "title": "WEB_INF_022 — Validate that the chosen language persists across a page reload",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_INF_022",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-information-center",
+    "testcaseId": "WEB_INF_022"
+  },
+  "createdAt": "2026-09-02T12:15:00.000Z",
+  "lastStatus": "pass",
+  "runs": [
+    {
+      "ts": "2026-09-02T12-11-20-594Z",
+      "status": "pass",
+      "durationMs": 8786,
+      "hasVideo": true,
+      "hasTrace": true,
+      "hasApiLog": false
+    }
+  ],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "i18n"
+  ],
+  "folder": "EPTTS Web / web-information-center",
+  "engine": "playwright"
+}

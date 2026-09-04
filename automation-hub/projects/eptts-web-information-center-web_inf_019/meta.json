@@ -1,0 +1,32 @@
+{
+  "name": "eptts-web-information-center-web_inf_019",
+  "title": "WEB_INF_019 — Validate that the search and category filters reset when the page is reloaded",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_INF_019",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-information-center",
+    "testcaseId": "WEB_INF_019"
+  },
+  "createdAt": "2026-09-02T12:00:00.000Z",
+  "lastStatus": "pass",
+  "runs": [
+    {
+      "ts": "2026-09-02T12-07-29-646Z",
+      "status": "pass",
+      "durationMs": 9380,
+      "hasVideo": true,
+      "hasTrace": true,
+      "hasApiLog": false
+    }
+  ],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "filter",
+    "navigation"
+  ],
+  "folder": "EPTTS Web / web-information-center",
+  "engine": "playwright"
+}

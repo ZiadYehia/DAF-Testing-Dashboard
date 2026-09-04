@@ -1,0 +1,33 @@
+{
+  "name": "eptts-web-information-center-web_inf_028",
+  "title": "WEB_INF_028 — Validate that a failing announcements endpoint surfaces an error rather than an empty page",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_INF_028",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-information-center",
+    "testcaseId": "WEB_INF_028"
+  },
+  "createdAt": "2026-09-02T12:15:00.000Z",
+  "lastStatus": "fail",
+  "runs": [
+    {
+      "ts": "2026-09-02T12-11-29-472Z",
+      "status": "fail",
+      "durationMs": 21824,
+      "hasVideo": true,
+      "hasTrace": true,
+      "hasApiLog": false,
+      "error": "Error: a panel whose request failed does not claim there are no announcements"
+    }
+  ],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "error-state",
+    "known-gap"
+  ],
+  "folder": "EPTTS Web / web-information-center",
+  "engine": "playwright"
+}

@@ -1,0 +1,32 @@
+{
+  "name": "eptts-web-information-center-web_inf_021",
+  "title": "WEB_INF_021 — Validate that an active search term and category survive a language switch",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_INF_021",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-information-center",
+    "testcaseId": "WEB_INF_021"
+  },
+  "createdAt": "2026-09-02T12:15:00.000Z",
+  "lastStatus": "pass",
+  "runs": [
+    {
+      "ts": "2026-09-02T12-11-13-571Z",
+      "status": "pass",
+      "durationMs": 6866,
+      "hasVideo": true,
+      "hasTrace": true,
+      "hasApiLog": false
+    }
+  ],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "i18n",
+    "filter"
+  ],
+  "folder": "EPTTS Web / web-information-center",
+  "engine": "playwright"
+}

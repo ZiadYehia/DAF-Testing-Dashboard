@@ -1,0 +1,31 @@
+{
+  "name": "eptts-web-information-center-web_inf_027",
+  "title": "WEB_INF_027 — Validate that a script tag entered in search is not executed by the page",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_INF_027",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-information-center",
+    "testcaseId": "WEB_INF_027"
+  },
+  "createdAt": "2026-09-02T12:00:00.000Z",
+  "lastStatus": "pass",
+  "runs": [
+    {
+      "ts": "2026-09-02T12-07-50-842Z",
+      "status": "pass",
+      "durationMs": 4244,
+      "hasVideo": true,
+      "hasTrace": true,
+      "hasApiLog": false
+    }
+  ],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "security"
+  ],
+  "folder": "EPTTS Web / web-information-center",
+  "engine": "playwright"
+}

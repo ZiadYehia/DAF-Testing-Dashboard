@@ -1,0 +1,31 @@
+{
+  "name": "eptts-web-information-center-web_inf_004",
+  "title": "WEB_INF_004 — Validate that the Pinned Announcements panel lists only pinned announcements",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_INF_004",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-information-center",
+    "testcaseId": "WEB_INF_004"
+  },
+  "createdAt": "2026-09-02T12:00:00.000Z",
+  "lastStatus": "pass",
+  "runs": [
+    {
+      "ts": "2026-09-02T12-06-23-583Z",
+      "status": "pass",
+      "durationMs": 3294,
+      "hasVideo": true,
+      "hasTrace": true,
+      "hasApiLog": false
+    }
+  ],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "content"
+  ],
+  "folder": "EPTTS Web / web-information-center",
+  "engine": "playwright"
+}

@@ -1,0 +1,7 @@
+{
+  "WEB_INF_024": "PASS - Admin, Manufacturer, Distributor and Pharmacy were each shown the same five announcements; none was shown REG-001.",
+  "WEB_INF_025": "PASS - Pharmacy opening /admin/announcements was redirected to /scanning; no admin table and no New Announcement control were rendered.",
+  "WEB_INF_028": "FAIL - Platform gap. With the announcements endpoint aborted, a generic \"Error / An error occurred\" toast appeared but auto-dismissed between t+9s and t+17s, after which Latest Updates showed only \"No announcements found\" - indistinguishable from an empty notice board. Automated as a known gap: the spec asserts the correct behaviour and carries test.fail(), so it flips to an unexpected pass the day it is fixed. See draft:a-failed-announcements-request-leaves-the-panel-showing-no-announcements-found.",
+  "WEB_INF_029": "PASS - After Logout the browser back button landed on the Keycloak sign-in page; no announcement data from the previous session remained.",
+  "WEB_INF_031": "FAIL - The header icon button carries title=\"Information Center\", cursor:pointer and a ripple. Three real clicks produced no navigation, no dialog, no overlay and no toast; the URL stayed /information-center. Hovering showed no tooltip. The adjacent user chip does respond, opening the Profile dialog."
+}

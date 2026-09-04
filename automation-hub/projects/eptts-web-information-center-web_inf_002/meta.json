@@ -9,13 +9,13 @@
     "feature": "web-information-center",
     "testcaseId": "WEB_INF_002"
   },
-  "createdAt": "2026-09-01T04:00:00.000Z",
+  "createdAt": "2026-09-02T12:00:00.000Z",
   "lastStatus": "pass",
   "runs": [
     {
-      "ts": "2026-09-01T00-41-01-046Z",
+      "ts": "2026-09-02T12-06-13-003Z",
       "status": "pass",
-      "durationMs": 4964,
+      "durationMs": 7013,
       "hasVideo": true,
       "hasTrace": true,
       "hasApiLog": false
@@ -24,7 +24,7 @@
   "tags": [
     "dashboard",
     "readonly",
-    "directUrl"
+    "navigation"
   ],
   "folder": "EPTTS Web / web-information-center",
   "engine": "playwright"

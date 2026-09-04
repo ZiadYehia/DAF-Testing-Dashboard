@@ -1,0 +1,32 @@
+{
+  "name": "eptts-web-information-center-web_inf_015",
+  "title": "WEB_INF_015 — Validate that the search term and the category filter combine rather than replace each other",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_INF_015",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-information-center",
+    "testcaseId": "WEB_INF_015"
+  },
+  "createdAt": "2026-09-02T12:00:00.000Z",
+  "lastStatus": "pass",
+  "runs": [
+    {
+      "ts": "2026-09-02T12-07-01-468Z",
+      "status": "pass",
+      "durationMs": 5392,
+      "hasVideo": true,
+      "hasTrace": true,
+      "hasApiLog": false
+    }
+  ],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "search",
+    "filter"
+  ],
+  "folder": "EPTTS Web / web-information-center",
+  "engine": "playwright"
+}

@@ -1,0 +1,31 @@
+{
+  "name": "eptts-web-information-center-web_inf_012",
+  "title": "WEB_INF_012 — Validate that search narrows Latest Updates to announcements matching the term",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_INF_012",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-information-center",
+    "testcaseId": "WEB_INF_012"
+  },
+  "createdAt": "2026-09-02T12:00:00.000Z",
+  "lastStatus": "pass",
+  "runs": [
+    {
+      "ts": "2026-09-02T12-06-48-984Z",
+      "status": "pass",
+      "durationMs": 4118,
+      "hasVideo": true,
+      "hasTrace": true,
+      "hasApiLog": false
+    }
+  ],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "search"
+  ],
+  "folder": "EPTTS Web / web-information-center",
+  "engine": "playwright"
+}

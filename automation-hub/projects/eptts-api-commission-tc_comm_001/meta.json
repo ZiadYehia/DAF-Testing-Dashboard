@@ -13,6 +13,42 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-02T09-55-11-961Z",
+      "status": "fail",
+      "durationMs": 126422.71699999999,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: single commission: accepted for processing"
+    },
+    {
+      "ts": "2026-09-02T09-49-45-006Z",
+      "status": "fail",
+      "durationMs": 46069.205,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": false,
+      "error": "Error: apiRequestContext.post: connect ETIMEDOUT 192.168.225.195:8445"
+    },
+    {
+      "ts": "2026-09-02T09-45-39-771Z",
+      "status": "fail",
+      "durationMs": 47305.945,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": false,
+      "error": "Error: apiRequestContext.post: connect ETIMEDOUT 192.168.225.195:8445"
+    },
+    {
+      "ts": "2026-09-02T06-19-57-336Z",
+      "status": "fail",
+      "durationMs": 126189.223,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: single commission: accepted for processing"
+    },
+    {
       "ts": "2026-09-02T06-13-46-234Z",
       "status": "fail",
       "durationMs": 126037.786,
@@ -65,42 +101,6 @@
       "hasTrace": false,
       "hasApiLog": true,
       "error": "TimeoutError: apiRequestContext.post: Timeout 45000ms exceeded."
-    },
-    {
-      "ts": "2026-09-02T05-46-33-057Z",
-      "status": "fail",
-      "durationMs": 95410.82999999999,
-      "hasVideo": false,
-      "hasTrace": false,
-      "hasApiLog": true,
-      "error": "TimeoutError: apiRequestContext.post: Timeout 45000ms exceeded."
-    },
-    {
-      "ts": "2026-09-02T05-36-56-773Z",
-      "status": "fail",
-      "durationMs": 96180.146,
-      "hasVideo": false,
-      "hasTrace": false,
-      "hasApiLog": true,
-      "error": "TimeoutError: apiRequestContext.post: Timeout 45000ms exceeded."
-    },
-    {
-      "ts": "2026-09-02T04-14-11-841Z",
-      "status": "fail",
-      "durationMs": 125763.826,
-      "hasVideo": false,
-      "hasTrace": false,
-      "hasApiLog": true,
-      "error": "Error: single commission: accepted for processing"
-    },
-    {
-      "ts": "2026-09-02T03-43-49-688Z",
-      "status": "fail",
-      "durationMs": 5168.4310000000005,
-      "hasVideo": false,
-      "hasTrace": false,
-      "hasApiLog": true,
-      "error": "Error: single commission: accepted for processing"
     }
   ],
   "tags": [

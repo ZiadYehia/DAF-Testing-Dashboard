@@ -8,5 +8,5 @@
   "TC_COMM_027": "platform validation gap: an empty eventTimeZoneOffset is accepted and processed successfully",
   "TC_COMM_028": "platform validation gap: eventTimeZoneOffset +99:99 is accepted and processed successfully",
   "TC_COMM_034": "platform validation gap: a disposition outside the CBV vocabulary is accepted (presence is checked, validity is not)",
-  "TC_COMM_001": "Blocked by the 2026-09-02 platform EPCIS storage outage: POST /scp/SendEPCIS returned 202 but the message never registered (503 E003 durable-object-storage-not-confirmed on the write path), so the commissioning could not be confirmed. A normally-passing positive case; re-run when the EPCIS write path recovers.\n[automation 2026-09-02T06-04-49-202Z] Error: single commission: accepted for processing"
+  "TC_COMM_001": "Blocked by the 2026-09-02 platform EPCIS storage outage: POST /scp/SendEPCIS returned 202 but the message never registered (503 E003 durable-object-storage-not-confirmed on the write path), so the commissioning could not be confirmed. A normally-passing positive case; re-run when the EPCIS write path recovers.\n[automation 2026-09-02T09-55-11-961Z] Error: single commission: accepted for processing"
 }

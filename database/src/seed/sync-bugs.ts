@@ -36,9 +36,22 @@
  *   file's copy is stale by construction. NEVER written from disk; disagreements are reported
  *   so it is clear the file is the out-of-date one.
  *
- * It also does NOT touch `module` (derived from the module tree, owned by
- * sync-feature-modules) and never deletes a row — a file removed from disk may well have been
- * filed in Jira. Those are reported instead.
+ * It never deletes a row — a file removed from disk may well have been filed in Jira. Those are
+ * reported instead.
+ *
+ * MODULE AND ATTACHMENTS ARE OWNED HERE TOO, and that is a correction.
+ *
+ * `bugs.module` is derived from the bug's feature (features/<feature>/metadata.json), exactly as
+ * import.ts resolves it. It used to be left alone on the grounds that sync-feature-modules owned
+ * it — but that tool assigns modules to FEATURES and never touches a bug row. The result was that
+ * every bug this tool inserted carried module NULL and never appeared under its module in the
+ * dashboard: twelve filed bugs were invisible while the seven that predated them, inserted by
+ * db:import, showed up fine.
+ *
+ * Attachments have the same shape of problem. import.ts registers them, but it is insert-only for
+ * bugs and is not re-run after a bug is filed, so evidence added later never reaches the app and
+ * the report renders with no screenshots. Rows carry `data: null` — the binary is served from
+ * disk — so this only registers filename, MIME type and size.
  */
 import 'reflect-metadata'
 import * as fs from 'fs'
@@ -46,6 +59,7 @@ import * as path from 'path'
 import matter from 'gray-matter'
 import { AppDataSource } from '../data-source'
 import { Bug } from '../entities/Bug'
+import { Attachment } from '../entities/Attachment'
 
 const DATA_ROOT = path.join(__dirname, '..', '..', '..', 'data')
 
@@ -62,6 +76,60 @@ const DRY_RUN = process.argv.includes('--dry-run')
 if (!APP) {
   console.error('required: --app <slug>')
   process.exit(1)
+}
+
+/** Mirrors src/lib/bugs.ts and import.ts — keep the three in step. */
+const ATTACHMENT_MIME: Record<string, string> = {
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.webp': 'image/webp',
+  '.mp4': 'video/mp4',
+  '.webm': 'video/webm',
+  '.mov': 'video/quicktime',
+}
+
+/** The module a bug belongs to, taken from its feature. Same resolution as import.ts. */
+function resolveBugModule(appSlug: string, feature: string): string | null {
+  const metaFile = path.join(DATA_ROOT, appSlug, 'features', feature, 'metadata.json')
+  if (!fs.existsSync(metaFile)) return null
+  try {
+    return (JSON.parse(fs.readFileSync(metaFile, 'utf-8')) as { module?: string | null }).module ?? null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Register the evidence files sitting in <slug>-attachments/ against a bug row.
+ *
+ * `data` stays null: the dashboard streams the binary from disk, so storing it twice would
+ * bloat the database for nothing. Returns how many rows were added.
+ */
+async function syncAttachments(appSlug: string, bugId: number, feature: string, slug: string,
+                               dryRun: boolean): Promise<string[]> {
+  const dir = path.join(DATA_ROOT, appSlug, 'bugs', feature, `${slug}-attachments`)
+  if (!fs.existsSync(dir)) return []
+  const repo = AppDataSource.getRepository(Attachment)
+  const added: string[] = []
+  for (const fileName of fs.readdirSync(dir).sort()) {
+    const ext = path.extname(fileName).toLowerCase()
+    if (!ATTACHMENT_MIME[ext]) continue
+    const existing = await repo.findOne({ where: { bug: { id: bugId }, fileName } })
+    if (existing) continue
+    if (!dryRun) {
+      await repo.save({
+        bug: { id: bugId },
+        fileName,
+        mimeType: ATTACHMENT_MIME[ext],
+        data: null,
+        byteSize: (() => { try { return fs.statSync(path.join(dir, fileName)).size } catch { return null } })(),
+      })
+    }
+    added.push(fileName)
+  }
+  return added
 }
 
 /** Authored content: disk wins, this tool writes it. */
@@ -109,6 +177,7 @@ async function main(): Promise<void> {
     const onDisk = new Set<string>()
     let updated = 0
     let inserted = 0
+  let attachmentsAdded = 0
     let current = 0
     const staleFrontmatter: string[] = []
 
@@ -124,12 +193,27 @@ async function main(): Promise<void> {
         const fields = diskOwned(filePath)
         const existing = await repo.findOne({ where: { appSlug: APP!, feature, slug } })
 
+        const moduleVal = resolveBugModule(APP!, feature)
+
         if (!existing) {
           // A brand-new bug has no app-side history yet, so the file's workflow fields are
           // all there is — take them on insert only.
-          if (!DRY_RUN) await repo.save({ appSlug: APP!, feature, slug, ...fields, ...appOwned(filePath) })
+          let newId: number | undefined
+          if (!DRY_RUN) {
+            const saved = await repo.save({
+              appSlug: APP!, feature, slug, module: moduleVal, ...fields, ...appOwned(filePath),
+            })
+            newId = saved.id
+          }
           inserted++
           console.log(`  + insert   ${feature}/${slug.slice(0, 50)}`)
+          if (newId !== undefined) {
+            const files = await syncAttachments(APP!, newId, feature, slug, DRY_RUN)
+            if (files.length) {
+              attachmentsAdded += files.length
+              console.log(`      + ${files.length} attachment(s): ${files.join(', ')}`)
+            }
+          }
           continue
         }
 
@@ -162,8 +246,21 @@ async function main(): Promise<void> {
             : String(key))
         }
 
+        // module is derived, not authored — backfill it whenever the row disagrees with disk.
+        if ((existing.module ?? null) !== moduleVal) {
+          changes.push(`module ${existing.module ?? 'NULL'} -> ${moduleVal ?? 'NULL'}`)
+        }
+
+        // Evidence can be added to a bug long after it is filed, so check every time.
+        const newFiles = await syncAttachments(APP!, existing.id, feature, slug, DRY_RUN)
+        if (newFiles.length) {
+          attachmentsAdded += newFiles.length
+          console.log(`  + ${DRY_RUN ? 'would attach' : 'attached'} ${feature}/${slug.slice(0, 40)}`)
+          console.log(`      ${newFiles.length} file(s): ${newFiles.join(', ')}`)
+        }
+
         if (!changes.length) { current++; continue }
-        if (!DRY_RUN) await repo.save({ ...existing, ...fields })
+        if (!DRY_RUN) await repo.save({ ...existing, ...fields, module: moduleVal })
         updated++
         console.log(`  ~ ${DRY_RUN ? 'would update' : 'updated'} ${feature}/${slug.slice(0, 44)}`)
         console.log(`      ${changes.join(', ')}`)

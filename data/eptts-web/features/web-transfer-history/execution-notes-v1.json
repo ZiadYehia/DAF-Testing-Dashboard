@@ -1,3 +1,4 @@
 {
-  "WEB_THS_005": "searching \"a\" narrows 25 row(s)"
+  "WEB_THS_005": "searching \"a\" narrows 25 row(s)",
+  "WEB_THS_010": "FAIL - On load /shipments/history issued only GET /users/me and rendered zero rows beneath a \"Rows per page 25 / Page 1\" paginator. Selecting the In Transit status fired GET /shipments?limit=25 and 25 shipments appeared immediately. Verified twice, once using the browser network capture rather than an injected listener."
 }

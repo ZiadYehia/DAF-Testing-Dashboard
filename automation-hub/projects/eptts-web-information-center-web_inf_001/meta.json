@@ -1,6 +1,6 @@
 {
   "name": "eptts-web-information-center-web_inf_001",
-  "title": "WEB_INF_001 — Validate that the Information Center page renders with its heading and primary controls",
+  "title": "WEB_INF_001 — Validate that the Information Center page renders its heading and every populated panel",
   "app": "eptts-web",
   "createdVia": "testcase",
   "linkedTestcaseId": "WEB_INF_001",
@@ -9,13 +9,13 @@
     "feature": "web-information-center",
     "testcaseId": "WEB_INF_001"
   },
-  "createdAt": "2026-09-01T04:00:00.000Z",
+  "createdAt": "2026-09-02T12:00:00.000Z",
   "lastStatus": "pass",
   "runs": [
     {
-      "ts": "2026-09-01T00-40-57-758Z",
+      "ts": "2026-09-02T12-06-09-363Z",
       "status": "pass",
-      "durationMs": 3247,
+      "durationMs": 3480,
       "hasVideo": true,
       "hasTrace": true,
       "hasApiLog": false

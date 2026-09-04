@@ -1,0 +1,31 @@
+{
+  "name": "eptts-web-information-center-web_inf_016",
+  "title": "WEB_INF_016 — Validate that clearing the search field restores the unfiltered list",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_INF_016",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-information-center",
+    "testcaseId": "WEB_INF_016"
+  },
+  "createdAt": "2026-09-02T12:00:00.000Z",
+  "lastStatus": "pass",
+  "runs": [
+    {
+      "ts": "2026-09-02T12-07-07-039Z",
+      "status": "pass",
+      "durationMs": 4816,
+      "hasVideo": true,
+      "hasTrace": true,
+      "hasApiLog": false
+    }
+  ],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "search"
+  ],
+  "folder": "EPTTS Web / web-information-center",
+  "engine": "playwright"
+}

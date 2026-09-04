@@ -3,5 +3,8 @@
   "WEB_SHP_002": "pass",
   "WEB_SHP_003": "new_added",
   "WEB_SHP_004": "pass",
-  "WEB_SHP_005": "pass"
+  "WEB_SHP_005": "pass",
+  "WEB_SHP_006": "fail",
+  "WEB_SHP_007": "fail",
+  "WEB_SHP_008": "fail"
 }

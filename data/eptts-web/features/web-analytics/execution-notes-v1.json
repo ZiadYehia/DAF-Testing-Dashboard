@@ -1,0 +1,3 @@
+{
+  "WEB_ANL_009": "FAIL - With lang=ar, dir=rtl and every group expanded, 36 of 37 sidebar labels render in Arabic. Only /analytics renders as the Latin string \"Analytics\", between the translated التقارير and المخالفات."
+}

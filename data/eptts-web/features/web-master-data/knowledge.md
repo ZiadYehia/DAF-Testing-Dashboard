@@ -58,3 +58,25 @@ the test-case table, which holds only the 13 columns.
 **Not yet executed against production.** Every case is `Under Testing` / `new_added`.
 
 The source spreadsheet recorded these statuses against **staging**, by a different tester: Under Testing 7. Those are retained here as history only — they are not evidence of coverage in this environment, so they are deliberately not carried into the Status column.
+
+## Retest log
+
+**2026-09-02 — draft dropped: "All seven collapsible sidebar groups render with no child items".**
+Retested against v1.0.2 as Platform Admin from `/dashboard`, following the draft's own steps. Each
+of the seven group headers was clicked once and the links it ADDED were measured, so an
+already-expanded group could not be mistaken for an empty one — which is how the original
+observation most likely arose. Every group expands:
+
+| Group | Children added on expand |
+|---|---|
+| Product Movement | 8 |
+| Product Structure | 3 |
+| Product Actions | 4 |
+| File Upload | 2 |
+| Master Data | 5, including `/products` and `/master-data`'s siblings |
+| Monitoring | 4 |
+| Administration | 3 |
+
+The draft was never filed in Jira, declared no covered test cases, and no longer reproduces, so it
+was dropped per bug-format.md's "Verify before filing". Evidence:
+`screenshots/retest-2026-09-02-sidebar-groups-expand.jpg`.

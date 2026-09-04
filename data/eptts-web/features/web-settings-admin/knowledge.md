@@ -58,3 +58,18 @@ the test-case table, which holds only the 13 columns.
 **Not yet executed against production.** Every case is `Under Testing` / `new_added`.
 
 The source spreadsheet recorded these statuses against **staging**, by a different tester: Under Testing 10. Those are retained here as history only — they are not evidence of coverage in this environment, so they are deliberately not carried into the Status column.
+
+## Retest log
+
+**2026-09-02 — draft dropped: "Settings (/admin) and Product Display (/products) have no sidebar
+entry in any role".** Retested against v1.0.2 as Platform Admin. Both entries are present:
+`Settings` -> `/admin` under the ADMINISTRATION group (alongside `Announcements` and
+`Mobile Versions`), and `Product Display` -> `/products` under MASTER DATA. The Distributor,
+Manufacturer and Pharmacy sidebars were also captured the same day; Admin and Manufacturer and
+Distributor all expose `/admin`, Pharmacy does not — which is correct for a role with no admin
+rights, except that Pharmacy still renders the empty ADMINISTRATION header (filed separately).
+
+The draft was never filed in Jira, declared no covered test cases, and no longer reproduces, so it
+was dropped per bug-format.md's "Verify before filing". Evidence:
+`screenshots/retest-2026-09-02-admin-link-present.jpg`,
+`screenshots/retest-2026-09-02-products-link-present.jpg`.

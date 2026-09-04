@@ -1,3 +1,6 @@
 {
-  "WEB_SHP_001": "untranslated i18n key(s) rendered as UI labels instead of text: shipments.bulkUpload — the control gives the user no indication of what it does"
+  "WEB_SHP_001": "untranslated i18n key(s) rendered as UI labels instead of text: shipments.bulkUpload — the control gives the user no indication of what it does",
+  "WEB_SHP_006": "FAIL - POST /masar-service/api/v1/shipments/draft/01a062a4-f075-7dd8-97c5-276bd2b7d3c6/add-packs returned 404 Not Found. The Add to Invoice button entered a loading state, recovered, and the UI showed no toast and no inline error. Invoice Items stayed at \"0 pack(s) total\".",
+  "WEB_SHP_007": "FAIL - Blocked by the same 404: with no pack ever added, the Dispatch button never leaves its disabled state, so a dispatch cannot be performed through the UI at all. All three item paths (Add SSCC, Create SSCC, Add Individual Packs) feed the same staging list and the same endpoint.",
+  "WEB_SHP_008": "FAIL - The selector loaded 90 options in total from four calls to registry-service entities, each limit=30&offset=0. The pharmacy response carried {\"items\":[...30...],\"total\":87314}. No pagination control and no server-side search; the filter box narrows only the 90 already in memory."
 }

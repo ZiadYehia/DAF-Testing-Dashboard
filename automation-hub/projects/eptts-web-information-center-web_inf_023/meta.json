@@ -1,0 +1,31 @@
+{
+  "name": "eptts-web-information-center-web_inf_023",
+  "title": "WEB_INF_023 — Validate that an announcement not targeted to the signed-in user is withheld from the page",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_INF_023",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-information-center",
+    "testcaseId": "WEB_INF_023"
+  },
+  "createdAt": "2026-09-02T12:00:00.000Z",
+  "lastStatus": "pass",
+  "runs": [
+    {
+      "ts": "2026-09-02T12-07-39-217Z",
+      "status": "pass",
+      "durationMs": 6405,
+      "hasVideo": true,
+      "hasTrace": true,
+      "hasApiLog": false
+    }
+  ],
+  "tags": [
+    "dashboard",
+    "readonly",
+    "permissions"
+  ],
+  "folder": "EPTTS Web / web-information-center",
+  "engine": "playwright"
+}
