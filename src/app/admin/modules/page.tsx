@@ -3,10 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import {
-  Plus, Pencil, Trash2, Layers,
-  Shield, BarChart2, Lock, Package, Scale, ImagePlus, X, Upload,
-} from 'lucide-react'
+import { Plus, Pencil, Trash2, ImagePlus, X, Upload, Layers } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -19,6 +16,7 @@ import { IntakeGroupForm } from '@/components/shared/IntakeGroupForm'
 import { ReadinessBadge } from '@/components/shared/ReadinessBadge'
 import { MODULE_INTAKE_GROUPS, type IntakeValue } from '@/lib/intake-types'
 import type { ModuleManifest } from '@/lib/modules'
+import { getModuleIcon, MODULE_ICON_NAMES } from '@/components/shared/ModuleIcon'
 import { slugify } from '@/lib/utils'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -32,19 +30,10 @@ interface AppEntry {
 
 // ─── Icon picker ──────────────────────────────────────────────────────────────
 
-const ICONS: { name: string; el: React.ReactNode }[] = [
-  { name: 'Layers',    el: <Layers    className="h-5 w-5" /> },
-  { name: 'Shield',    el: <Shield    className="h-5 w-5" /> },
-  { name: 'BarChart2', el: <BarChart2 className="h-5 w-5" /> },
-  { name: 'Lock',      el: <Lock      className="h-5 w-5" /> },
-  { name: 'Package',   el: <Package   className="h-5 w-5" /> },
-  { name: 'Scale',     el: <Scale     className="h-5 w-5" /> },
-]
-
 function IconPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
     <div className="flex flex-wrap gap-2">
-      {ICONS.map(({ name, el }) => (
+      {MODULE_ICON_NAMES.map((name) => (
         <button
           key={name}
           type="button"
@@ -55,16 +44,12 @@ function IconPicker({ value, onChange }: { value: string; onChange: (v: string) 
               : 'border-border hover:border-primary/50 hover:bg-accent text-muted-foreground'
           }`}
         >
-          {el}
+          {getModuleIcon(name, 'h-5 w-5')}
           {name}
         </button>
       ))}
     </div>
   )
-}
-
-function getModuleIcon(name: string) {
-  return ICONS.find((i) => i.name === name)?.el ?? <Layers className="h-4 w-4" />
 }
 
 // ─── Module form ──────────────────────────────────────────────────────────────
@@ -372,7 +357,7 @@ export default function AdminModulesPage() {
                           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary overflow-hidden">
                             {moduleLogo
                               ? <img src={moduleLogo} alt="" className="h-full w-full object-contain p-1" />
-                              : getModuleIcon(m.icon)
+                              : getModuleIcon(m.icon, 'h-4 w-4')
                             }
                           </div>
                           <div className="flex-1 min-w-0">

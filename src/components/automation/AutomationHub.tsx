@@ -28,6 +28,16 @@ import { useChatSession } from './useChatSession'
 import { ChatAuthoringTab } from './ChatAuthoringTab'
 import { SpecTab, type PageFile } from './SpecTab'
 import { NewAutomationDialog } from './NewAutomationDialog'
+import { useProjectModules } from './useProjectModules'
+import { getModuleIcon } from '@/components/shared/ModuleIcon'
+import { ScopeSelect } from './ScopeSelect'
+import { StatusSegment } from './StatusSegment'
+import { TagPopover } from './TagPopover'
+import { ActiveFilterBar } from './ActiveFilterBar'
+import {
+  NO_MODULE, deriveModuleCounts, deriveTagCounts, deriveStatusCounts,
+  moduleMatches, tagsMatch, toggleIn, readStoredList, reconcileSelection,
+} from './moduleFilter'
 import { FlakyBadge, StatusPill, isFlaky, type RunStatus, type RunRecord } from './statusBadges'
 import { toast } from 'sonner'
 
@@ -109,6 +119,7 @@ export function AutomationHub({ app }: { app: string }) {
   // MCP chat drives a real browser, so it does not apply to an API app.
   const chatAvailable = lockedEngine !== 'api'
   const isApiApp = lockedEngine === 'api'
+  const { modules, moduleOf, moduleName, moduleIcon, available: modulesAvailable } = useProjectModules(app)
   /**
    * Which run the API console reads its exchanges from.
    *
@@ -369,40 +380,179 @@ export function AutomationHub({ app }: { app: string }) {
   const [allSummary, setAllSummary] = useState<string | null>(null)
   const [healing, setHealing] = useState(false)
 
-  // ── Tags: filter the list and slice "Run all" (smoke / per-module / …) ──
-  const [tagFilter, setTagFilter] = useState<string | null>(null)
+  // ── Filter levels: 1 Scope (modules) · 2 State (status) · 3 Refine (tags) ──
+  // Scope and refine are multi-select, any-of. Scope persists per app because it is
+  // standing context; state and tags are momentary questions, so they reset.
+  const moduleStorageKey = `automation-modules-${app}`
+  const legacyModuleStorageKey = `automation-module-${app}`
+  const [moduleFilters, setModuleFilters] = useState<string[]>([])
+  const [tagFilters, setTagFilters] = useState<string[]>([])
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(moduleStorageKey)
+      if (stored) { setModuleFilters(readStoredList(stored)); return }
+      // Carry over the single-select key this replaced, so a stored scope survives the upgrade.
+      const legacy = localStorage.getItem(legacyModuleStorageKey)
+      if (!legacy) return
+      const migrated = readStoredList(legacy)
+      setModuleFilters(migrated)
+      localStorage.setItem(moduleStorageKey, JSON.stringify(migrated))
+      localStorage.removeItem(legacyModuleStorageKey)
+    } catch { /* ignore malformed storage */ }
+  }, [moduleStorageKey, legacyModuleStorageKey])
+
+  const persistModules = useCallback((next: string[]) => {
+    try {
+      if (next.length > 0) localStorage.setItem(moduleStorageKey, JSON.stringify(next))
+      else localStorage.removeItem(moduleStorageKey)
+    } catch { /* ignore quota errors */ }
+  }, [moduleStorageKey])
+
+  const toggleModuleFilter = useCallback((key: string) => {
+    setModuleFilters((cur) => {
+      const next = toggleIn(cur, key)
+      persistModules(next)
+      return next
+    })
+  }, [persistModules])
+
+  const clearModuleFilters = useCallback(() => {
+    setModuleFilters([])
+    persistModules([])
+  }, [persistModules])
+
+  const toggleTagFilter = useCallback((tag: string) => setTagFilters((cur) => toggleIn(cur, tag)), [])
+
+  /** Module slug → project count (unfiltered), plus the "no module" bucket — same spirit as folderCounts below. */
+  const moduleCounts = useMemo(() => deriveModuleCounts(projects, moduleOf), [projects, moduleOf])
+
+  // A stored scope can outlive what it points at: a module gets deleted or renamed in
+  // admin, or this app's projects no longer reach it. Without this the list filters to
+  // nothing while no chip looks active — an empty hub with no visible cause.
+  useEffect(() => {
+    // projects.length: the counts are empty until the list loads — reconciling before
+    // then would clear a perfectly good scope on every mount.
+    if (!modulesAvailable || moduleFilters.length === 0 || projects.length === 0) return
+    const available = new Set(moduleCounts.counts.keys())
+    if (moduleCounts.unassigned > 0) available.add(NO_MODULE)
+    const next = reconcileSelection(moduleFilters, available)
+    if (next !== moduleFilters) {
+      setModuleFilters(next)
+      persistModules(next)
+    }
+  }, [modulesAvailable, moduleFilters, moduleCounts, projects.length, persistModules])
+
+  // Detail-pane tag editor — unrelated to the tag filter above.
   const [tagDraft, setTagDraft] = useState('')
   const [savingTags, setSavingTags] = useState(false)
 
-  const allTags = useMemo(
-    () => [...new Set(projects.flatMap((p) => p.tags ?? []))].sort(),
-    [projects],
-  )
-
-  // ── Search + status chips: instant client-side filter over the list ────
+  // ── Search ────────────────────────────────────────────────────────────────
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<RunStatus | 'all'>('all')
   const searchActive = searchQuery.trim().length > 0
-  const filtersActive = searchActive || statusFilter !== 'all' || !!tagFilter
+  const filtersActive =
+    searchActive || statusFilter !== 'all' || tagFilters.length > 0 || moduleFilters.length > 0
 
-  const visibleProjects = useMemo(() => {
+  /** Scope + search, before state — so the state segment's counts describe the current scope. */
+  const scopedProjects = useMemo(() => {
     const q = searchQuery.trim().toLowerCase()
     return projects.filter((p) => {
-      if (tagFilter && !(p.tags ?? []).includes(tagFilter)) return false
-      if (statusFilter !== 'all' && p.lastStatus !== statusFilter) return false
-      if (q) {
-        const haystack = [p.title, ...(p.tags ?? []), p.linkedTestcaseId ?? ''].join(' ').toLowerCase()
-        if (!haystack.includes(q)) return false
-      }
-      return true
+      if (!moduleMatches(moduleFilters, moduleOf(p))) return false
+      if (!q) return true
+      const haystack = [p.title, ...(p.tags ?? []), p.linkedTestcaseId ?? ''].join(' ').toLowerCase()
+      return haystack.includes(q)
     })
-  }, [projects, tagFilter, statusFilter, searchQuery])
+  }, [projects, moduleFilters, moduleOf, searchQuery])
 
-  // "Run all" honors the active tag/search/status filters, so running while filtered = a scoped run.
-  const runAll = () => runList(visibleProjects, tagFilter ? `tag: ${tagFilter}` : filtersActive ? 'filtered' : null)
+  const statusCounts = useMemo(
+    () => deriveStatusCounts(scopedProjects, (p) => p.lastStatus),
+    [scopedProjects],
+  )
+
+  /** …plus state, before tags — so the tag popover's counts describe what is on screen. */
+  const preTagProjects = useMemo(
+    () => scopedProjects.filter((p) => statusFilter === 'all' || p.lastStatus === statusFilter),
+    [scopedProjects, statusFilter],
+  )
+
+  const tagOptions = useMemo(() => deriveTagCounts(preTagProjects, (p) => p.tags), [preTagProjects])
+
+  const visibleProjects = useMemo(
+    () => preTagProjects.filter((p) => tagsMatch(tagFilters, p.tags)),
+    [preTagProjects, tagFilters],
+  )
+
+  const scopeOptions = useMemo(() => {
+    const opts = modules
+      .filter((m) => (moduleCounts.counts.get(m.slug) ?? 0) > 0)
+      .map((m) => ({
+        key: m.slug,
+        label: m.name,
+        icon: getModuleIcon(moduleIcon(m.slug) ?? 'Layers', 'h-3 w-3'),
+        count: moduleCounts.counts.get(m.slug) ?? 0,
+      }))
+    if (moduleCounts.unassigned > 0) {
+      opts.push({ key: NO_MODULE, label: 'Unassigned', icon: null, count: moduleCounts.unassigned })
+    }
+    return opts
+  }, [modules, moduleCounts, moduleIcon])
+
+  const STATUS_LABELS: Record<string, string> = { pass: 'Passing', fail: 'Failing', never_run: 'Never run' }
+
+  /** The funnel in one line, every entry removable — the answer to "why am I seeing 27 of 372?". */
+  const activeFilters = useMemo(() => {
+    const out: { key: string; label: string; onRemove: () => void }[] = []
+    for (const key of moduleFilters) {
+      out.push({
+        key: `module:${key}`,
+        label: key === NO_MODULE ? 'Unassigned' : moduleName(key),
+        onRemove: () => toggleModuleFilter(key),
+      })
+    }
+    if (statusFilter !== 'all') {
+      out.push({
+        key: 'status',
+        label: STATUS_LABELS[statusFilter] ?? statusFilter,
+        onRemove: () => setStatusFilter('all'),
+      })
+    }
+    for (const tag of tagFilters) {
+      out.push({ key: `tag:${tag}`, label: tag, onRemove: () => toggleTagFilter(tag) })
+    }
+    if (searchActive) {
+      out.push({ key: 'search', label: `“${searchQuery.trim()}”`, onRemove: () => setSearchQuery('') })
+    }
+    return out
+  }, [moduleFilters, statusFilter, tagFilters, searchActive, searchQuery, moduleName, toggleModuleFilter, toggleTagFilter])
+
+  /** Reset the whole funnel — with a persisted scope, "where did my list go?" needs one obvious answer. */
+  function clearFilters() {
+    setSearchQuery('')
+    setStatusFilter('all')
+    setTagFilters([])
+    clearModuleFilters()
+  }
+
+  // "Run all" honors the active filters, so running while filtered = a scoped run.
+  const runAll = () => runList(
+    visibleProjects,
+    filtersActive ? activeFilters.map((f) => f.label).join(' · ') : null,
+  )
 
   // ── Folders: file automations into suites; the list groups by folder ──
   const [collapsedFolders, setCollapsedFolders] = useState<Record<string, boolean>>({})
+
+  // Filtering keeps its own collapse state, separate from the persisted one. Turning a
+  // filter on expands everything (the point of filtering is to see the matches), but a
+  // collapse the user performs while filtered has to stick — the render used to force
+  // `false` whenever a filter was active, so the chevron did nothing at all. Session-only
+  // and never persisted, so it can't leak into the unfiltered preferences.
+  const [filteredCollapsed, setFilteredCollapsed] = useState<Record<string, boolean>>({})
+
+  useEffect(() => {
+    if (filtersActive) setFilteredCollapsed({})
+  }, [filtersActive])
 
   const allFolders = useMemo(
     () => [...new Set(projects.map((p) => p.folder?.trim() || '').filter(Boolean))].sort(),
@@ -445,6 +595,10 @@ export function AutomationHub({ app }: { app: string }) {
   }, [folderCounts, folderStorageKey])
 
   function toggleFolder(name: string) {
+    if (filtersActive) {
+      setFilteredCollapsed((c) => ({ ...c, [name]: !c[name] }))
+      return
+    }
     setCollapsedFolders((c) => {
       const next = { ...c, [name]: !c[name] }
       try { localStorage.setItem(folderStorageKey, JSON.stringify(next)) } catch { /* ignore quota errors */ }
@@ -613,6 +767,7 @@ export function AutomationHub({ app }: { app: string }) {
     const accent = p.lastStatus === 'pass' ? 'before:bg-emerald-500'
       : p.lastStatus === 'fail' ? 'before:bg-red-500' : 'before:bg-border'
     const SourceIcon = p.createdVia === 'chat' ? MessageSquare : p.createdVia === 'testcase' ? FlaskConical : Plus
+    const modSlug = modulesAvailable ? moduleOf(p) : null
     return (
       <Card
         key={p.name}
@@ -637,9 +792,15 @@ export function AutomationHub({ app }: { app: string }) {
               <Badge variant="outline" className="ml-auto font-mono text-[10px]">{p.linkedTestcaseId}</Badge>
             )}
           </div>
-          {(p.tags ?? []).length > 0 && (
-            <div className="flex flex-wrap gap-1">
-              {p.tags!.map((t) => (
+          {(modSlug || (p.tags ?? []).length > 0) && (
+            <div className="flex flex-wrap items-center gap-1">
+              {modSlug && (
+                <Badge variant="outline" className="gap-1 text-[10px] font-normal">
+                  {getModuleIcon(moduleIcon(modSlug) ?? 'Layers', 'h-2.5 w-2.5')}
+                  {moduleName(modSlug)}
+                </Badge>
+              )}
+              {(p.tags ?? []).map((t) => (
                 <span key={t} className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">{t}</span>
               ))}
             </div>
@@ -705,7 +866,7 @@ export function AutomationHub({ app }: { app: string }) {
         <TabsContent value="automations" className="pt-4">
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[320px_1fr]">
             {/* List — its own scroll container so the detail pane stays put while this scrolls */}
-            <div className="lg:h-[calc(100vh-230px)] lg:overflow-y-auto lg:pr-1">
+            <div className="min-w-0 overflow-x-hidden lg:h-[calc(100vh-230px)] lg:overflow-y-auto lg:pr-1">
             {/* Sticky controls: header, search, filters — stay put while folders scroll beneath */}
             <div className="sticky top-0 z-10 space-y-2 bg-background pb-2">
               <div className="flex items-center justify-between px-0.5 pb-1">
@@ -716,11 +877,12 @@ export function AutomationHub({ app }: { app: string }) {
                       {filtersActive ? `${visibleProjects.length}/${projects.length}` : projects.length}
                     </span>
                   )}
+
                 </div>
                 {projects.length > 0 && (
                   <Button variant="ghost" size="sm" onClick={runAll} disabled={runningAll} className="h-7 gap-1.5 text-xs">
                     {runningAll ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
-                    {runningAll ? 'Running…' : tagFilter ? `Run "${tagFilter}"` : filtersActive ? 'Run filtered' : 'Run all'}
+                    {runningAll ? 'Running…' : filtersActive ? 'Run filtered' : 'Run all'}
                   </Button>
                 )}
               </div>
@@ -744,48 +906,31 @@ export function AutomationHub({ app }: { app: string }) {
                   )}
                 </div>
               )}
+              {/* L1 Scope — a single trigger, not a chip strip: at 320px the strip hid
+                  over half its options behind a sideways scroll. An app whose features
+                  carry no module has nothing to scope by, so it stays hidden entirely. */}
+              {modulesAvailable && scopeOptions.length > 0 && projects.length > 0 && (
+                <ScopeSelect
+                  options={scopeOptions}
+                  selected={moduleFilters}
+                  onToggle={toggleModuleFilter}
+                  onClear={clearModuleFilters}
+                  total={projects.length}
+                />
+              )}
+              {/* L2 State + L3 Refine share one line — state is exclusive, tags are any-of. */}
               {projects.length > 0 && (
-                <div className="flex flex-wrap items-center gap-1 px-0.5">
-                  {([
-                    { key: 'all', label: 'All' },
-                    { key: 'pass', label: 'Passing' },
-                    { key: 'fail', label: 'Failing' },
-                    { key: 'never_run', label: 'Never run' },
-                  ] as const).map((s) => (
-                    <button
-                      key={s.key}
-                      onClick={() => setStatusFilter(s.key)}
-                      className={cn(
-                        'rounded-full border px-2 py-0.5 text-[10px] font-medium transition-colors',
-                        statusFilter === s.key
-                          ? 'border-primary bg-primary text-primary-foreground'
-                          : 'border-border/60 text-muted-foreground hover:border-primary/50 hover:text-foreground',
-                      )}
-                    >
-                      {s.label}
-                    </button>
-                  ))}
+                <div className="flex min-w-0 items-center justify-between gap-2 px-0.5">
+                  <StatusSegment value={statusFilter} onChange={setStatusFilter} counts={statusCounts} />
+                  <TagPopover
+                    tags={tagOptions}
+                    selected={tagFilters}
+                    onToggle={toggleTagFilter}
+                    onClear={() => setTagFilters([])}
+                  />
                 </div>
               )}
-              {allTags.length > 0 && (
-                <div className="flex flex-wrap items-center gap-1 px-0.5">
-                  <Tag className="h-3 w-3 text-muted-foreground" />
-                  {allTags.map((t) => (
-                    <button
-                      key={t}
-                      onClick={() => setTagFilter((cur) => (cur === t ? null : t))}
-                      className={cn(
-                        'rounded-full border px-2 py-0.5 text-[10px] font-medium transition-colors',
-                        tagFilter === t
-                          ? 'border-primary bg-primary text-primary-foreground'
-                          : 'border-border/60 text-muted-foreground hover:border-primary/50 hover:text-foreground',
-                      )}
-                    >
-                      {t}
-                    </button>
-                  ))}
-                </div>
-              )}
+              <ActiveFilterBar filters={activeFilters} onClearAll={clearFilters} />
               {allSummary && (
                 <div className="rounded-md bg-muted px-2 py-1.5 text-center text-xs text-muted-foreground">
                   Regression: <span className="font-medium text-foreground">{allSummary}</span>
@@ -872,9 +1017,7 @@ export function AutomationHub({ app }: { app: string }) {
               <p className="px-1 py-6 text-center text-sm text-muted-foreground">
                 {searchActive
                   ? `No automations match “${searchQuery.trim()}”.`
-                  : statusFilter !== 'all'
-                  ? 'No automations match this status.'
-                  : `No automations tagged “${tagFilter}”.`}
+                  : 'No automations match these filters.'}
               </p>
             )}
 
@@ -893,7 +1036,9 @@ export function AutomationHub({ app }: { app: string }) {
                     </div>
                   )
                 }
-                const isCollapsed = filtersActive ? false : !!collapsedFolders[folderName]
+                const isCollapsed = filtersActive
+                  ? !!filteredCollapsed[folderName]
+                  : !!collapsedFolders[folderName]
                 const passCount = list.filter((p) => p.lastStatus === 'pass').length
                 const failCount = list.filter((p) => p.lastStatus === 'fail').length
                 const neverCount = list.filter((p) => p.lastStatus === 'never_run').length

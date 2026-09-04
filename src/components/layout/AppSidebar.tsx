@@ -22,10 +22,6 @@ import {
   Users,
   Layers,
   Shield,
-  BarChart2,
-  Lock,
-  Package,
-  Scale,
   Bot,
   GitPullRequestArrow,
   UserCog,
@@ -48,6 +44,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import type { ModuleManifest } from '@/lib/modules'
+import { getModuleIcon } from '@/components/shared/ModuleIcon'
 
 interface NavItem {
   label: string
@@ -68,19 +65,6 @@ const MIN_SIDEBAR_WIDTH = 52
 const MAX_SIDEBAR_WIDTH = 400
 const COLLAPSE_THRESHOLD = 100
 const DEFAULT_SIDEBAR_WIDTH = 240
-
-function getModuleIcon(iconName: string, size = 'h-3.5 w-3.5'): React.ReactNode {
-  const cls = size
-  switch (iconName) {
-    case 'Shield':    return <Shield className={cls} />
-    case 'Layers':    return <Layers className={cls} />
-    case 'BarChart2': return <BarChart2 className={cls} />
-    case 'Lock':      return <Lock className={cls} />
-    case 'Package':   return <Package className={cls} />
-    case 'Scale':     return <Scale className={cls} />
-    default:          return <Layers className={cls} />
-  }
-}
 
 function getModuleNavItems(appSlug: string, moduleSlug: string, pathPrefix: string): NavItem[] {
   const base = pathPrefix ? `/${appSlug}/${pathPrefix}` : `/${appSlug}`

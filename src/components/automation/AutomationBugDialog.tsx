@@ -11,16 +11,12 @@ import { Bug, Loader2, Send, FlaskConical } from 'lucide-react'
 import type { AIModel } from '@/lib/ai'
 import { useBugDraft } from '@/components/bugs/useBugDraft'
 import { BugDraftForm } from '@/components/bugs/BugDraftForm'
+import { useFeatures } from '@/hooks/useFeatures'
 
 interface LinkedTestcase {
   app: string
   feature: string
   testcaseId: string
-}
-
-interface FeatureSummary {
-  name: string
-  module?: string | null
 }
 
 interface AutomationBugDialogProps {
@@ -70,7 +66,7 @@ export function AutomationBugDialog({
   // Bugs and features live in the linked test case's app when there is one.
   const targetApp = linkedTestcase?.app ?? app
 
-  const [features, setFeatures] = useState<FeatureSummary[]>([])
+  const { features } = useFeatures(targetApp)
   const [feature, setFeature] = useState<string>('')
   const [model, setModel] = useState('')
 
@@ -102,11 +98,6 @@ export function AutomationBugDialog({
       const first = models.find((m) => m.enabled)
       if (first) setModel(first.id)
     }
-    // Features list: the picker when unlinked, the module lookup when linked.
-    fetch(`/api/${targetApp}/features`)
-      .then((r) => (r.ok ? r.json() : []))
-      .then((list: FeatureSummary[]) => setFeatures(list))
-      .catch(() => setFeatures([]))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
