@@ -147,7 +147,7 @@ function parseReport(stdout: string): {
  * The app's own secrets are NOT needed here: playwright.config.ts calls loadHubEnv() to
  * read automation-hub/.env in the child itself.
  */
-function childEnv(): Record<string, string> {
+function childEnv(overrides: Record<string, string> = {}): Record<string, string> {
   const passThroughExact = [
     // Windows/OS essentials — omitting SystemRoot or PATH is itself a cause of 0xC0000142.
     'SystemRoot', 'windir', 'SystemDrive', 'COMSPEC', 'PATH', 'Path', 'PATHEXT',
@@ -168,14 +168,39 @@ function childEnv(): Record<string, string> {
   for (const [key, value] of Object.entries(process.env)) {
     if (value !== undefined && passThroughPrefixes.some((p) => key.startsWith(p))) env[key] = value
   }
+
+  /**
+   * The active environment's variables, applied LAST so they win.
+   *
+   * This is what makes switching environments in the UI actually change where a run goes.
+   * automation-hub/lib/env.ts loads .env with "existing env vars win", so anything set here
+   * overrides the file, and anything the environment does not define still falls back to it —
+   * neither side needs to know about the other.
+   */
+  for (const [key, value] of Object.entries(overrides)) {
+    if (value !== undefined && value !== null) env[key] = String(value)
+  }
   return env
 }
 
 /**
  * Run a project's spec and archive the result.
+ *
  * @param now ISO timestamp captured by the caller (route handler).
+ * @param envOverrides Variables from the app's active environment, applied over the curated
+ *   child environment so they beat automation-hub/.env. The CALLER resolves them — this engine
+ *   deliberately does not reach into the Next data layer.
+ *
+ *   The first attempt did reach in, with `await import('@/lib/environments')` and a catch
+ *   around it. The alias does not resolve from this module outside the Next bundle, so the
+ *   catch swallowed the failure and every run silently kept using .env: switching environments
+ *   in the UI appeared to work and changed nothing. Passing them in cannot fail quietly.
  */
-export async function runProject(name: string, now: string): Promise<RunResult> {
+export async function runProject(
+  name: string,
+  now: string,
+  envOverrides: Record<string, string> = {},
+): Promise<RunResult> {
   if (running.has(name)) {
     throw new Error(`A run for "${name}" is already in progress`)
   }
@@ -198,6 +223,7 @@ export async function runProject(name: string, now: string): Promise<RunResult> 
     // so a forward-slash relative path selects exactly this project's spec.
     const meta = await readMeta(name)
     const specFilter = `projects/${name}/${specFileName(meta?.engine)}`
+
     const args = [
       cli, 'test', specFilter,
       '--config', CONFIG,
@@ -214,7 +240,7 @@ export async function runProject(name: string, now: string): Promise<RunResult> 
         cwd: HUB_ROOT,
         // Cast: this repo augments ProcessEnv with required keys, but a child only
         // needs the curated set childEnv() builds.
-        env: childEnv() as NodeJS.ProcessEnv,
+        env: childEnv(envOverrides) as NodeJS.ProcessEnv,
         windowsHide: true,
       })
       let out = ''

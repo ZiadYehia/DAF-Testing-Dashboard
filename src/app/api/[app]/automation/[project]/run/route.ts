@@ -5,6 +5,7 @@ import { getProject } from '@automation-hub/store'
 import { runProject as runPlaywright, isRunning as isRunningPlaywright } from '@automation-hub/engine/runner'
 import { runProject as runAppium, isRunning as isRunningAppium } from '@automation-hub/engine/appium-runner'
 import { setExecutionStatus, appendExecutionNoteLine } from '@/lib/execution'
+import { activeEnvironmentVars } from '@/lib/environments'
 import { buildAutomationFailureNote, AUTOMATION_NOTE_PREFIX } from '@/lib/automation-run-note'
 
 export const runtime = 'nodejs'
@@ -34,7 +35,21 @@ export async function POST(
   }
 
   try {
-    const result = await (isAppiumProject ? runAppium : runPlaywright)(project, new Date().toISOString())
+    /**
+     * Where this run should point.
+     *
+     * Resolved here, at the boundary that already has the Next data layer, and handed to the
+     * engine — the engine must not import `@/lib/*`, because that alias does not resolve from
+     * automation-hub outside the Next bundle and the failure is silent.
+     *
+     * Read per run rather than cached: someone can switch environments between two replays and
+     * the second must go where the UI says. `{}` when nothing is active, which leaves
+     * automation-hub/.env in charge exactly as before this existed.
+     */
+    const envOverrides = await activeEnvironmentVars(app)
+    const result = await (isAppiumProject ? runAppium : runPlaywright)(
+      project, new Date().toISOString(), envOverrides,
+    )
 
     // If this automation is linked to a dashboard test case, mirror pass/fail
     // onto its execution status so automations become the regression source.

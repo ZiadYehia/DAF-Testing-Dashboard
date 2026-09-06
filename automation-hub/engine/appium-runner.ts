@@ -61,7 +61,16 @@ function parseResultLine(stdout: string): { status: 'pass' | 'fail'; durationMs:
  * Run a project's Appium spec and archive the result.
  * @param now ISO timestamp captured by the caller (route handler).
  */
-export async function runProject(name: string, now: string): Promise<RunResult> {
+export async function runProject(
+  name: string,
+  now: string,
+  /**
+   * Variables from the app's active environment, applied last so they beat both process.env
+   * and automation-hub/.env. Resolved by the caller — see the note in engine/runner.ts on why
+   * this engine does not read them itself.
+   */
+  envOverrides: Record<string, string> = {},
+): Promise<RunResult> {
   if (running.has(name)) {
     throw new Error(`A run for "${name}" is already in progress`)
   }
@@ -105,6 +114,9 @@ export async function runProject(name: string, now: string): Promise<RunResult> 
             ...(appium.appPackage ? { APP_PACKAGE: appium.appPackage } : {}),
             ...(appium.appActivity ? { APP_ACTIVITY: appium.appActivity } : {}),
             ...(appium.noReset ? { NO_RESET: '1' } : {}),
+            // Last, so switching environments redirects a mobile run too — otherwise the
+            // picker would appear to work for web and API projects and quietly do nothing here.
+            ...envOverrides,
           }
           // Invoke via plain node (no shell) so paths containing spaces —
           // e.g. "General Testing Dashboard" — are passed safely as argv.

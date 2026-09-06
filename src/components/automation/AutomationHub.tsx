@@ -14,9 +14,10 @@ import {
 import {
   Bot, Play, Plus, Save, Trash2, Film, FileArchive, Loader2, CheckCircle2,
   XCircle, FlaskConical, MessageSquare, Tag, X, Folder, ChevronDown, ChevronRight,
-  Bug, Link2, Search, ArrowLeftRight, Download,
+  Bug, Link2, Search, ArrowLeftRight, Download, Server,
 } from 'lucide-react'
 import { ApiConsole } from './ApiConsole'
+import { EnvironmentSwitcher } from './EnvironmentSwitcher'
 import { cn } from '@/lib/utils'
 import { useModels } from '@/hooks/useModels'
 import { useApp } from '@/lib/use-apps'
@@ -836,6 +837,12 @@ export function AutomationHub({ app }: { app: string }) {
                 : 'Author, replay & edit Playwright tests — recorded with video & trace.'}
             </p>
           </div>
+        </div>
+        <div className="flex flex-col gap-1">
+          <span className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            <Server className="h-3 w-3" /> Runs against
+          </span>
+          <EnvironmentSwitcher app={app} />
         </div>
         <div className="flex flex-col gap-1">
           <span className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">

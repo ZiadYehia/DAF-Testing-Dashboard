@@ -655,3 +655,38 @@ export const ChangeRequestEntity = new EntitySchema<IChangeRequest>({
     syncedAt:        { type: 'datetime2', nullable: true },
   },
 })
+
+/**
+ * A named run target — base URLs and credentials the automation should use.
+ *
+ * Mirrors database/src/entities/Environment.ts. The Next side declares its tables as
+ * EntitySchema rather than reusing the decorator entities, so both definitions have to be
+ * kept in step; the migration (1700000000032CreateEnvironments) is the authority on shape.
+ */
+export interface IEnvironment {
+  id: number
+  appSlug: string
+  name: string
+  description: string
+  /** KEY=VALUE pairs as a JSON object string. */
+  variables: string
+  isActive: boolean
+  createdAt: Date
+  updatedAt?: Date | null
+}
+
+export const EnvironmentEntity = new EntitySchema<IEnvironment>({
+  name: 'Environment',
+  tableName: 'environments',
+  columns: {
+    id: { type: Number, primary: true, generated: true },
+    appSlug: { type: 'varchar', length: 50 },
+    name: { type: 'nvarchar', length: 120 },
+    description: { type: 'nvarchar', length: 500, default: '' },
+    variables: { type: 'nvarchar', length: 'max' as unknown as number, default: '{}' },
+    isActive: { type: Boolean, default: false },
+    createdAt: { type: 'datetime2', createDate: true },
+    updatedAt: { type: 'datetime2', nullable: true },
+  },
+  uniques: [{ name: 'UQ_environments_app_name', columns: ['appSlug', 'name'] }],
+})

@@ -10,8 +10,25 @@
     "testcaseId": "TC_AUTH_001"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "pass",
+  "lastStatus": "fail",
   "runs": [
+    {
+      "ts": "2026-09-06T11-05-04-317Z",
+      "status": "fail",
+      "durationMs": 4514.616,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: HTTP 200 OK"
+    },
+    {
+      "ts": "2026-09-06T11-02-10-103Z",
+      "status": "pass",
+      "durationMs": 16780.978000000003,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true
+    },
     {
       "ts": "2026-09-01T11-42-53-045Z",
       "status": "pass",

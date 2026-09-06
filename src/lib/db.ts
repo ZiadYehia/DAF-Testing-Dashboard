@@ -22,6 +22,7 @@ import {
   IntakeDocumentEntity,
   AutomationConfigEntity,
   ChangeRequestEntity,
+  EnvironmentEntity,
 } from './entities'
 
 function createDataSource(): DataSource {
@@ -62,6 +63,7 @@ function createDataSource(): DataSource {
       IntakeDocumentEntity,
       AutomationConfigEntity,
       ChangeRequestEntity,
+      EnvironmentEntity,
     ],
     options: {
       encrypt: process.env.DB_ENCRYPT === 'true',
