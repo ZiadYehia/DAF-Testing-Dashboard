@@ -5,6 +5,7 @@
  * Usage:
  *   node scripts/eptts-record-hub-runs.js <report.json> [more.json ...] --app eptts-api
  *   node scripts/eptts-record-hub-runs.js <report.json> ... --app eptts-api --write
+ *   node scripts/eptts-record-hub-runs.js <report.json> --app eptts-api --environment "ngrok relay" --write
  *
  * WHY THIS IS NEEDED
  *
@@ -36,7 +37,7 @@ const path = require('path')
 
 const REPO = path.join(__dirname, '..')
 const HUB = path.join(REPO, 'automation-hub', 'projects')
-/** engine/store.ts keeps the newest N runs; match it so the Hub prunes consistently. */
+/** engine/store.ts keeps the newest N runs PER ENVIRONMENT; match it so the Hub prunes consistently. */
 const MAX_RUN_HISTORY = 20
 
 function argValue(flag) {
@@ -47,12 +48,53 @@ function argValue(flag) {
 }
 
 const APP = argValue('--app')
+/**
+ * Name of the environment the suite ran against, e.g. "ngrok relay". Must match the
+ * environment's name in the app exactly — that string is the key the Hub groups history by.
+ * Omit it only for a run made with no environment active.
+ */
+const ENVIRONMENT = argValue('--environment')
 const WRITE = process.argv.includes('--write')
+
+const NO_ENVIRONMENT = '(no environment)'
+const envOf = (r) => r.environment ?? NO_ENVIRONMENT
+
+/**
+ * Keep the newest MAX_RUN_HISTORY runs PER ENVIRONMENT, exactly as store.ts's recordRun does.
+ *
+ * Pruning a pooled list would silently delete the production history: recording a 400-case
+ * ngrok suite pushes 20 tunnel runs into every project and evicts the production result that
+ * is the whole reason the case is green. Each environment gets its own window instead.
+ */
+function pruneByEnvironment(record, existing, ts) {
+  const kept = [record]
+  const counts = { [envOf(record)]: 1 }
+  for (const r of existing) {
+    if (r.ts === ts) continue // de-duplicated on ts, so re-running this tool is idempotent
+    const b = envOf(r)
+    const n = counts[b] ?? 0
+    if (n >= MAX_RUN_HISTORY) continue
+    counts[b] = n + 1
+    kept.push(r)
+  }
+  return kept
+}
+
+/** Newest status per environment, read off an already newest-first list. */
+function lastStatusByEnv(runs) {
+  const out = {}
+  for (const r of runs) {
+    const b = envOf(r)
+    if (!(b in out)) out[b] = r.status
+  }
+  return out
+}
+
 const REPORTS = process.argv.slice(2)
-  .filter((a, i, all) => !a.startsWith('--') && all[i - 1] !== '--app')
+  .filter((a, i, all) => !a.startsWith('--') && all[i - 1] !== '--app' && all[i - 1] !== '--environment')
 
 if (!APP || !REPORTS.length || REPORTS.some((r) => !fs.existsSync(r))) {
-  console.error('usage: node scripts/eptts-record-hub-runs.js <report.json> [...] --app <slug> [--write]')
+  console.error('usage: node scripts/eptts-record-hub-runs.js <report.json> [...] --app <slug> [--environment <name>] [--write]')
   process.exit(1)
 }
 
@@ -156,6 +198,7 @@ for (const [caseId, r] of results) {
     hasTrace: lifted.some((l) => l.name === 'trace.zip'),
     hasApiLog: lifted.some((l) => l.name === 'api-log.html'),
     ...(r.error ? { error: r.error } : {}),
+    ...(ENVIRONMENT ? { environment: ENVIRONMENT } : {}),
   }
 
   if (WRITE) {
@@ -165,8 +208,13 @@ for (const [caseId, r] of results) {
     const mp = path.join(HUB, project, 'meta.json')
     const meta = JSON.parse(fs.readFileSync(mp, 'utf8'))
     // Newest first, de-duplicated on ts so a re-run of this tool is idempotent.
-    const runs = [record, ...(meta.runs ?? []).filter((x) => x.ts !== ts)].slice(0, MAX_RUN_HISTORY)
-    fs.writeFileSync(mp, `${JSON.stringify({ ...meta, lastStatus: record.status, runs }, null, 2)}\n`)
+    const runs = pruneByEnvironment(record, meta.runs ?? [], ts)
+    fs.writeFileSync(mp, `${JSON.stringify({
+      ...meta,
+      lastStatus: record.status,
+      lastStatusByEnv: lastStatusByEnv(runs),
+      runs,
+    }, null, 2)}\n`)
 
     // Drop run folders meta no longer references, exactly as store.ts's recordRun does.
     const keep = new Set(runs.map((x) => x.ts))

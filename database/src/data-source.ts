@@ -24,6 +24,7 @@ import {
   IntakeDocument,
   AutomationConfig,
   ChangeRequest,
+  Environment,
 } from './entities'
 
 // Load .env.local from the project root (one level above the database/ folder)
@@ -44,7 +45,7 @@ export const AppDataSource = new DataSource({
   database: process.env.DB_NAME ?? 'TestingDashboard',
   synchronize: false,
   logging: false,
-  entities: [Feature, Screenshot, Bug, Attachment, KnowledgeFile, Requirement, Setting, AcceptanceCriterion, TestcaseVersion, ApprovedExample, StoryLink, UserStory, TestExecution, User, Session, AppMembership, App, Module, IntakeDocument, AutomationConfig, ChangeRequest],
+  entities: [Feature, Screenshot, Bug, Attachment, KnowledgeFile, Requirement, Setting, AcceptanceCriterion, TestcaseVersion, ApprovedExample, StoryLink, UserStory, TestExecution, User, Session, AppMembership, App, Module, IntakeDocument, AutomationConfig, ChangeRequest, Environment],
   migrations: [path.join(__dirname, 'migrations', process.env.NODE_ENV === 'production' ? '*.js' : '*.ts')],
   options: {
     encrypt: process.env.DB_ENCRYPT === 'true',
