@@ -9,6 +9,8 @@
   "TC_SEC_008": "refresh-as-access is rejected",
   "TC_SEC_010": "non-jwt-bearer is rejected",
   "TC_SEC_012": "no dispensable GTIN is configured for this environment (EPTTS_MFG_DISPENSABLE_GTINS is empty), so this case cannot be built here. Set it to a GTIN this tenant holds, or run the case on an environment that has one.",
+  "TC_SEC_017": "auth failed for role \"ef_distributor\": 401 {\"statusCode\":401,\"timestamp\":\"2026-09-06T12:37:55.476Z\",\"path\":\"/masar-service/api/v1/auth\",\"method\":\"POST\",\"correlationId\":\"no-context\",\"message\":\"Http Exception\"} — check EPTTS_EF_DISTRIBUTOR_APIKEY in automation-hub/.env (keys cannot be re-read from the platform; if lost they must be rotated again)",
+  "TC_SEC_019": "auth failed for role \"ef_pharmacy\": 401 {\"statusCode\":401,\"timestamp\":\"2026-09-06T12:37:57.419Z\",\"path\":\"/masar-service/api/v1/auth\",\"method\":\"POST\",\"correlationId\":\"no-context\",\"message\":\"Http Exception\"} — check EPTTS_EF_PHARMACY_APIKEY in automation-hub/.env (keys cannot be re-read from the platform; if lost they must be rotated again)",
   "TC_SEC_020": "pharmacy history does not disclose manufacturer events",
   "TC_SEC_023": "no dispensable GTIN is configured for this environment (EPTTS_MFG_DISPENSABLE_GTINS is empty), so this case cannot be built here. Set it to a GTIN this tenant holds, or run the case on an environment that has one.",
   "TC_SEC_026": "no dispensable GTIN is configured for this environment (EPTTS_MFG_DISPENSABLE_GTINS is empty), so this case cannot be built here. Set it to a GTIN this tenant holds, or run the case on an environment that has one.",
@@ -18,5 +20,7 @@
   "TC_SEC_037": "a positive rate-limit ceiling is advertised",
   "TC_SEC_038": "would push 2000+ requests/window at a shared platform; needs an agreed maintenance window",
   "TC_SEC_041": "TypeError: expect(received).toMatch(expected) Matcher error: received value must be a string Received has value: undefined",
-  "TC_SEC_047": "no dispensable GTIN is configured for this environment (EPTTS_MFG_DISPENSABLE_GTINS is empty), so this case cannot be built here. Set it to a GTIN this tenant holds, or run the case on an environment that has one."
+  "TC_SEC_046": "auth failed for role \"ef_distributor\": 401 {\"statusCode\":401,\"timestamp\":\"2026-09-06T12:40:00.833Z\",\"path\":\"/masar-service/api/v1/auth\",\"method\":\"POST\",\"correlationId\":\"no-context\",\"message\":\"Http Exception\"} — check EPTTS_EF_DISTRIBUTOR_APIKEY in automation-hub/.env (keys cannot be re-read from the platform; if lost they must be rotated again)",
+  "TC_SEC_047": "no dispensable GTIN is configured for this environment (EPTTS_MFG_DISPENSABLE_GTINS is empty), so this case cannot be built here. Set it to a GTIN this tenant holds, or run the case on an environment that has one.",
+  "TC_SEC_048": "auth failed for role \"ef_manufacturer\": 401 {\"statusCode\":401,\"timestamp\":\"2026-09-06T12:40:14.066Z\",\"path\":\"/masar-service/api/v1/auth\",\"method\":\"POST\",\"correlationId\":\"no-context\",\"message\":\"Http Exception\"} — check EPTTS_EF_MAH_APIKEY in automation-hub/.env (keys cannot be re-read from the platform; if lost they must be rotated again)"
 }

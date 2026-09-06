@@ -118,6 +118,11 @@ function flatten(report) {
  */
 function isInfrastructureFailure(error) {
   if (!error) return false
+  // One exception to "auth failure = outage": a second-entity ("ef_") key rejected with a clean
+  // 401 is this tenant not having that trade partner provisioned. That is permanent, so calling
+  // it an outage parks the case on a re-run list forever. Only 401 — the same roles answered 404
+  // when the relay tunnel stopped routing, and that IS an outage.
+  if (/auth failed for role "ef_[a-z_]+": 401/i.test(error)) return false
   return (
     /\b(50[234])\b|Bad Gateway|Service Unavailable|Gateway Time-?out|ECONNRESET|ECONNREFUSED|ETIMEDOUT|EAI_AGAIN|socket hang up|connect Timeout|auth failed for role/i
       .test(error)
@@ -146,6 +151,11 @@ function isUnsupportedOnThisTenant(error) {
   if (!error) return false
   return /no (?:commissionable|dispensable|partial-dispense) GTIN is configured for this environment/i.test(error)
     || /Dispensing is not allowed for Dawana-integrated products|must be dispensed through the Dawana integration/i.test(error)
+    // A second-entity ("ef_") key REJECTED with 401 means this tenant has no such trade partner
+    // provisioned — permanent, so holding it back for a re-run that can never succeed just hides
+    // it. Pinned to 401: the same roles answered 404 once the relay tunnel stopped routing, and
+    // that is an outage, which isInfrastructureFailure must keep claiming first.
+    || /auth failed for role "ef_[a-z_]+": 401/i.test(error)
 }
 
 /** Reduce a Playwright error blob to the sentence that says what is wrong. */

@@ -1,11 +1,25 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import {
   activateEnvironment, createEnvironment, deleteEnvironment, fetchEnvironment, fetchEnvironments,
-  parseLines, toLines, updateEnvironment, type EnvDetail, type EnvSummary,
+  updateEnvironment, type EnvDetail, type EnvSummary,
 } from '@/lib/environments-client'
+
+/**
+ * One variable being edited.
+ *
+ * A row, not a line of text. The editor shows a field per variable, and a field needs an
+ * identity that survives renaming its key and reordering its neighbours — otherwise React
+ * reuses the wrong input and your cursor jumps to another row mid-word. `id` is that identity
+ * and never reaches the server; only key and value do.
+ */
+export interface VarRow {
+  id: number
+  key: string
+  value: string
+}
 
 /**
  * Everything the two environment surfaces do, in one place.
@@ -30,7 +44,13 @@ export function useEnvironmentManager(
   const [editing, setEditing] = useState<EnvDetail | null>(null)
   const [draftName, setDraftName] = useState('')
   const [draftDesc, setDraftDesc] = useState('')
-  const [draftVars, setDraftVars] = useState('')
+  const [draftVars, setDraftVars] = useState<VarRow[]>([])
+  // Row ids only have to be unique within one editing session, so a counter beats anything
+  // derived from the key — which is the one thing the user is about to change.
+  const nextId = useRef(0)
+  const makeRows = (vars: Record<string, string>): VarRow[] =>
+    Object.entries(vars).map(([key, value]) => ({ id: nextId.current++, key, value }))
+  const blankRow = (): VarRow => ({ id: nextId.current++, key: '', value: '' })
 
   // Every setState is inside an async callback, never in the effect body — the effect only
   // kicks off the fetch. Setting state synchronously in an effect is what
@@ -61,7 +81,9 @@ export function useEnvironmentManager(
     setEditing({ id: 0, name: '', description: '', isActive: false, keys: [], updatedAt: null, variables: {} })
     setDraftName('')
     setDraftDesc('')
-    setDraftVars('')
+    // One empty row, so a new environment opens on a field you can type in rather than on a
+    // button you have to find first.
+    setDraftVars([blankRow()])
   }
 
   const startEdit = async (id: number) => {
@@ -70,7 +92,7 @@ export function useEnvironmentManager(
     setEditing(detail)
     setDraftName(detail.name)
     setDraftDesc(detail.description)
-    setDraftVars(toLines(detail.variables))
+    setDraftVars(makeRows(detail.variables))
   }
 
   const cancelEdit = () => setEditing(null)
@@ -79,7 +101,7 @@ export function useEnvironmentManager(
     if (!editing) return
     setBusy(true)
     try {
-      const payload = { name: draftName.trim(), description: draftDesc.trim(), variables: parseLines(draftVars) }
+      const payload = { name: draftName.trim(), description: draftDesc.trim(), variables: rowsToVars(draftVars) }
       const isNew = editing.id === 0
       const res = isNew
         ? await createEnvironment(app, payload)
@@ -105,14 +127,56 @@ export function useEnvironmentManager(
     }
   }
 
+  /** Append a blank row and hand back its id, so the caller can focus it. */
+  const addVar = () => {
+    const row = blankRow()
+    setDraftVars((rows) => [...rows, row])
+    return row.id
+  }
+
+  const setVar = (id: number, patch: Partial<Omit<VarRow, 'id'>>) =>
+    setDraftVars((rows) => rows.map((r) => (r.id === id ? { ...r, ...patch } : r)))
+
+  const removeVar = (id: number) => setDraftVars((rows) => rows.filter((r) => r.id !== id))
+
+  /** Replace every row — used when a `.env` block is pasted in wholesale. */
+  const replaceVars = (vars: Record<string, string>) => setDraftVars(makeRows(vars))
+
+  /**
+   * Insert parsed variables at a row, replacing it. This is the paste path: dropping a block
+   * into an empty key field should become that many rows, not one row with newlines in its name.
+   */
+  const insertVarsAt = (id: number, vars: Record<string, string>) =>
+    setDraftVars((rows) => {
+      const at = rows.findIndex((r) => r.id === id)
+      if (at === -1) return rows
+      return [...rows.slice(0, at), ...makeRows(vars), ...rows.slice(at + 1)]
+    })
+
   return {
     envs, active, busy,
     load, activate, remove,
     editing, startNew, startEdit, cancelEdit, save,
     draftName, setDraftName,
     draftDesc, setDraftDesc,
-    draftVars, setDraftVars,
+    draftVars, setDraftVars, addVar, setVar, removeVar, replaceVars, insertVarsAt,
   }
+}
+
+/**
+ * Rows to the object the API stores.
+ *
+ * A row with no key is a field someone opened and did not fill, not a variable named "" — it is
+ * dropped. Whitespace around a key is always a typo; whitespace inside a value might not be, so
+ * only the key is trimmed. A repeated key keeps the last row, which is what a `.env` file does.
+ */
+export function rowsToVars(rows: VarRow[]): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const r of rows) {
+    const key = r.key.trim()
+    if (key) out[key] = r.value
+  }
+  return out
 }
 
 export type EnvironmentManager = ReturnType<typeof useEnvironmentManager>
