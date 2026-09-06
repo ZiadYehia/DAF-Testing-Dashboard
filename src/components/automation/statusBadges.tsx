@@ -17,6 +17,14 @@ export interface RunRecord {
    */
   hasApiLog?: boolean
   error?: string
+  /**
+   * Which environment this run targeted. Absent on runs recorded before environments existed,
+   * or made with none active — the Hub shows those under "(no environment)".
+   *
+   * Mirrors RunRecord in automation-hub/types.ts; the two are separate declarations, so a
+   * field added there has to be added here or the UI cannot see it.
+   */
+  environment?: string
 }
 
 /**

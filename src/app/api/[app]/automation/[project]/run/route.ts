@@ -5,7 +5,7 @@ import { getProject } from '@automation-hub/store'
 import { runProject as runPlaywright, isRunning as isRunningPlaywright } from '@automation-hub/engine/runner'
 import { runProject as runAppium, isRunning as isRunningAppium } from '@automation-hub/engine/appium-runner'
 import { setExecutionStatus, appendExecutionNoteLine } from '@/lib/execution'
-import { activeEnvironmentVars } from '@/lib/environments'
+import { activeEnvironmentVars, activeEnvironmentName } from '@/lib/environments'
 import { buildAutomationFailureNote, AUTOMATION_NOTE_PREFIX } from '@/lib/automation-run-note'
 
 export const runtime = 'nodejs'
@@ -47,8 +47,12 @@ export async function POST(
      * automation-hub/.env in charge exactly as before this existed.
      */
     const envOverrides = await activeEnvironmentVars(app)
+    // Recorded on the run so history stays readable: without it, results from two different
+    // servers sit in one list with nothing to tell them apart, and lastStatus is simply
+    // whichever ran last.
+    const envName = await activeEnvironmentName(app)
     const result = await (isAppiumProject ? runAppium : runPlaywright)(
-      project, new Date().toISOString(), envOverrides,
+      project, new Date().toISOString(), envOverrides, envName ?? undefined,
     )
 
     // If this automation is linked to a dashboard test case, mirror pass/fail

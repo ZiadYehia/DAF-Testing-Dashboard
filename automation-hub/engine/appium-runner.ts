@@ -70,6 +70,8 @@ export async function runProject(
    * this engine does not read them itself.
    */
   envOverrides: Record<string, string> = {},
+  /** Name of the active environment, recorded on the run so history is readable. */
+  environment?: string,
 ): Promise<RunResult> {
   if (running.has(name)) {
     throw new Error(`A run for "${name}" is already in progress`)
@@ -180,7 +182,10 @@ export async function runProject(
       'utf8',
     )
 
-    await recordRun(name, { ts, status, durationMs, hasVideo, hasTrace, error })
+    await recordRun(name, {
+      ts, status, durationMs, hasVideo, hasTrace, error,
+      ...(environment ? { environment } : {}),
+    })
 
     return { status, durationMs, ts, error, hasVideo, hasTrace, log, executed: true }
   } finally {

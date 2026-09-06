@@ -55,7 +55,18 @@ function parseLines(text: string): Record<string, string> {
 const toLines = (vars: Record<string, string>) =>
   Object.entries(vars).map(([k, v]) => `${k}=${v}`).join('\n')
 
-export function EnvironmentSwitcher({ app }: { app: string }) {
+export function EnvironmentSwitcher({
+  app,
+  onActiveChange,
+}: {
+  app: string
+  /**
+   * Fires with the active environment's name (null when none is active and .env decides).
+   * The Hub needs it to report each automation's status for the environment you are pointed
+   * at, rather than whichever server happened to run last.
+   */
+  onActiveChange?: (name: string | null) => void
+}) {
   const [envs, setEnvs] = useState<EnvSummary[] | null>(null)
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -68,13 +79,16 @@ export function EnvironmentSwitcher({ app }: { app: string }) {
   // only kicks off the fetch. Setting state synchronously in an effect is what
   // react-hooks/set-state-in-effect warns about, and it is a cascading render for no gain.
   const load = useCallback(async () => {
+    let list: EnvSummary[] = []
     try {
       const res = await fetch(`/api/${app}/environments`)
-      setEnvs(res.ok ? await res.json() : [])
+      if (res.ok) list = await res.json()
     } catch {
-      setEnvs([])
+      list = []
     }
-  }, [app])
+    setEnvs(list)
+    onActiveChange?.(list.find((e) => e.isActive)?.name ?? null)
+  }, [app, onActiveChange])
 
   useEffect(() => { load() }, [load])
 

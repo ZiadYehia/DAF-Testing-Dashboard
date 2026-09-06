@@ -156,14 +156,56 @@ export function withMetaLock<T>(name: string, fn: () => Promise<T>): Promise<T> 
  * tag/link edit. Engine-agnostic (works off RunRecord/ProjectMeta alone), so both
  * the Playwright runner (engine/runner.ts) and the Appium runner call this.
  */
+/** The bucket a run belongs to. Runs made before environments existed keep their own. */
+export const NO_ENVIRONMENT = '(no environment)'
+export const runEnvironment = (r: RunRecord): string => r.environment ?? NO_ENVIRONMENT
+
 export async function recordRun(name: string, record: RunRecord): Promise<void> {
   const runs = await withMetaLock(name, async () => {
     const meta = await readMeta(name)
     if (!meta) return null
-    const updatedRuns = [record, ...meta.runs].slice(0, MAX_RUN_HISTORY)
-    const updated: ProjectMeta = { ...meta, lastStatus: record.status, runs: updatedRuns }
+
+    /**
+     * History is kept PER ENVIRONMENT, not pooled.
+     *
+     * Pruning the combined list to MAX_RUN_HISTORY let one environment evict another's
+     * history entirely — twenty runs against a colleague's ngrok tunnel would erase every
+     * recorded production result for that project. And `lastStatus` became whichever server
+     * happened to run last: TC_AUTH_001 read "fail" because a tunnel with a wrong auth path
+     * ran three minutes after a passing production run, with nothing on screen to say the two
+     * had hit different hosts.
+     *
+     * Each environment therefore keeps its own cap, and its own last status. The runs stay in
+     * one chronological array so the file shape is unchanged and old history is still valid —
+     * the split is by `environment`, applied when pruning and when reporting.
+     */
+    const bucket = runEnvironment(record)
+    const kept: RunRecord[] = [record]
+    const counts: Record<string, number> = { [bucket]: 1 }
+    for (const r of meta.runs) {
+      const b = runEnvironment(r)
+      const n = counts[b] ?? 0
+      if (n >= MAX_RUN_HISTORY) continue
+      counts[b] = n + 1
+      kept.push(r)
+    }
+
+    const lastStatusByEnv: Record<string, RunRecord['status']> = {}
+    for (const r of kept) {
+      const b = runEnvironment(r)
+      // kept is newest-first, so the first entry per bucket is that environment's latest.
+      if (!(b in lastStatusByEnv)) lastStatusByEnv[b] = r.status
+    }
+
+    const updated: ProjectMeta = {
+      ...meta,
+      // Still the newest run overall, so anything reading lastStatus keeps working.
+      lastStatus: record.status,
+      lastStatusByEnv,
+      runs: kept,
+    }
     await writeMeta(updated)
-    return updatedRuns
+    return kept
   })
   if (!runs) return
 

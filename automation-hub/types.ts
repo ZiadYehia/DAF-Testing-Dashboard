@@ -113,6 +113,19 @@ export interface RunRecord {
   hasApiLog?: boolean
   /** First error message, if the run failed. */
   error?: string
+  /**
+   * Which environment this run targeted, e.g. "Production (devsim)" or "ngrok relay".
+   *
+   * Run history is one list per project, so runs against different servers sit side by side.
+   * Without this the list is actively misleading: TC_AUTH_001 showed `pass` at 11:02 against
+   * production and `fail` at 11:05 against an ngrok tunnel whose auth path is wrong, and
+   * lastStatus became "fail" purely because the tunnel ran last. Nothing on screen said the
+   * two runs had hit different servers.
+   *
+   * Absent on runs recorded before environments existed, and on any run made with no
+   * environment active (automation-hub/.env decides then, and the UI says so).
+   */
+  environment?: string
 }
 
 /**
@@ -139,8 +152,18 @@ export interface ProjectMeta {
   /** Full link used to sync replay pass/fail back to execution status. */
   linkedTestcase?: LinkedTestcase | null
   createdAt: string
+  /** The newest run of any environment. Kept so existing readers keep working. */
   lastStatus: RunStatus
-  /** Newest first; trimmed to MAX_RUN_HISTORY. */
+  /**
+   * Last status PER ENVIRONMENT, keyed by environment name ("(no environment)" for runs made
+   * before environments existed, or with none active).
+   *
+   * This is the one to read when you care whether a case passes: `lastStatus` alone answers
+   * "what happened most recently anywhere", which conflates servers. A case can legitimately
+   * pass on production and fail on a tunnel whose auth path is wrong, and both facts matter.
+   */
+  lastStatusByEnv?: Record<string, RunStatus>
+  /** Newest first; trimmed to MAX_RUN_HISTORY PER ENVIRONMENT, not overall. */
   runs: RunRecord[]
   /** Free-form labels ("smoke", "orders", …) used to slice regression runs. */
   tags?: string[]

@@ -200,6 +200,8 @@ export async function runProject(
   name: string,
   now: string,
   envOverrides: Record<string, string> = {},
+  /** Name of the active environment, recorded on the run so history is readable. */
+  environment?: string,
 ): Promise<RunResult> {
   if (running.has(name)) {
     throw new Error(`A run for "${name}" is already in progress`)
@@ -318,7 +320,10 @@ export async function runProject(
     // The raw playwright output is bulky and already mined — drop it.
     await fs.rm(rawOut, { recursive: true, force: true })
 
-    await recordRun(name, { ts, status, durationMs, hasVideo, hasTrace, hasApiLog, error: parsed.error })
+    await recordRun(name, {
+      ts, status, durationMs, hasVideo, hasTrace, hasApiLog, error: parsed.error,
+      ...(environment ? { environment } : {}),
+    })
 
     return { status, exitCode: code, durationMs, ts, error: parsed.error, hasVideo, hasTrace, hasApiLog, log, executed }
   } finally {

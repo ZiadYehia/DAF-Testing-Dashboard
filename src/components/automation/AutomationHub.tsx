@@ -57,6 +57,7 @@ interface ProjectMeta {
   linkedTestcase?: LinkedTestcase | null
   createdAt: string
   lastStatus: RunStatus
+  lastStatusByEnv?: Record<string, RunStatus>
   runs: RunRecord[]
   tags?: string[]
   folder?: string | null
@@ -451,6 +452,14 @@ export function AutomationHub({ app }: { app: string }) {
   // ── Search ────────────────────────────────────────────────────────────────
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<RunStatus | 'all'>('all')
+  /**
+   * Name of the environment runs currently target; null when none is active and
+   * automation-hub/.env decides. Reported by EnvironmentSwitcher, which already loads the list.
+   * `setActiveEnv` is passed as the callback directly because a useState setter is referentially
+   * stable — an inline arrow would change identity every render and re-fire the switcher's load
+   * effect forever.
+   */
+  const [activeEnv, setActiveEnv] = useState<string | null>(null)
   const searchActive = searchQuery.trim().length > 0
   const filtersActive =
     searchActive || statusFilter !== 'all' || tagFilters.length > 0 || moduleFilters.length > 0
@@ -466,15 +475,34 @@ export function AutomationHub({ app }: { app: string }) {
     })
   }, [projects, moduleFilters, moduleOf, searchQuery])
 
+  /**
+   * Status of one automation ON THE ENVIRONMENT CURRENTLY SELECTED.
+   *
+   * `lastStatus` is the newest run anywhere, which pooled servers together: a case could read
+   * "Failing" only because a tunnel ran after production passed, and switching environments
+   * changed nothing on screen. Reading the per-environment map instead means the pill, the
+   * state counts and the state filter all describe the target you are pointed at.
+   *
+   * Never run on that environment reads `never_run` rather than borrowing another server's
+   * result — that is the honest answer, and it doubles as the list of what is still to run
+   * after a switch. With no environment active, automation-hub/.env decides and `lastStatus`
+   * (which includes runs recorded before environments existed) is the right fallback.
+   */
+  const statusOf = useCallback(
+    (p: Pick<ProjectMeta, 'lastStatus' | 'lastStatusByEnv'>): RunStatus =>
+      activeEnv ? (p.lastStatusByEnv?.[activeEnv] ?? 'never_run') : p.lastStatus,
+    [activeEnv],
+  )
+
   const statusCounts = useMemo(
-    () => deriveStatusCounts(scopedProjects, (p) => p.lastStatus),
-    [scopedProjects],
+    () => deriveStatusCounts(scopedProjects, statusOf),
+    [scopedProjects, statusOf],
   )
 
   /** …plus state, before tags — so the tag popover's counts describe what is on screen. */
   const preTagProjects = useMemo(
-    () => scopedProjects.filter((p) => statusFilter === 'all' || p.lastStatus === statusFilter),
-    [scopedProjects, statusFilter],
+    () => scopedProjects.filter((p) => statusFilter === 'all' || statusOf(p) === statusFilter),
+    [scopedProjects, statusFilter, statusOf],
   )
 
   const tagOptions = useMemo(() => deriveTagCounts(preTagProjects, (p) => p.tags), [preTagProjects])
@@ -765,8 +793,9 @@ export function AutomationHub({ app }: { app: string }) {
   const modelName = models.find((m) => m.id === chatModel)?.name ?? 'No model selected'
 
   const projectCard = (p: ProjectMeta) => {
-    const accent = p.lastStatus === 'pass' ? 'before:bg-emerald-500'
-      : p.lastStatus === 'fail' ? 'before:bg-red-500' : 'before:bg-border'
+    const cardStatus = statusOf(p)
+    const accent = cardStatus === 'pass' ? 'before:bg-emerald-500'
+      : cardStatus === 'fail' ? 'before:bg-red-500' : 'before:bg-border'
     const SourceIcon = p.createdVia === 'chat' ? MessageSquare : p.createdVia === 'testcase' ? FlaskConical : Plus
     const modSlug = modulesAvailable ? moduleOf(p) : null
     return (
@@ -782,7 +811,7 @@ export function AutomationHub({ app }: { app: string }) {
         <CardContent className="space-y-1.5 p-2.5">
           <div className="flex items-start justify-between gap-2">
             <h3 className="truncate text-sm font-medium leading-snug">{p.title}</h3>
-            <StatusPill status={p.lastStatus} />
+            <StatusPill status={cardStatus} />
           </div>
           <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
             <span className="inline-flex items-center gap-1"><SourceIcon className="h-3 w-3" />{p.createdVia}</span>
@@ -842,7 +871,7 @@ export function AutomationHub({ app }: { app: string }) {
           <span className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
             <Server className="h-3 w-3" /> Runs against
           </span>
-          <EnvironmentSwitcher app={app} />
+          <EnvironmentSwitcher app={app} onActiveChange={setActiveEnv} />
         </div>
         <div className="flex flex-col gap-1">
           <span className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
@@ -1046,9 +1075,9 @@ export function AutomationHub({ app }: { app: string }) {
                 const isCollapsed = filtersActive
                   ? !!filteredCollapsed[folderName]
                   : !!collapsedFolders[folderName]
-                const passCount = list.filter((p) => p.lastStatus === 'pass').length
-                const failCount = list.filter((p) => p.lastStatus === 'fail').length
-                const neverCount = list.filter((p) => p.lastStatus === 'never_run').length
+                const passCount = list.filter((p) => statusOf(p) === 'pass').length
+                const failCount = list.filter((p) => statusOf(p) === 'fail').length
+                const neverCount = list.filter((p) => statusOf(p) === 'never_run').length
                 return (
                   <div key={folderName} className="space-y-2">
                     <div className="flex items-center justify-between gap-1 px-0.5 pt-1">
@@ -1125,7 +1154,7 @@ export function AutomationHub({ app }: { app: string }) {
                     <div>
                       <h2 className="text-lg font-semibold leading-tight">{detail.title}</h2>
                       <div className="mt-0.5 flex items-center gap-2">
-                        <StatusPill status={detail.lastStatus} />
+                        <StatusPill status={statusOf(detail)} />
                         {detail.engine === 'appium' && (
                           <Badge variant="outline" className="gap-1 font-mono text-[10px]">
                             Android · {detail.appium?.apkPath?.split(/[\\/]/).pop() ?? detail.appium?.appPackage ?? 'no APK'}
@@ -1351,15 +1380,30 @@ export function AutomationHub({ app }: { app: string }) {
                     </CardContent>
                   </Card>
 
-                  {/* Run history */}
+                  {/* Run history — grouped by environment.
+                      One pooled list put results from different servers side by side with
+                      nothing to tell them apart, so a case could read "fail" purely because a
+                      different server ran last. Each environment now has its own section and
+                      its own latest status. */}
                   {detail.runs.length > 0 && (
                     <Card>
                       <CardContent className="p-3">
-                        <p className="mb-2 text-xs font-medium text-muted-foreground">
-                          Run history (last {detail.runs.length})
+                        {Object.entries(
+                          detail.runs.reduce<Record<string, RunRecord[]>>((acc, r) => {
+                            const key = r.environment ?? '(no environment)'
+                            ;(acc[key] = acc[key] ?? []).push(r)
+                            return acc
+                          }, {}),
+                        ).map(([envName, envRuns]) => (
+                        <div key={envName} className="mb-3 last:mb-0">
+                        <p className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                          <Server className="h-3 w-3" />
+                          {envName}
+                          <StatusPill status={detail.lastStatusByEnv?.[envName] ?? envRuns[0].status} />
+                          <span className="font-normal">· last {envRuns.length}</span>
                         </p>
                         <div className="divide-y divide-border/60">
-                          {detail.runs.map((r) => (
+                          {envRuns.map((r) => (
                             <div key={r.ts} className="flex items-center justify-between gap-3 py-2 text-sm">
                               <span className="flex items-center gap-2">
                                 {r.status === 'pass'
@@ -1403,6 +1447,8 @@ export function AutomationHub({ app }: { app: string }) {
                             </div>
                           ))}
                         </div>
+                        </div>
+                        ))}
                       </CardContent>
                     </Card>
                   )}
