@@ -3,7 +3,7 @@ import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Unique, 
 import { Feature } from './Feature'
 
 @Entity('test_executions')
-@Unique(['feature', 'version', 'testcaseId'])
+@Unique(['feature', 'version', 'testcaseId', 'environment'])
 export class TestExecution {
   @PrimaryGeneratedColumn()
   id!: number
@@ -26,6 +26,13 @@ export class TestExecution {
 
   @Column({ type: 'nvarchar', length: 'max', nullable: true })
   notes!: string | null
+
+  /**
+   * Environment this status was observed on; NULL = no environment was active. Part of the
+   * uniqueness key so a run on one server cannot overwrite another server's result.
+   */
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  environment!: string | null
 
   @UpdateDateColumn({ type: 'datetime2', nullable: true })
   updatedAt!: Date | null

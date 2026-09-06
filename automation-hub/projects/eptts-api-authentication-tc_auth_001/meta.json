@@ -10,8 +10,46 @@
     "testcaseId": "TC_AUTH_001"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "fail",
+  "lastStatus": "pass",
   "runs": [
+    {
+      "ts": "2026-09-06T11-49-27-819Z",
+      "status": "pass",
+      "durationMs": 2949.953,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "ngrok relay"
+    },
+    {
+      "ts": "2026-09-06T11-47-56-962Z",
+      "status": "fail",
+      "durationMs": 4351.5869999999995,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: token is bound to this entity GLN",
+      "environment": "ngrok relay"
+    },
+    {
+      "ts": "2026-09-06T11-28-26-044Z",
+      "status": "fail",
+      "durationMs": 4123.6720000000005,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: HTTP 200 OK",
+      "environment": "ngrok relay"
+    },
+    {
+      "ts": "2026-09-06T11-28-06-496Z",
+      "status": "pass",
+      "durationMs": 17976.233999999997,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "Production (devsim)"
+    },
     {
       "ts": "2026-09-06T11-05-04-317Z",
       "status": "fail",
@@ -75,5 +113,10 @@
     "readonly"
   ],
   "folder": "EPTTS APIs / api-authentication",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "ngrok relay": "pass",
+    "Production (devsim)": "pass",
+    "(no environment)": "fail"
+  }
 }

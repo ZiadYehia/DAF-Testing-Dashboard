@@ -247,6 +247,7 @@ export default function SettingsPage() {
           <div className={`space-y-4 pt-4 ${locked || isAdmin === false ? 'opacity-75' : ''}`}>
             {adminOnlyNotice}
             <AutomationSettingsTab
+              app={app}
               globals={globals}
               loading={loadingGlobals}
               onChange={updateGlobal}

@@ -4,5 +4,5 @@
   "TC_AUTH_009": "platform validation gap: a partially-supplied credential is ignored rather than rejected (the spreadsheet expected 400, the platform returns 200)",
   "TC_AUTH_010": "platform validation gap: a partially-supplied credential is ignored rather than rejected (the spreadsheet expected 400, the platform returns 200)",
   "TC_AUTH_011": "needs a disposable entity: rotating a real key to prove it dies is destructive",
-  "TC_AUTH_001": "[automation 2026-09-06T11-05-04-317Z] Error: HTTP 200 OK"
+  "TC_AUTH_001": "[automation 2026-09-06T11-47-56-962Z] Error: token is bound to this entity GLN"
 }

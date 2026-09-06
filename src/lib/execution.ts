@@ -31,8 +31,42 @@ function isValidStatus(s: string): s is ExecutionStatus {
 // fallback whenever the DB is unreachable OR a feature has never had any
 // rows written to test_executions at all (not yet migrated).
 
-function executionFilePath(appSlug: string, featureName: string, version?: string): string {
-  const filename = version ? `execution-status-v${version}.json` : 'execution-status.json'
+// ─── Environment-scoped storage ─────────────────────────────────────────────
+//
+// Status is ALSO scoped per environment, on the same principle as versions: one row per
+// (feature, version, case) meant one status per case across every server, so running the suite
+// against the ngrok relay would have overwritten the production result for all 400 cases. They
+// are different servers with different tenants and genuinely different outcomes.
+//
+// Omitting `environment` means "no environment" — the bucket every result recorded before
+// environments existed lives in, and where a run made with no environment active still goes.
+// On disk that is the existing filename, unchanged, so nothing already written moves.
+//
+// There is deliberately NO fallback from an environment to the no-environment bucket. A case
+// never run on the selected environment reads as unexecuted, because that is what it is;
+// borrowing another server's result is the exact confusion this split removes.
+
+/**
+ * Filename-safe form of an environment name. "Production (devsim)" -> "production-devsim".
+ *
+ * Names are user-typed and routinely contain spaces, parentheses and slashes. Collisions are
+ * possible in principle (two names differing only in punctuation) but not in practice, and the
+ * DB — not the file — is the primary store; these files are write-through for export parity.
+ */
+function environmentSlug(environment: string): string {
+  return environment.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'env'
+}
+
+/** `execution-status-v2.json` with no environment; `execution-status-v2--ngrok-relay.json` with. */
+function scopedFilename(stem: string, version?: string, environment?: string): string {
+  const versioned = version ? `${stem}-v${version}` : stem
+  return environment ? `${versioned}--${environmentSlug(environment)}.json` : `${versioned}.json`
+}
+
+function executionFilePath(
+  appSlug: string, featureName: string, version?: string, environment?: string,
+): string {
+  const filename = scopedFilename('execution-status', version, environment)
   return path.join(getDataRoot(), appSlug, 'features', featureName, filename)
 }
 
@@ -86,12 +120,15 @@ async function resolveWriteVersion(appSlug: string, featureName: string, version
   }
 }
 
-function readFromFs(appSlug: string, featureName: string, version?: string): Record<string, ExecutionStatus> {
-  let file = executionFilePath(appSlug, featureName, version)
+function readFromFs(
+  appSlug: string, featureName: string, version?: string, environment?: string,
+): Record<string, ExecutionStatus> {
+  let file = executionFilePath(appSlug, featureName, version, environment)
   // A version was requested but has no file of its own yet — this feature
   // hasn't been migrated to version-scoped execution, so fall back to the
-  // legacy flat file rather than showing empty for every version.
-  if (version && !fs.existsSync(file)) file = executionFilePath(appSlug, featureName)
+  // legacy flat file rather than showing empty for every version. The fallback
+  // stays WITHIN the environment: it drops the version, never the environment.
+  if (version && !fs.existsSync(file)) file = executionFilePath(appSlug, featureName, undefined, environment)
   if (!fs.existsSync(file)) return {}
   try {
     const raw = JSON.parse(fs.readFileSync(file, 'utf-8')) as Record<string, string>
@@ -105,8 +142,11 @@ function readFromFs(appSlug: string, featureName: string, version?: string): Rec
   }
 }
 
-function writeToFs(appSlug: string, featureName: string, map: Record<string, ExecutionStatus>, version?: string): void {
-  const file = executionFilePath(appSlug, featureName, version)
+function writeToFs(
+  appSlug: string, featureName: string, map: Record<string, ExecutionStatus>,
+  version?: string, environment?: string,
+): void {
+  const file = executionFilePath(appSlug, featureName, version, environment)
   fs.mkdirSync(path.dirname(file), { recursive: true })
   fs.writeFileSync(file, JSON.stringify(map, null, 2), 'utf-8')
 }
@@ -118,13 +158,19 @@ function writeToFs(appSlug: string, featureName: string, map: Record<string, Exe
  * fallback, so a version that has never had a status/bug written shows the
  * legacy history instead of appearing empty.
  */
-async function fetchExecutionRows(ds: DS, featureId: number, version?: string): Promise<ITestExecution[]> {
+async function fetchExecutionRows(
+  ds: DS, featureId: number, version?: string, environment?: string,
+): Promise<ITestExecution[]> {
   const repo = ds.getRepository(TestExecutionEntity)
   const versionNum = version !== undefined ? parseInt(version, 10) : null
   const byVersion = (v: number | null) => {
     const qb = repo.createQueryBuilder('te').where('te.featureId = :fId', { fId: featureId })
     if (v === null) qb.andWhere('te.version IS NULL')
     else qb.andWhere('te.version = :v', { v })
+    // The environment filter is never relaxed by the version fallback below: dropping it would
+    // answer "what happened on the selected server" with another server's rows.
+    if (environment === undefined) qb.andWhere('te.environment IS NULL')
+    else qb.andWhere('te.environment = :env', { env: environment })
     return qb.getMany()
   }
   let rows = await byVersion(versionNum)
@@ -136,11 +182,12 @@ export async function getExecutions(
   appSlug: string,
   featureName: string,
   version?: string,
+  environment?: string,
 ): Promise<Record<string, ExecutionStatus>> {
   try {
     const ds = await getDataSource()
     const feature = await ds.getRepository(FeatureEntity).findOne({ where: { appSlug, name: featureName } })
-    if (!feature) return readFromFs(appSlug, featureName, version)
+    if (!feature) return readFromFs(appSlug, featureName, version, environment)
 
     const totalCount = await ds
       .getRepository(TestExecutionEntity)
@@ -149,16 +196,16 @@ export async function getExecutions(
       .getCount()
     // Feature has never had a row written to test_executions (not migrated /
     // never touched since) — read JSON files as before rather than showing empty.
-    if (totalCount === 0) return readFromFs(appSlug, featureName, version)
+    if (totalCount === 0) return readFromFs(appSlug, featureName, version, environment)
 
-    const rows = await fetchExecutionRows(ds, feature.id, version)
+    const rows = await fetchExecutionRows(ds, feature.id, version, environment)
     const map: Record<string, ExecutionStatus> = {}
     for (const row of rows) {
       if (isValidStatus(row.status)) map[row.testcaseId] = row.status
     }
     return map
   } catch {
-    return readFromFs(appSlug, featureName, version)
+    return readFromFs(appSlug, featureName, version, environment)
   }
 }
 
@@ -198,6 +245,7 @@ async function upsertExecutionRow(
   testcaseId: string,
   version: string | undefined,
   patch: { status?: string; bugSlug?: string; notes?: string | null },
+  environment?: string,
 ): Promise<void> {
   const ds = await getDataSource()
   const feature = await ds.getRepository(FeatureEntity).findOne({ where: { appSlug, name: featureName } })
@@ -210,6 +258,10 @@ async function upsertExecutionRow(
     .where('te.featureId = :fId AND te.testcaseId = :testcaseId', { fId: feature.id, testcaseId })
   if (versionNum === null) qb.andWhere('te.version IS NULL')
   else qb.andWhere('te.version = :v', { v: versionNum })
+  // Matching the environment is what makes this an upsert PER ENVIRONMENT rather than one row
+  // the last server to run overwrites.
+  if (environment === undefined) qb.andWhere('te.environment IS NULL')
+  else qb.andWhere('te.environment = :env', { env: environment })
   const existing = await qb.getOne()
 
   if (existing) {
@@ -222,6 +274,7 @@ async function upsertExecutionRow(
       status: patch.status ?? 'new_added',
       bugSlug: patch.bugSlug ?? null,
       notes: patch.notes ?? null,
+      environment: environment ?? null,
     })
   }
 }
@@ -232,22 +285,25 @@ export async function setExecutionStatus(
   testcaseId: string,
   status: string,
   version?: string,
+  environment?: string,
 ): Promise<{ ok: boolean; error?: string }> {
   if (!isValidStatus(status)) return { ok: false, error: `Invalid status: "${status}"` }
-  const lockKey = `${appSlug}::${featureName}::${version ?? ''}`
+  // Keyed per environment too, so a production write and an ngrok write for the same
+  // feature neither serialise against each other nor share a read-modify-write.
+  const lockKey = `${appSlug}::${featureName}::${version ?? ''}::${environment ?? ''}`
   return withExecutionLock(lockKey, async () => {
     try {
       const effectiveVersion = await resolveWriteVersion(appSlug, featureName, version)
 
       try {
-        await upsertExecutionRow(appSlug, featureName, testcaseId, effectiveVersion, { status })
+        await upsertExecutionRow(appSlug, featureName, testcaseId, effectiveVersion, { status }, environment)
       } catch {
         // DB unavailable — file write-through below still records the change
       }
 
-      const map = readFromFs(appSlug, featureName, effectiveVersion)
+      const map = readFromFs(appSlug, featureName, effectiveVersion, environment)
       map[testcaseId] = status
-      writeToFs(appSlug, featureName, map, effectiveVersion)
+      writeToFs(appSlug, featureName, map, effectiveVersion, environment)
       return { ok: true }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
@@ -262,8 +318,10 @@ export async function setExecutionStatus(
 // test_executions row (bugSlug column) as the status. Kept apart on disk so
 // the status read/validation path is untouched. Version-scoped the same way.
 
-function executionBugsFilePath(appSlug: string, featureName: string, version?: string): string {
-  const filename = version ? `execution-bugs-v${version}.json` : 'execution-bugs.json'
+function executionBugsFilePath(
+  appSlug: string, featureName: string, version?: string, environment?: string,
+): string {
+  const filename = scopedFilename('execution-bugs', version, environment)
   return path.join(getDataRoot(), appSlug, 'features', featureName, filename)
 }
 
@@ -274,14 +332,18 @@ function executionBugsFilePath(appSlug: string, featureName: string, version?: s
 // spec row itself. Shares the same test_executions row (notes column) in the
 // DB. Version-scoped the same way as status/bugSlug.
 
-function executionNotesFilePath(appSlug: string, featureName: string, version?: string): string {
-  const filename = version ? `execution-notes-v${version}.json` : 'execution-notes.json'
+function executionNotesFilePath(
+  appSlug: string, featureName: string, version?: string, environment?: string,
+): string {
+  const filename = scopedFilename('execution-notes', version, environment)
   return path.join(getDataRoot(), appSlug, 'features', featureName, filename)
 }
 
-function readNotesFromFs(appSlug: string, featureName: string, version?: string): Record<string, string> {
-  let file = executionNotesFilePath(appSlug, featureName, version)
-  if (version && !fs.existsSync(file)) file = executionNotesFilePath(appSlug, featureName)
+function readNotesFromFs(
+  appSlug: string, featureName: string, version?: string, environment?: string,
+): Record<string, string> {
+  let file = executionNotesFilePath(appSlug, featureName, version, environment)
+  if (version && !fs.existsSync(file)) file = executionNotesFilePath(appSlug, featureName, undefined, environment)
   if (!fs.existsSync(file)) return {}
   try {
     const raw = JSON.parse(fs.readFileSync(file, 'utf-8')) as Record<string, unknown>
@@ -295,9 +357,11 @@ function readNotesFromFs(appSlug: string, featureName: string, version?: string)
   }
 }
 
-function readBugsFromFs(appSlug: string, featureName: string, version?: string): Record<string, string> {
-  let file = executionBugsFilePath(appSlug, featureName, version)
-  if (version && !fs.existsSync(file)) file = executionBugsFilePath(appSlug, featureName)
+function readBugsFromFs(
+  appSlug: string, featureName: string, version?: string, environment?: string,
+): Record<string, string> {
+  let file = executionBugsFilePath(appSlug, featureName, version, environment)
+  if (version && !fs.existsSync(file)) file = executionBugsFilePath(appSlug, featureName, undefined, environment)
   if (!fs.existsSync(file)) return {}
   try {
     const raw = JSON.parse(fs.readFileSync(file, 'utf-8')) as Record<string, unknown>
@@ -315,27 +379,28 @@ export async function getExecutionBugs(
   appSlug: string,
   featureName: string,
   version?: string,
+  environment?: string,
 ): Promise<Record<string, string>> {
   try {
     const ds = await getDataSource()
     const feature = await ds.getRepository(FeatureEntity).findOne({ where: { appSlug, name: featureName } })
-    if (!feature) return readBugsFromFs(appSlug, featureName, version)
+    if (!feature) return readBugsFromFs(appSlug, featureName, version, environment)
 
     const totalCount = await ds
       .getRepository(TestExecutionEntity)
       .createQueryBuilder('te')
       .where('te.featureId = :fId', { fId: feature.id })
       .getCount()
-    if (totalCount === 0) return readBugsFromFs(appSlug, featureName, version)
+    if (totalCount === 0) return readBugsFromFs(appSlug, featureName, version, environment)
 
-    const rows = await fetchExecutionRows(ds, feature.id, version)
+    const rows = await fetchExecutionRows(ds, feature.id, version, environment)
     const map: Record<string, string> = {}
     for (const row of rows) {
       if (row.bugSlug) map[row.testcaseId] = row.bugSlug
     }
     return map
   } catch {
-    return readBugsFromFs(appSlug, featureName, version)
+    return readBugsFromFs(appSlug, featureName, version, environment)
   }
 }
 
@@ -343,27 +408,28 @@ export async function getExecutionNotes(
   appSlug: string,
   featureName: string,
   version?: string,
+  environment?: string,
 ): Promise<Record<string, string>> {
   try {
     const ds = await getDataSource()
     const feature = await ds.getRepository(FeatureEntity).findOne({ where: { appSlug, name: featureName } })
-    if (!feature) return readNotesFromFs(appSlug, featureName, version)
+    if (!feature) return readNotesFromFs(appSlug, featureName, version, environment)
 
     const totalCount = await ds
       .getRepository(TestExecutionEntity)
       .createQueryBuilder('te')
       .where('te.featureId = :fId', { fId: feature.id })
       .getCount()
-    if (totalCount === 0) return readNotesFromFs(appSlug, featureName, version)
+    if (totalCount === 0) return readNotesFromFs(appSlug, featureName, version, environment)
 
-    const rows = await fetchExecutionRows(ds, feature.id, version)
+    const rows = await fetchExecutionRows(ds, feature.id, version, environment)
     const map: Record<string, string> = {}
     for (const row of rows) {
       if (row.notes) map[row.testcaseId] = row.notes
     }
     return map
   } catch {
-    return readNotesFromFs(appSlug, featureName, version)
+    return readNotesFromFs(appSlug, featureName, version, environment)
   }
 }
 
@@ -394,17 +460,44 @@ export async function clearExecutions(appSlug: string, featureName: string, vers
     // DB unavailable — file deletion below is sufficient
   }
 
-  for (const file of [
-    executionFilePath(appSlug, featureName, version),
-    executionBugsFilePath(appSlug, featureName, version),
-    executionNotesFilePath(appSlug, featureName, version),
-  ]) {
+  // Deliberately ACROSS every environment, matching the DELETE above, which has no environment
+  // clause. This runs when a regenerate replaces the whole case set, so the case IDs themselves
+  // are gone — a status for them is meaningless on every server, not just the selected one.
+  for (const file of scopedSiblings(appSlug, featureName, version)) {
     try {
       if (fs.existsSync(file)) fs.unlinkSync(file)
     } catch {
       // non-fatal
     }
   }
+}
+
+/**
+ * Every status/bugs/notes file for this feature+version, across all environments — the
+ * un-suffixed one plus each `--<env>` variant that exists on disk.
+ */
+function scopedSiblings(appSlug: string, featureName: string, version?: string): string[] {
+  const dir = path.join(getDataRoot(), appSlug, 'features', featureName)
+  const out = [
+    executionFilePath(appSlug, featureName, version),
+    executionBugsFilePath(appSlug, featureName, version),
+    executionNotesFilePath(appSlug, featureName, version),
+  ]
+  let entries: string[]
+  try {
+    entries = fs.readdirSync(dir)
+  } catch {
+    return out
+  }
+  for (const stem of ['execution-status', 'execution-bugs', 'execution-notes']) {
+    const prefix = version ? `${stem}-v${version}--` : `${stem}--`
+    for (const name of entries) {
+      // `execution-status--x.json` must not be swept by a v2 clear, and vice versa; the
+      // version-qualified prefix already separates them.
+      if (name.startsWith(prefix) && name.endsWith('.json')) out.push(path.join(dir, name))
+    }
+  }
+  return out
 }
 
 /** Removes execution status + bug-link + note entries for specific testcase IDs.
@@ -444,30 +537,18 @@ export async function removeExecutionEntries(
     }
   }
 
-  try {
-    const statuses = readFromFs(appSlug, featureName, version)
-    const keptStatuses = Object.fromEntries(Object.entries(statuses).filter(([id]) => !ids.has(id)))
-    writeToFs(appSlug, featureName, keptStatuses, version)
-  } catch {
-    // non-fatal
-  }
-  try {
-    const bugs = readBugsFromFs(appSlug, featureName, version)
-    const keptBugs = Object.fromEntries(Object.entries(bugs).filter(([id]) => !ids.has(id)))
-    const file = executionBugsFilePath(appSlug, featureName, version)
-    fs.mkdirSync(path.dirname(file), { recursive: true })
-    fs.writeFileSync(file, JSON.stringify(keptBugs, null, 2), 'utf-8')
-  } catch {
-    // non-fatal
-  }
-  try {
-    const notes = readNotesFromFs(appSlug, featureName, version)
-    const keptNotes = Object.fromEntries(Object.entries(notes).filter(([id]) => !ids.has(id)))
-    const file = executionNotesFilePath(appSlug, featureName, version)
-    fs.mkdirSync(path.dirname(file), { recursive: true })
-    fs.writeFileSync(file, JSON.stringify(keptNotes, null, 2), 'utf-8')
-  } catch {
-    // non-fatal
+  // Across every environment, for the same reason as clearExecutions: these case IDs no longer
+  // exist, so leaving their status behind on any other environment's file would resurrect them
+  // the moment that environment is selected.
+  for (const file of scopedSiblings(appSlug, featureName, version)) {
+    try {
+      if (!fs.existsSync(file)) continue
+      const raw = JSON.parse(fs.readFileSync(file, 'utf-8')) as Record<string, unknown>
+      const kept = Object.fromEntries(Object.entries(raw).filter(([id]) => !ids.has(id)))
+      fs.writeFileSync(file, JSON.stringify(kept, null, 2), 'utf-8')
+    } catch {
+      // non-fatal
+    }
   }
 }
 
@@ -477,20 +558,21 @@ export async function setExecutionBug(
   testcaseId: string,
   bugSlug: string,
   version?: string,
+  environment?: string,
 ): Promise<{ ok: boolean; error?: string }> {
   if (!testcaseId || !bugSlug) return { ok: false, error: 'testcaseId and bugSlug required' }
   try {
     const effectiveVersion = await resolveWriteVersion(appSlug, featureName, version)
 
     try {
-      await upsertExecutionRow(appSlug, featureName, testcaseId, effectiveVersion, { bugSlug })
+      await upsertExecutionRow(appSlug, featureName, testcaseId, effectiveVersion, { bugSlug }, environment)
     } catch {
       // DB unavailable — file write-through below still records the link
     }
 
-    const map = readBugsFromFs(appSlug, featureName, effectiveVersion)
+    const map = readBugsFromFs(appSlug, featureName, effectiveVersion, environment)
     map[testcaseId] = bugSlug
-    const file = executionBugsFilePath(appSlug, featureName, effectiveVersion)
+    const file = executionBugsFilePath(appSlug, featureName, effectiveVersion, environment)
     fs.mkdirSync(path.dirname(file), { recursive: true })
     fs.writeFileSync(file, JSON.stringify(map, null, 2), 'utf-8')
     return { ok: true }
@@ -528,26 +610,27 @@ export async function appendExecutionNoteLine(
   line: string,
   opts?: { replacePrefix?: string },
   version?: string,
+  environment?: string,
 ): Promise<{ ok: boolean; error?: string }> {
   if (!testcaseId) return { ok: false, error: 'testcaseId required' }
-  const lockKey = `${appSlug}::${featureName}::${version ?? ''}`
+  const lockKey = `${appSlug}::${featureName}::${version ?? ''}::${environment ?? ''}`
   return withExecutionLock(lockKey, async () => {
     try {
       const effectiveVersion = await resolveWriteVersion(appSlug, featureName, version)
-      const map = readNotesFromFs(appSlug, featureName, effectiveVersion)
+      const map = readNotesFromFs(appSlug, featureName, effectiveVersion, environment)
       const kept = (map[testcaseId] ?? '')
         .split('\n')
         .filter((l) => l.trim() && !(opts?.replacePrefix && l.trimStart().startsWith(opts.replacePrefix)))
       const merged = [...kept, line].join('\n')
 
       try {
-        await upsertExecutionRow(appSlug, featureName, testcaseId, effectiveVersion, { notes: merged })
+        await upsertExecutionRow(appSlug, featureName, testcaseId, effectiveVersion, { notes: merged }, environment)
       } catch {
         // DB unavailable — file write-through below still records the change
       }
 
       map[testcaseId] = merged
-      const file = executionNotesFilePath(appSlug, featureName, effectiveVersion)
+      const file = executionNotesFilePath(appSlug, featureName, effectiveVersion, environment)
       fs.mkdirSync(path.dirname(file), { recursive: true })
       fs.writeFileSync(file, JSON.stringify(map, null, 2), 'utf-8')
       return { ok: true }
@@ -564,10 +647,11 @@ export async function setExecutionNote(
   testcaseId: string,
   note: string,
   version?: string,
+  environment?: string,
 ): Promise<{ ok: boolean; error?: string }> {
   if (!testcaseId) return { ok: false, error: 'testcaseId required' }
   const trimmed = note.trim()
-  const lockKey = `${appSlug}::${featureName}::${version ?? ''}`
+  const lockKey = `${appSlug}::${featureName}::${version ?? ''}::${environment ?? ''}`
   return withExecutionLock(lockKey, async () => {
     try {
       const effectiveVersion = await resolveWriteVersion(appSlug, featureName, version)
@@ -575,18 +659,18 @@ export async function setExecutionNote(
       try {
         await upsertExecutionRow(appSlug, featureName, testcaseId, effectiveVersion, {
           notes: trimmed ? trimmed : null,
-        })
+        }, environment)
       } catch {
         // DB unavailable — file write-through below still records the change
       }
 
-      const map = readNotesFromFs(appSlug, featureName, effectiveVersion)
+      const map = readNotesFromFs(appSlug, featureName, effectiveVersion, environment)
       if (trimmed) {
         map[testcaseId] = trimmed
       } else {
         delete map[testcaseId]
       }
-      const file = executionNotesFilePath(appSlug, featureName, effectiveVersion)
+      const file = executionNotesFilePath(appSlug, featureName, effectiveVersion, environment)
       fs.mkdirSync(path.dirname(file), { recursive: true })
       fs.writeFileSync(file, JSON.stringify(map, null, 2), 'utf-8')
       return { ok: true }

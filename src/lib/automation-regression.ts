@@ -14,6 +14,7 @@ import { engineFamily } from '@automation-hub/types'
 import { runProject as runPlaywright, isRunning as isRunningPlaywright } from '@automation-hub/engine/runner'
 import { runProject as runAppium, isRunning as isRunningAppium } from '@automation-hub/engine/appium-runner'
 import { setExecutionStatus, appendExecutionNoteLine } from './execution'
+import { activeEnvironmentVars, activeEnvironmentName } from './environments'
 import { getSetting } from './settings'
 import { writeAllAutomationCaches } from './automation-cache'
 import { buildAutomationFailureNote, AUTOMATION_NOTE_PREFIX } from './automation-run-note'
@@ -69,6 +70,12 @@ export async function runRegression(opts: {
       console.warn('[automation] writeAllAutomationCaches failed — proceeding with existing automation.json files:', err)
     }
 
+    // Scheduled regression runs honour the active environment exactly as a manual replay
+    // does. Without this they would silently target automation-hub/.env while the UI showed
+    // an environment selected, and file their results in the no-environment bucket.
+    const envOverrides = opts.app ? await activeEnvironmentVars(opts.app) : {}
+    const envName = opts.app ? await activeEnvironmentName(opts.app) : null
+
     let passed = 0
     let failed = 0
     let skipped = 0
@@ -84,7 +91,9 @@ export async function runRegression(opts: {
         continue
       }
       try {
-        const result = await runProject(p.name, new Date().toISOString())
+        const result = await runProject(
+          p.name, new Date().toISOString(), envOverrides, envName ?? undefined,
+        )
         if (result.status === 'pass') passed++
         else {
           failed++
@@ -96,14 +105,17 @@ export async function runRegression(opts: {
         // `pass` for lack of a failure, but nothing was actually verified.
         const link = p.linkedTestcase
         if (link && result.executed) {
-          await setExecutionStatus(link.app, link.feature, link.testcaseId, result.status).catch(() => {})
+          await setExecutionStatus(
+            link.app, link.feature, link.testcaseId, result.status, undefined, envName ?? undefined,
+          ).catch(() => {})
           // A human observation must survive a green run — only failures write a
           // note — and even then it is merged in, never allowed to overwrite the
           // tester's own text.
           if (result.status === 'fail') {
-            await appendExecutionNoteLine(link.app, link.feature, link.testcaseId, buildAutomationFailureNote(result), {
-              replacePrefix: AUTOMATION_NOTE_PREFIX,
-            }).catch(() => {})
+            await appendExecutionNoteLine(
+              link.app, link.feature, link.testcaseId, buildAutomationFailureNote(result),
+              { replacePrefix: AUTOMATION_NOTE_PREFIX }, undefined, envName ?? undefined,
+            ).catch(() => {})
           }
         }
       } catch (err: any) {

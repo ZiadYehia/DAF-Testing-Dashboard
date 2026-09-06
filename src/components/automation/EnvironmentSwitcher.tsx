@@ -10,6 +10,10 @@ import {
 } from '@/components/ui/dialog'
 import { Check, Globe, Loader2, Pencil, Plus, Server, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
+import {
+  activateEnvironment, createEnvironment, deleteEnvironment, fetchEnvironment, fetchEnvironments,
+  parseLines, toLines, updateEnvironment, type EnvDetail, type EnvSummary,
+} from '@/lib/environments-client'
 
 /**
  * Pick which server the automation runs against, and see exactly what that means.
@@ -25,36 +29,10 @@ import { toast } from 'sonner'
  *
  * The active environment's variables are injected into the run child by the run route and beat
  * automation-hub/.env, which stays as the fallback for anything an environment does not define.
+ *
+ * This is the compact header control; Settings → Automation has the full management card. Both
+ * go through lib/environments-client.ts so they cannot disagree.
  */
-
-interface EnvSummary {
-  id: number
-  name: string
-  description: string
-  isActive: boolean
-  keys: string[]
-  updatedAt: string | null
-}
-
-interface EnvDetail extends EnvSummary {
-  variables: Record<string, string>
-}
-
-/** `KEY=value` lines <-> an object. A textarea is the fastest way to paste a whole config. */
-function parseLines(text: string): Record<string, string> {
-  const out: Record<string, string> = {}
-  for (const line of text.split(/\r?\n/)) {
-    if (!line.trim() || line.trim().startsWith('#')) continue
-    const at = line.indexOf('=')
-    if (at === -1) continue
-    out[line.slice(0, at).trim()] = line.slice(at + 1).trim()
-  }
-  return out
-}
-
-const toLines = (vars: Record<string, string>) =>
-  Object.entries(vars).map(([k, v]) => `${k}=${v}`).join('\n')
-
 export function EnvironmentSwitcher({
   app,
   onActiveChange,
@@ -79,13 +57,7 @@ export function EnvironmentSwitcher({
   // only kicks off the fetch. Setting state synchronously in an effect is what
   // react-hooks/set-state-in-effect warns about, and it is a cascading render for no gain.
   const load = useCallback(async () => {
-    let list: EnvSummary[] = []
-    try {
-      const res = await fetch(`/api/${app}/environments`)
-      if (res.ok) list = await res.json()
-    } catch {
-      list = []
-    }
+    const list = await fetchEnvironments(app)
     setEnvs(list)
     onActiveChange?.(list.find((e) => e.isActive)?.name ?? null)
   }, [app, onActiveChange])
@@ -97,14 +69,9 @@ export function EnvironmentSwitcher({
   const activate = async (id: number) => {
     setBusy(true)
     try {
-      const res = await fetch(`/api/${app}/environments/${id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ activate: true }),
-      })
-      const data = await res.json()
-      if (!res.ok) { toast.error(data.error ?? 'Could not switch environment'); return }
-      toast.success(`Runs now target "${data.name}"`)
+      const res = await activateEnvironment(app, id)
+      if (!res.ok) { toast.error(res.error); return }
+      toast.success(`Runs now target "${res.name}"`)
       await load()
     } finally {
       setBusy(false)
@@ -119,9 +86,8 @@ export function EnvironmentSwitcher({
   }
 
   const startEdit = async (id: number) => {
-    const res = await fetch(`/api/${app}/environments/${id}`)
-    if (!res.ok) { toast.error('Could not load that environment'); return }
-    const detail: EnvDetail = await res.json()
+    const detail = await fetchEnvironment(app, id)
+    if (!detail) { toast.error('Could not load that environment'); return }
     setEditing(detail)
     setDraftName(detail.name)
     setDraftDesc(detail.description)
@@ -132,23 +98,13 @@ export function EnvironmentSwitcher({
     if (!editing) return
     setBusy(true)
     try {
-      const payload = {
-        name: draftName,
-        description: draftDesc,
-        variables: parseLines(draftVars),
-      }
+      const payload = { name: draftName, description: draftDesc, variables: parseLines(draftVars) }
       const isNew = editing.id === 0
-      const res = await fetch(
-        isNew ? `/api/${app}/environments` : `/api/${app}/environments/${editing.id}`,
-        {
-          method: isNew ? 'POST' : 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        },
-      )
-      const data = await res.json()
-      if (!res.ok) { toast.error(data.error ?? 'Could not save'); return }
-      toast.success(isNew ? `Created "${data.name}"` : `Saved "${data.name}"`)
+      const res = isNew
+        ? await createEnvironment(app, payload)
+        : await updateEnvironment(app, editing.id, payload)
+      if (!res.ok) { toast.error(res.error); return }
+      toast.success(isNew ? `Created "${res.name}"` : `Saved "${res.name}"`)
       setEditing(null)
       await load()
     } finally {
@@ -159,9 +115,8 @@ export function EnvironmentSwitcher({
   const remove = async (env: EnvSummary) => {
     setBusy(true)
     try {
-      const res = await fetch(`/api/${app}/environments/${env.id}`, { method: 'DELETE' })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) { toast.error(data.error ?? 'Could not delete'); return }
+      const res = await deleteEnvironment(app, env.id)
+      if (!res.ok) { toast.error(res.error); return }
       toast.success(`Deleted "${env.name}"`)
       await load()
     } finally {

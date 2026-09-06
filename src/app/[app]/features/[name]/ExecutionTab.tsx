@@ -59,6 +59,9 @@ export function ExecutionTab({
   testcaseVersions,
   execVersion,
   onExecVersionChange,
+  execEnvironment,
+  environments,
+  onExecEnvironmentChange,
   exporting,
   onExport,
   onStatusChange,
@@ -73,6 +76,11 @@ export function ExecutionTab({
   testcaseVersions: TestcaseVersion[];
   execVersion: string;
   onExecVersionChange: (v: string) => void;
+  /** Selected environment; "" = the no-environment bucket. */
+  execEnvironment: string;
+  /** Every environment defined for this app, by name. */
+  environments: string[];
+  onExecEnvironmentChange: (v: string) => void;
   exporting: boolean;
   onExport: (format: "md" | "xlsx") => void;
   onStatusChange: (testcaseId: string, status: ExecutionStatus) => void;
@@ -118,6 +126,21 @@ export function ExecutionTab({
                 value: v.filename,
                 label: v.label,
               }))}
+            />
+          )}
+          {environments.length > 0 && (
+            <AppSelect
+              aria-label="Select execution environment"
+              size="sm"
+              value={execEnvironment}
+              onChange={(v) => onExecEnvironmentChange(v ?? "")}
+              options={[
+                // Named "No environment" rather than left blank: results recorded before
+                // environments existed live here, and they are a real set someone may want to
+                // look at, not an empty selection.
+                { value: "", label: "No environment" },
+                ...environments.map((e) => ({ value: e, label: e })),
+              ]}
             />
           )}
           {executions.length > 0 && (

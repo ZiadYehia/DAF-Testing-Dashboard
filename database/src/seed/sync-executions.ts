@@ -4,6 +4,7 @@
  * Run with:
  *   npx ts-node database/src/seed/sync-executions.ts --app eptts-web
  *   npx ts-node database/src/seed/sync-executions.ts --app eptts-web --dry-run
+ *   npx ts-node database/src/seed/sync-executions.ts --app eptts-api --environment "ngrok relay"
  *
  * WHY THIS EXISTS SEPARATELY FROM db:import
  *
@@ -40,6 +41,15 @@ function argValue(flag: string): string | null {
 }
 
 const APP = argValue('--app')
+/**
+ * Which environment's results to sync, e.g. "ngrok relay". Must match the environment's name
+ * in the app exactly — it is stored on the row and is what the dashboard filters by.
+ *
+ * Omitted means the no-environment bucket: the unsuffixed files, and rows with
+ * environment IS NULL. The two never mix, so syncing an ngrok run cannot touch a production
+ * result for the same case.
+ */
+const ENVIRONMENT = argValue('--environment')
 const DRY_RUN = process.argv.includes('--dry-run')
 
 if (!APP) {
@@ -57,12 +67,24 @@ function readJson<T>(p: string): T | null {
 
 interface FileRef { version: number | null; path: string }
 
-/** Every `<kind>-v<N>.json` plus the unsuffixed file, which resolves later. */
+/** Filename-safe environment name, matching src/lib/execution.ts's environmentSlug. */
+function environmentSlug(environment: string): string {
+  return environment.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'env'
+}
+
+/**
+ * Every `<kind>-v<N>.json` plus the unsuffixed file, which resolves later.
+ *
+ * With --environment, reads that environment's `--<slug>` variants instead. The two sets are
+ * disjoint by construction: the no-environment regex requires `.json` immediately after the
+ * version, so it can never match an environment file, and vice versa.
+ */
 function listFiles(featureDir: string, kind: string): FileRef[] {
   const refs: FileRef[] = []
-  const flat = path.join(featureDir, `${kind}.json`)
+  const suffix = ENVIRONMENT ? `--${environmentSlug(ENVIRONMENT)}` : ''
+  const flat = path.join(featureDir, `${kind}${suffix}.json`)
   if (fs.existsSync(flat)) refs.push({ version: null, path: flat })
-  const re = new RegExp(`^${kind}-v(\\d+)\\.json$`)
+  const re = new RegExp(`^${kind}-v(\\d+)${suffix}\\.json$`)
   for (const f of fs.readdirSync(featureDir)) {
     const m = re.exec(f)
     if (m) refs.push({ version: Number(m[1]), path: path.join(featureDir, f) })
@@ -135,10 +157,14 @@ async function main(): Promise<void> {
       for (const [vKey, rows] of merged) {
         const version = vKey === 'null' ? null : Number(vKey)
         const versionWhere = version === null ? IsNull() : version
+        const environmentWhere = ENVIRONMENT === null ? IsNull() : ENVIRONMENT
 
         for (const [testcaseId, next] of rows) {
           const existing = await teRepo.findOne({
-            where: { feature: { id: feature.id }, version: versionWhere, testcaseId },
+            where: {
+              feature: { id: feature.id }, version: versionWhere, testcaseId,
+              environment: environmentWhere,
+            },
           })
 
           if (!existing) {
@@ -149,6 +175,7 @@ async function main(): Promise<void> {
                 testcaseId,
                 status: next.status ?? 'new_added',
                 notes: next.notes ?? null,
+                environment: ENVIRONMENT,
               })
             }
             inserted++

@@ -513,6 +513,12 @@ export interface ITestExecution {
   version?: number | null
   bugSlug?: string | null
   notes?: string | null
+  /**
+   * Which environment this status was observed on; null = recorded with no environment active
+   * (every row that predates environments). Part of the uniqueness key, so a result on one
+   * server can never overwrite another's.
+   */
+  environment?: string | null
   updatedAt: Date | null
 }
 
@@ -526,6 +532,7 @@ export const TestExecutionEntity = new EntitySchema<ITestExecution>({
     version:    { type: Number, nullable: true },
     bugSlug:    { type: 'varchar', length: 200, nullable: true },
     notes:      { type: 'nvarchar', length: 'max' as unknown as number, nullable: true },
+    environment: { type: 'varchar', length: 100, nullable: true },
     updatedAt:  { type: 'datetime2', updateDate: true, nullable: true },
   },
   relations: {
@@ -537,7 +544,10 @@ export const TestExecutionEntity = new EntitySchema<ITestExecution>({
       nullable: false,
     },
   },
-  uniques: [{ name: 'UQ_te_feature_version_testcase', columns: ['feature', 'version', 'testcaseId'] }],
+  uniques: [{
+    name: 'UQ_te_feature_version_testcase_env',
+    columns: ['feature', 'version', 'testcaseId', 'environment'],
+  }],
 })
 
 // ─── Auth Entities ────────────────────────────────────────────────────────────

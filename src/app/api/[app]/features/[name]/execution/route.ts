@@ -28,6 +28,10 @@ export async function GET(req: NextRequest, { params }: Params) {
   // version number so reads target that version's own file rather than an
   // ambiguous "current" file.
   const versionParam = req.nextUrl.searchParams.get('version')
+  // Which environment's results to show. Absent = the no-environment bucket, which is where
+  // everything recorded before environments existed lives. Never falls back across
+  // environments: a case not run on the selected one reads as unexecuted, because it is.
+  const environment = req.nextUrl.searchParams.get('environment') || undefined
   let content = feature.testcases
   let effectiveVersion = versionParam ?? undefined
   if (versionParam) {
@@ -39,9 +43,9 @@ export async function GET(req: NextRequest, { params }: Params) {
   }
 
   const rows = parseTestcaseRows(content)
-  const statuses = await getExecutions(app, name, effectiveVersion)
-  const bugLinks = await getExecutionBugs(app, name, effectiveVersion)
-  const notes = await getExecutionNotes(app, name, effectiveVersion)
+  const statuses = await getExecutions(app, name, effectiveVersion, environment)
+  const bugLinks = await getExecutionBugs(app, name, effectiveVersion, environment)
+  const notes = await getExecutionNotes(app, name, effectiveVersion, environment)
 
   // Resolve each linked bug slug once (only the few that have links).
   const linkedSlugs = [...new Set(Object.values(bugLinks))]
@@ -74,22 +78,24 @@ export async function PUT(req: NextRequest, { params }: Params) {
   const { app, name } = await params
   const guard = await guardApp(app, 'testcases.execute')
   if (!guard.ok) return guard.response
-  const { testcaseId, status, notes, version } = (await req.json()) as {
+  const { testcaseId, status, notes, version, environment } = (await req.json()) as {
     testcaseId: string
     status?: string
     notes?: string
     version?: string
+    /** Environment these results belong to; omitted = the no-environment bucket. */
+    environment?: string
   }
   if (!testcaseId || (status === undefined && notes === undefined)) {
     return NextResponse.json({ error: 'testcaseId and at least one of status/notes required' }, { status: 400 })
   }
 
   if (status !== undefined) {
-    const result = await setExecutionStatus(app, name, testcaseId, status, version)
+    const result = await setExecutionStatus(app, name, testcaseId, status, version, environment)
     if (!result.ok) return NextResponse.json({ error: result.error ?? 'Failed to update status' }, { status: 400 })
   }
   if (notes !== undefined) {
-    const result = await setExecutionNote(app, name, testcaseId, notes, version)
+    const result = await setExecutionNote(app, name, testcaseId, notes, version, environment)
     if (!result.ok) return NextResponse.json({ error: result.error ?? 'Failed to update notes' }, { status: 400 })
   }
   return NextResponse.json({ success: true })

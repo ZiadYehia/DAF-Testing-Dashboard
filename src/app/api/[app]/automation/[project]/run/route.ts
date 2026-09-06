@@ -63,15 +63,20 @@ export async function POST(
     let synced: { testcaseId: string; status: string } | null = null
     const link = detail.linkedTestcase
     if (link && result.executed && (result.status === 'pass' || result.status === 'fail')) {
-      const res = await setExecutionStatus(link.app, link.feature, link.testcaseId, result.status)
+      // Same environment the run targeted: execution status is scoped per environment, so
+      // recording an ngrok result must not land on (and overwrite) the production one.
+      const res = await setExecutionStatus(
+        link.app, link.feature, link.testcaseId, result.status, undefined, envName ?? undefined,
+      )
       if (res.ok) synced = { testcaseId: link.testcaseId, status: result.status }
       // A human observation must survive a green run — only failures write a
       // note — and even then it is merged in, never allowed to overwrite the
       // tester's own text.
       if (result.status === 'fail') {
-        await appendExecutionNoteLine(link.app, link.feature, link.testcaseId, buildAutomationFailureNote(result), {
-          replacePrefix: AUTOMATION_NOTE_PREFIX,
-        })
+        await appendExecutionNoteLine(
+          link.app, link.feature, link.testcaseId, buildAutomationFailureNote(result),
+          { replacePrefix: AUTOMATION_NOTE_PREFIX }, undefined, envName ?? undefined,
+        )
       }
     }
 

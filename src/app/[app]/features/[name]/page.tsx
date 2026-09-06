@@ -149,6 +149,16 @@ export default function FeatureDetailPage() {
   const [executionsLoading, setExecutionsLoading] = useState(false);
   // Which test-case version the execution tab is showing (filename, "" = latest).
   const [execVersion, setExecVersion] = useState<string>("");
+  /**
+   * Which environment's results are on screen. "" = the no-environment bucket, where every
+   * result recorded before environments existed lives.
+   *
+   * Status, counts and the bug links all come from the one fetch below, so scoping the fetch
+   * scopes everything the tab shows — there is no second place a stale environment could leak
+   * in from.
+   */
+  const [execEnvironment, setExecEnvironment] = useState<string>("");
+  const [environments, setEnvironments] = useState<string[]>([]);
   // Execution status/bug-links are scoped per version — this is the version
   // number to send on every read/write so they all target the same file.
   // undefined ("" selected) means "latest"; the API resolves that server-side.
@@ -260,9 +270,11 @@ export default function FeatureDetailPage() {
   const loadExecutions = useCallback(async () => {
     setExecutionsLoading(true);
     try {
-      const url = execVersionNum
-        ? `/api/${app}/features/${name}/execution?version=${execVersionNum}`
-        : `/api/${app}/features/${name}/execution`;
+      const params = new URLSearchParams();
+      if (execVersionNum) params.set("version", execVersionNum);
+      if (execEnvironment) params.set("environment", execEnvironment);
+      const qs = params.toString();
+      const url = `/api/${app}/features/${name}/execution${qs ? `?${qs}` : ""}`;
       const res = await fetch(url, { cache: "no-store" });
       if (res.ok) {
         const { testcases } = await res.json();
@@ -271,9 +283,23 @@ export default function FeatureDetailPage() {
     } finally {
       setExecutionsLoading(false);
     }
-  }, [app, name, execVersion]);
+  }, [app, name, execVersion, execEnvironment]);
 
   useEffect(() => { loadExecutions(); }, [loadExecutions]);
+
+  // The environment list drives the selector. Fetched once per app; a failure leaves it
+  // empty, which degrades to the no-environment bucket rather than blocking the tab.
+  const loadEnvironments = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/${app}/environments`);
+      const list = res.ok ? await res.json() : [];
+      setEnvironments(list.map((e: { name: string }) => e.name));
+    } catch {
+      setEnvironments([]);
+    }
+  }, [app]);
+
+  useEffect(() => { loadEnvironments(); }, [loadEnvironments]);
 
   const updateExecutionStatus = async (testcaseId: string, status: ExecutionStatus) => {
     const prev = executions;
@@ -282,7 +308,10 @@ export default function FeatureDetailPage() {
       const res = await fetch(`/api/${app}/features/${name}/execution`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ testcaseId, status, version: execVersionNum }),
+        body: JSON.stringify({
+          testcaseId, status, version: execVersionNum,
+          environment: execEnvironment || undefined,
+        }),
       });
       if (!res.ok) throw new Error();
     } catch {
@@ -298,7 +327,10 @@ export default function FeatureDetailPage() {
       const res = await fetch(`/api/${app}/features/${name}/execution`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ testcaseId, notes, version: execVersionNum }),
+        body: JSON.stringify({
+          testcaseId, notes, version: execVersionNum,
+          environment: execEnvironment || undefined,
+        }),
       });
       if (!res.ok) throw new Error();
     } catch {
@@ -1116,6 +1148,9 @@ export default function FeatureDetailPage() {
             executionsLoading={executionsLoading}
             testcaseVersions={testcaseVersions}
             execVersion={execVersion}
+            execEnvironment={execEnvironment}
+            environments={environments}
+            onExecEnvironmentChange={setExecEnvironment}
             onExecVersionChange={setExecVersion}
             exporting={executionExporting}
             onExport={handleExecutionExport}

@@ -1,5 +1,5 @@
 {
-  "TC_AUTH_001": "fail",
+  "TC_AUTH_001": "pass",
   "TC_AUTH_002": "pass",
   "TC_AUTH_003": "pass",
   "TC_AUTH_004": "pass",

@@ -6,15 +6,23 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { CredentialRow, type GlobalKeysProps } from '@/components/settings/fields'
+import { EnvironmentsCard } from '@/components/settings/EnvironmentsCard'
 
 const AUTOMATION_KEYS = ['AUTOMATION_WEBHOOK_URL', 'AUTOMATION_SCHEDULE_ENABLED', 'AUTOMATION_SCHEDULE_TIME', 'AUTOMATION_SCHEDULE_TAG']
 
-export function AutomationSettingsTab({ globals, loading, onChange, saveKeys }: GlobalKeysProps) {
+export function AutomationSettingsTab({
+  app, globals, loading, onChange, saveKeys,
+}: GlobalKeysProps & { app: string }) {
   const [savingAutomation, setSavingAutomation] = useState(false)
   const scheduleEnabled = globals['AUTOMATION_SCHEDULE_ENABLED'] === '1' || globals['AUTOMATION_SCHEDULE_ENABLED'] === 'true'
 
   return (
     <>
+      {/* Environments first: which server everything below runs against is the setting
+          people come here looking for, and it was previously reachable only from the
+          Automation Hub header. */}
+      <EnvironmentsCard app={app} />
+
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Scheduled Regression</CardTitle>
