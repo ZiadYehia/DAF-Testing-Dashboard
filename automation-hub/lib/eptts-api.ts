@@ -943,6 +943,36 @@ export async function errorOf(res: APIResponse): Promise<NormalisedError> {
 }
 
 // ─── test data ───────────────────────────────────────────────────────────────
+//
+// Every value below describes ONE TENANT's catalogue, so each is overridable by an environment
+// variable and falls back to the devsim production tenant. Without that, pointing the suite at
+// another server fails for a reason that has nothing to do with the platform: the ngrok relay's
+// manufacturer is a different entity with 7 products and a 7-digit GCP, so all 117 write cases
+// died on "product 08435308354487 is not registered, so its marketing-authorisation holder
+// cannot be established" — a correct refusal of a request that should never have been built.
+
+/**
+ * Comma-separated list from the environment. An explicitly EMPTY value means "this tenant has
+ * none", which is different from unset ("use the devsim list") — a tenant whose every product
+ * is Dawana-integrated genuinely has no dispensable GTIN, and saying so lets those cases skip
+ * with a reason instead of failing.
+ */
+function envList(name: string, fallback: readonly string[]): readonly string[] {
+  const raw = process.env[name]
+  if (raw === undefined) return fallback
+  return raw.split(',').map((s) => s.trim()).filter(Boolean)
+}
+
+/** Positive integer from the environment. Throws rather than silently using the wrong tenant's. */
+function envInt(name: string, fallback: number): number {
+  const raw = process.env[name]
+  if (raw === undefined || raw.trim() === '') return fallback
+  const n = Number(raw)
+  if (!Number.isInteger(n) || n <= 0) {
+    throw new Error(`${name} must be a positive integer, got "${raw}"`)
+  }
+  return n
+}
 
 /**
  * A GTIN registered to the devsim manufacturer (INSTITUTO GRIFOLS, GLN
@@ -950,13 +980,13 @@ export async function errorOf(res: APIResponse): Promise<NormalisedError> {
  * Commissioning requires a GTIN under the acting manufacturer's own GCP, so these
  * are not interchangeable with the spreadsheet's placeholder GTINs.
  */
-export const MFG_GTINS = [
+export const MFG_GTINS = envList('EPTTS_MFG_GTINS', [
   '08435308354487', // Factor IX Grifols 1000 IU / 20 ml
   '08435308354494', // Factor IX Grifols 1500 IU / 30 ml
   '08435308354302', // Factor IX Grifols 250 IU / 5 ml
   '08435308354319', // Factor IX Grifols 500 IU / 10 ml
   '08435308354081', // Fanhdi 100 IU FVIII / 120 IU VWF per ml
-] as const
+])
 
 /**
  * GTINs that can actually be DISPENSED through this API.
@@ -971,11 +1001,11 @@ export const MFG_GTINS = [
  * must pick from this short list or it fails for the wrong reason. Commissioning,
  * packing, shipping and receiving are unaffected and work with any GTIN above.
  */
-export const MFG_DISPENSABLE_GTINS = [
+export const MFG_DISPENSABLE_GTINS = envList('EPTTS_MFG_DISPENSABLE_GTINS', [
   '08435308348882', // Fanhdi 50 IU FVIII / 60 IU VWF per ml (MQ)
   '08435308348912', // Flebogamma DIF 2.5 g / 50 ml (MQ)
   '08435308348929', // Human Albumin Grifols 10 g / 50 ml (MQ)
-] as const
+])
 
 /**
  * No product THIS MANUFACTURER holds has a `dispenseType` other than "full" — all 30 of its
@@ -997,12 +1027,12 @@ export const MFG_DISPENSABLE_GTINS = [
  * non-Dawana partial products, or a partial product is registered under it. Two of the five
  * are also Dawana-only, so any fix should target 06290009990011 or 05413868123456.
  */
-export const MFG_PARTIAL_DISPENSE_GTINS: readonly string[] = [
+export const MFG_PARTIAL_DISPENSE_GTINS: readonly string[] = envList('EPTTS_MFG_PARTIAL_GTINS', [
   // Fanhdi 50 IU FVIII/60 IU VWF per ml (MQ). Made `dispenseType: partial` on 2026-09-01 so
   // partial dispensing could be exercised at all. It is the ONE partial product this
   // manufacturer holds, and it is non-Dawana, so this channel will actually dispense it.
   '08435308348882',
-]
+])
 
 /**
  * Units in one pack of the partial-dispense product: 10 pills per strip x 3 strips.
@@ -1010,16 +1040,16 @@ export const MFG_PARTIAL_DISPENSE_GTINS: readonly string[] = [
  * Read from the registry rather than assumed — the quantity cases turn on it, and a wrong
  * pack size makes "over-dispense is refused" pass for the wrong reason.
  */
-export const MFG_PARTIAL_PACK_UNITS = 30
+export const MFG_PARTIAL_PACK_UNITS = envInt('EPTTS_MFG_PARTIAL_PACK_UNITS', 30)
 
 /** A fresh SGTIN of the partial-dispense product. */
 export function freshPartialSgtin(): string {
-  return sgtinFor(MFG_PARTIAL_DISPENSE_GTINS[0], MFG_GCP_LENGTH, uniqueSerial())
+  return sgtinFor(firstGtin(MFG_PARTIAL_DISPENSE_GTINS, 'EPTTS_MFG_PARTIAL_GTINS', 'partial-dispense'), MFG_GCP_LENGTH, uniqueSerial())
 }
 
-export const MFG_GCP_LENGTH = 8
+export const MFG_GCP_LENGTH = envInt('EPTTS_MFG_GCP_LENGTH', 8)
 /** The manufacturer's GS1 Company Prefix, for minting SSCCs. */
-export const MFG_COMPANY_PREFIX = '84353083'
+export const MFG_COMPANY_PREFIX = process.env.EPTTS_MFG_COMPANY_PREFIX?.trim() || '84353083'
 
 /**
  * GS1 Company Prefix length per role, from the registry's `gcpLength` field.
@@ -1029,9 +1059,9 @@ export const MFG_COMPANY_PREFIX = '84353083'
  *   pharmacy     1234567890128 gcp 7 -> urn:epc:id:sgln:1234567.89012.0
  */
 export const GCP_LENGTH: Record<Role, number> = {
-  manufacturer: 8,
-  branch: 7,
-  pharmacy: 7,
+  manufacturer: MFG_GCP_LENGTH,
+  branch: envInt('EPTTS_BRANCH_GCP_LENGTH', 7),
+  pharmacy: envInt('EPTTS_PHARMACY_GCP_LENGTH', 7),
   // Second-entity GCP lengths, read from the registry's `gcpLength` field 2026-09-02:
   //   ef_manufacturer 7910000000005 gcp 9 (LoadTest MAH 0)
   //   ef_distributor  5413868000108 gcp 7 (Test Distributor)
@@ -1046,8 +1076,27 @@ export function sglnOf(role: Role): string {
   return sglnFor(glnFor(role), GCP_LENGTH[role])
 }
 
+/**
+ * Fail loudly when a tenant has no product of the kind a case needs.
+ *
+ * `MFG_GTINS[0]` on an empty list is `undefined`, and sgtinFor would happily mint
+ * `urn:epc:id:sgtin:5413868.undefined.1` — the platform then refuses it for a malformed EPC and
+ * the case reads as a validation defect. This says which variable is empty and for which
+ * environment instead, which is a configuration answer rather than a false finding.
+ */
+function firstGtin(list: readonly string[], varName: string, kind: string): string {
+  if (list.length === 0) {
+    throw new Error(
+      `no ${kind} GTIN is configured for this environment (${varName} is empty), `
+      + 'so this case cannot be built here. Set it to a GTIN this tenant holds, or run the '
+      + 'case on an environment that has one.',
+    )
+  }
+  return list[0]
+}
+
 /** A fresh SGTIN under the manufacturer's own GCP, ready to commission. */
-export function freshSgtin(gtin: string = MFG_GTINS[0]): string {
+export function freshSgtin(gtin: string = firstGtin(MFG_GTINS, 'EPTTS_MFG_GTINS', 'commissionable')): string {
   return sgtinFor(gtin, MFG_GCP_LENGTH, uniqueSerial())
 }
 
@@ -1056,7 +1105,9 @@ export function freshSgtin(gtin: string = MFG_GTINS[0]): string {
  * whenever the flow under test ends in a dispense, otherwise the run fails on the
  * Dawana-integration rule rather than on the behaviour being tested.
  */
-export function freshDispensableSgtin(gtin: string = MFG_DISPENSABLE_GTINS[0]): string {
+export function freshDispensableSgtin(
+  gtin: string = firstGtin(MFG_DISPENSABLE_GTINS, 'EPTTS_MFG_DISPENSABLE_GTINS', 'dispensable'),
+): string {
   return sgtinFor(gtin, MFG_GCP_LENGTH, uniqueSerial())
 }
 
