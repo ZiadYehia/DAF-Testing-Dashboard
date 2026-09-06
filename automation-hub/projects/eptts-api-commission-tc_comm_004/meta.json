@@ -10,8 +10,17 @@
     "testcaseId": "TC_COMM_004"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "fail",
+  "lastStatus": "pass",
   "runs": [
+    {
+      "ts": "2026-09-06T12-05-28-861Z",
+      "status": "pass",
+      "durationMs": 812,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "ngrok relay"
+    },
     {
       "ts": "2026-09-01T13-34-45-060Z",
       "status": "fail",
@@ -73,5 +82,9 @@
     "known-gap"
   ],
   "folder": "EPTTS APIs / api-commission",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "ngrok relay": "pass",
+    "(no environment)": "fail"
+  }
 }

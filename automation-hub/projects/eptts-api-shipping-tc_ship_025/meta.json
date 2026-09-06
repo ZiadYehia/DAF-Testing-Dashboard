@@ -13,6 +13,16 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-06T13-12-11-392Z",
+      "status": "fail",
+      "durationMs": 1717,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: fixture: commission 1 SGTIN(s) was not accepted (HTTP 502)",
+      "environment": "ngrok relay"
+    },
+    {
       "ts": "2026-09-01T11-31-40-103Z",
       "status": "fail",
       "durationMs": 32100,
@@ -28,5 +38,9 @@
     "known-gap"
   ],
   "folder": "EPTTS APIs / api-shipping",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "ngrok relay": "fail",
+    "(no environment)": "fail"
+  }
 }

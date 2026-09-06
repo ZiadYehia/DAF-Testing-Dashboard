@@ -10,8 +10,18 @@
     "testcaseId": "TC_PDISP_031"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "pass",
+  "lastStatus": "fail",
   "runs": [
+    {
+      "ts": "2026-09-06T13-09-40-668Z",
+      "status": "fail",
+      "durationMs": 1255,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: auth failed for role \"pharmacy\": 502 {} — check EPTTS_PHARMACY_APIKEY in automation-hub/.env (keys cannot be re-read from the platform; if lost they must be rotated again)",
+      "environment": "ngrok relay"
+    },
     {
       "ts": "2026-09-01T10-35-23-667Z",
       "status": "pass",
@@ -34,5 +44,9 @@
     "destructive"
   ],
   "folder": "EPTTS APIs / api-partial-dispensing",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "ngrok relay": "fail",
+    "(no environment)": "pass"
+  }
 }

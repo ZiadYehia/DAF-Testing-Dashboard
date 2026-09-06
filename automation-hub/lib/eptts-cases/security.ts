@@ -58,7 +58,12 @@ async function expectBearerRejected(bearer: string | null, what: string): Promis
   const res = await rawRequest('POST', 'masar', '/VerifyProduct', {
     headers, data: { productId: MFG_GTINS[0], geoLatitude: '', geoLongitude: '' }, label: `sec:${what}`,
   })
-  expect(res.status(), `${what} is rejected`).toBe(401)
+  // The observed status goes IN the message, not just the expectation. Without it a gateway
+  // 502 during the run reads exactly like the platform accepting a forged token: nine of
+  // these failed with "alg-none is rejected" while the tunnel was down, which looks like an
+  // auth bypass and is not one. It also lets the recorder's infrastructure guard recognise
+  // the failure instead of filing it as a defect.
+  expect(res.status(), `${what} is rejected (got HTTP ${res.status()})`).toBe(401)
   const body = await res.text()
   expect(body, `${what}: no product data leaks in a 401`).not.toMatch(/"verified"\s*:\s*true/i)
 }

@@ -10,8 +10,18 @@
     "testcaseId": "TS_RTN_027"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "pass",
+  "lastStatus": "fail",
   "runs": [
+    {
+      "ts": "2026-09-06T13-10-42-274Z",
+      "status": "fail",
+      "durationMs": 957,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: fixture: commission 1 SGTIN(s) was not accepted (HTTP 502)",
+      "environment": "ngrok relay"
+    },
     {
       "ts": "2026-09-01T11-20-26-721Z",
       "status": "pass",
@@ -26,5 +36,9 @@
     "write"
   ],
   "folder": "EPTTS APIs / api-return",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "ngrok relay": "fail",
+    "(no environment)": "pass"
+  }
 }

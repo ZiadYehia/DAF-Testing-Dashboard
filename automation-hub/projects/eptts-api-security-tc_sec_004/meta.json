@@ -10,8 +10,18 @@
     "testcaseId": "TC_SEC_004"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "pass",
+  "lastStatus": "fail",
   "runs": [
+    {
+      "ts": "2026-09-06T13-11-17-400Z",
+      "status": "fail",
+      "durationMs": 3568,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: garbage-signature is rejected",
+      "environment": "ngrok relay"
+    },
     {
       "ts": "2026-09-01T11-25-28-540Z",
       "status": "pass",
@@ -27,5 +37,9 @@
     "security"
   ],
   "folder": "EPTTS APIs / api-security",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "ngrok relay": "fail",
+    "(no environment)": "pass"
+  }
 }

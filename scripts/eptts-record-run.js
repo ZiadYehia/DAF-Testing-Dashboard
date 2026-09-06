@@ -5,6 +5,7 @@
  * Usage:
  *   node scripts/eptts-record-run.js <report.json> --app eptts-api            # dry run
  *   node scripts/eptts-record-run.js <report.json> --app eptts-web --write
+ *   node scripts/eptts-record-run.js <report.json> --app eptts-api --environment "ngrok relay" --write
  *
  * Works for either app: the API suite and the dashboard specs produce the same Playwright
  * report shape, and both link a test title back to a case id the same way. `--app` is
@@ -42,6 +43,21 @@ function argValue(flag) {
 }
 
 const APP = argValue('--app')
+/**
+ * Which environment these results were observed on, e.g. "ngrok relay". Must match the
+ * environment's name in the app exactly.
+ *
+ * Execution status is scoped per environment (see src/lib/execution.ts), so without this a
+ * suite run against a relay tunnel would overwrite the production status of every case it
+ * touched — different servers, different tenants, genuinely different outcomes. Omitted means
+ * the no-environment bucket, which is where every result recorded before environments lives.
+ */
+const ENVIRONMENT = argValue('--environment')
+
+/** Filename-safe environment name, matching src/lib/execution.ts's environmentSlug. */
+const envSuffix = ENVIRONMENT
+  ? `--${ENVIRONMENT.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'env'}`
+  : ''
 if (!APP) {
   console.error('required: --app <eptts-api|eptts-web>')
   process.exit(1)
@@ -49,7 +65,9 @@ if (!APP) {
 const FEATURES = path.join(REPO, 'data', APP, 'features')
 const WRITE = process.argv.includes('--write')
 // slice(3) skips the node/script argv and the --app value, which is also non-flag-shaped.
-const positional = process.argv.slice(2).filter((a, i, all) => !a.startsWith('--') && all[i - 1] !== '--app')
+const positional = process.argv.slice(2).filter(
+  (a, i, all) => !a.startsWith('--') && all[i - 1] !== '--app' && all[i - 1] !== '--environment',
+)
 const reportPath = positional[0]
 
 if (!reportPath || !fs.existsSync(reportPath)) {
@@ -113,6 +131,23 @@ function isInfrastructureFailure(error) {
   )
 }
 
+/**
+ * A failure caused by the TENANT not having suitable test data, rather than by the platform
+ * misbehaving. `blocked`, not `fail` — the case was never really exercised.
+ *
+ * Two shapes, both seen on the ngrok relay:
+ *   - our own guard saying the environment has no GTIN of the required kind;
+ *   - the platform correctly refusing to dispense a Dawana-integrated product through this
+ *     channel. That refusal is right; it just means the tenant has no product that can
+ *     exercise dispensing here. Every one of its seven products is Dawana-integrated, so
+ *     recording 50-odd cases as defects would invent failures the platform did not have.
+ */
+function isUnsupportedOnThisTenant(error) {
+  if (!error) return false
+  return /no (?:commissionable|dispensable|partial-dispense) GTIN is configured for this environment/i.test(error)
+    || /Dispensing is not allowed for Dawana-integrated products|must be dispensed through the Dawana integration/i.test(error)
+}
+
 /** Reduce a Playwright error blob to the sentence that says what is wrong. */
 function issueOf(error) {
   if (!error) return 'Failed without an error message — see the run artifacts.'
@@ -154,6 +189,7 @@ const tally = { pass: 0, fail: 0, blocked: 0 }
 const fixed = []
 const unknown = []
 const infra = []      // cases whose result we refuse to record — must be re-run
+const unsupported = [] // cases this tenant has no data for — recorded blocked, with the reason
 
 for (const r of results) {
   const id = r.title.split('—')[0].trim()
@@ -169,6 +205,16 @@ for (const r of results) {
   // Leave whatever status the case already had and list it for a re-run.
   if (r.ran === 'failed' && isInfrastructureFailure(r.error)) {
     infra.push(id)
+    continue
+  }
+
+  // Missing test data is not a defect either, but unlike an outage it will not fix itself on
+  // a re-run, so it is recorded as blocked with the reason rather than held back silently.
+  if (r.ran === 'failed' && isUnsupportedOnThisTenant(r.error)) {
+    f.status[id] = 'blocked'
+    f.notes[id] = issueOf(r.error)
+    tally.blocked++
+    unsupported.push(id)
     continue
   }
 
@@ -209,8 +255,8 @@ let touched = 0
 
 for (const [feature, { status, notes }] of [...byFeature].sort()) {
   const dir = path.join(FEATURES, feature)
-  const sPath = path.join(dir, 'execution-status-v1.json')
-  const nPath = path.join(dir, 'execution-notes-v1.json')
+  const sPath = path.join(dir, `execution-status-v1${envSuffix}.json`)
+  const nPath = path.join(dir, `execution-notes-v1${envSuffix}.json`)
 
   const existingStatus = fs.existsSync(sPath) ? JSON.parse(fs.readFileSync(sPath, 'utf8')) : {}
   const existingNotes = fs.existsSync(nPath) ? JSON.parse(fs.readFileSync(nPath, 'utf8')) : {}
@@ -250,6 +296,12 @@ if (infra.length) {
     fs.writeFileSync(listPath, infra.join('\n') + '\n')
     console.log(`\n   list written to ${path.relative(REPO, listPath)}`)
   }
+}
+if (unsupported.length) {
+  console.log(
+    `\nBLOCKED, not failed — ${unsupported.length} case(s) need test data this tenant does not ` +
+    'have (no product of the required kind, or dispensing refused as Dawana-integrated):')
+  console.log(`   ${unsupported.join(' ')}`)
 }
 if (fixed.length) console.log(`\nknown gaps that now PASS (remove the markers): ${fixed.join(', ')}`)
 if (unknown.length) {

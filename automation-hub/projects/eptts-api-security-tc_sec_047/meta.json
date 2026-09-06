@@ -10,13 +10,27 @@
     "testcaseId": "TC_SEC_047"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "never_run",
-  "runs": [],
+  "lastStatus": "fail",
+  "runs": [
+    {
+      "ts": "2026-09-06T13-11-52-189Z",
+      "status": "fail",
+      "durationMs": 922,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: fixture: commission 1 SGTIN(s) was not accepted (HTTP 502)",
+      "environment": "ngrok relay"
+    }
+  ],
   "tags": [
     "api",
     "write",
     "security"
   ],
   "folder": "EPTTS APIs / api-security",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "ngrok relay": "fail"
+  }
 }

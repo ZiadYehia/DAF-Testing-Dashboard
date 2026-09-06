@@ -1,0 +1,15 @@
+{
+  "TC_AUTH_001": "pass",
+  "TC_AUTH_002": "pass",
+  "TC_AUTH_003": "pass",
+  "TC_AUTH_004": "pass",
+  "TC_AUTH_005": "pass",
+  "TC_AUTH_006": "pass",
+  "TC_AUTH_007": "fail",
+  "TC_AUTH_008": "fail",
+  "TC_AUTH_009": "fail",
+  "TC_AUTH_010": "fail",
+  "TC_AUTH_011": "blocked",
+  "TC_AUTH_012": "pass",
+  "TC_AUTH_013": "pass"
+}

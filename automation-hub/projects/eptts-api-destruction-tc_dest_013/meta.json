@@ -10,8 +10,18 @@
     "testcaseId": "TC_DEST_013"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "pass",
+  "lastStatus": "fail",
   "runs": [
+    {
+      "ts": "2026-09-06T13-05-14-024Z",
+      "status": "fail",
+      "durationMs": 68204,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: fixture: dispense — http=200 raw=\"E - Application Error\" state=FAILED polls=1 logs=[E: Dispensing event failed: Dispensing is not allowed for Dawana-integrated products via this channel. These products must be dispensed through the Dawana integration. | E: Message processing failed — 1 of 1 event(s) encountered errors]",
+      "environment": "ngrok relay"
+    },
     {
       "ts": "2026-09-01T10-25-45-237Z",
       "status": "pass",
@@ -34,5 +44,9 @@
     "destructive"
   ],
   "folder": "EPTTS APIs / api-destruction",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "ngrok relay": "fail",
+    "(no environment)": "pass"
+  }
 }

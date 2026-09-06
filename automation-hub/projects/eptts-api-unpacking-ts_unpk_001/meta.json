@@ -10,8 +10,18 @@
     "testcaseId": "TS_UNPK_001"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "pass",
+  "lastStatus": "fail",
   "runs": [
+    {
+      "ts": "2026-09-06T13-12-17-243Z",
+      "status": "fail",
+      "durationMs": 976,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: fixture: commission 2 SGTIN(s) was not accepted (HTTP 502)",
+      "environment": "ngrok relay"
+    },
     {
       "ts": "2026-09-01T13-32-02-497Z",
       "status": "pass",
@@ -34,5 +44,9 @@
     "write"
   ],
   "folder": "EPTTS APIs / api-unpacking",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "ngrok relay": "fail",
+    "(no environment)": "pass"
+  }
 }

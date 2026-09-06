@@ -10,8 +10,18 @@
     "testcaseId": "TC_SEC_008"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "pass",
+  "lastStatus": "fail",
   "runs": [
+    {
+      "ts": "2026-09-06T13-11-27-152Z",
+      "status": "fail",
+      "durationMs": 1292,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: refresh-as-access is rejected",
+      "environment": "ngrok relay"
+    },
     {
       "ts": "2026-09-01T11-26-18-469Z",
       "status": "pass",
@@ -27,5 +37,9 @@
     "security"
   ],
   "folder": "EPTTS APIs / api-security",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "ngrok relay": "fail",
+    "(no environment)": "pass"
+  }
 }

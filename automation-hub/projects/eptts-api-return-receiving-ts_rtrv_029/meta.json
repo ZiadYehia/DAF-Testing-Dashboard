@@ -13,6 +13,16 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-06T13-10-03-313Z",
+      "status": "fail",
+      "durationMs": 1119,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: fixture: commission 1 SGTIN(s) was not accepted (HTTP 502)",
+      "environment": "ngrok relay"
+    },
+    {
       "ts": "2026-09-01T10-59-42-795Z",
       "status": "fail",
       "durationMs": 65380,
@@ -28,5 +38,9 @@
     "known-gap"
   ],
   "folder": "EPTTS APIs / api-return-receiving",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "ngrok relay": "fail",
+    "(no environment)": "fail"
+  }
 }

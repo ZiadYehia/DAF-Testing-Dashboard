@@ -1,0 +1,22 @@
+{
+  "TC_SEC_001": "alg-none is rejected",
+  "TC_SEC_002": "tampered-claims is rejected",
+  "TC_SEC_003": "empty-signature is rejected",
+  "TC_SEC_004": "garbage-signature is rejected",
+  "TC_SEC_005": "expired is rejected",
+  "TC_SEC_006": "no-authorization is rejected",
+  "TC_SEC_007": "an apikey is not a request credential",
+  "TC_SEC_008": "refresh-as-access is rejected",
+  "TC_SEC_010": "non-jwt-bearer is rejected",
+  "TC_SEC_012": "no dispensable GTIN is configured for this environment (EPTTS_MFG_DISPENSABLE_GTINS is empty), so this case cannot be built here. Set it to a GTIN this tenant holds, or run the case on an environment that has one.",
+  "TC_SEC_020": "pharmacy history does not disclose manufacturer events",
+  "TC_SEC_023": "no dispensable GTIN is configured for this environment (EPTTS_MFG_DISPENSABLE_GTINS is empty), so this case cannot be built here. Set it to a GTIN this tenant holds, or run the case on an environment that has one.",
+  "TC_SEC_026": "no dispensable GTIN is configured for this environment (EPTTS_MFG_DISPENSABLE_GTINS is empty), so this case cannot be built here. Set it to a GTIN this tenant holds, or run the case on an environment that has one.",
+  "TC_SEC_029": "platform validation gap: an empty eventList is accepted (202 I001) instead of rejected",
+  "TC_SEC_031": "no verified XML submission endpoint on the B2B API; XML/XXE upload is a dashboard feature (Phase 5)",
+  "TC_SEC_032": "no verified XML submission endpoint on the B2B API; covered on the dashboard EPCIS XML upload (Phase 5)",
+  "TC_SEC_037": "a positive rate-limit ceiling is advertised",
+  "TC_SEC_038": "would push 2000+ requests/window at a shared platform; needs an agreed maintenance window",
+  "TC_SEC_041": "TypeError: expect(received).toMatch(expected) Matcher error: received value must be a string Received has value: undefined",
+  "TC_SEC_047": "no dispensable GTIN is configured for this environment (EPTTS_MFG_DISPENSABLE_GTINS is empty), so this case cannot be built here. Set it to a GTIN this tenant holds, or run the case on an environment that has one."
+}

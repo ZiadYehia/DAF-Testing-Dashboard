@@ -1,0 +1,13 @@
+{
+  "TS_RTRV_002": "needs a second manufacturer tenant or a defined all-or-nothing semantic for mixed EPC lists — confirm with the PO first",
+  "TS_RTRV_004": "needs a second manufacturer tenant or a defined all-or-nothing semantic for mixed EPC lists — confirm with the PO first",
+  "TS_RTRV_006": "TS_RTRV_006 an empty sourceList: the platform ACCEPTED input it should refuse — http=200 raw=\"S - Successful\" state=SUCCESS polls=1 logs=[I: Return Confirmation event processed successfully | I: Message processed successfully — all 1 event(s) completed]",
+  "TS_RTRV_009": "needs a second manufacturer tenant or a defined all-or-nothing semantic for mixed EPC lists — confirm with the PO first",
+  "TS_RTRV_010": "Previously a known platform gap; the platform now behaves correctly. Remove the expected-failure marker for this case in automation-hub/lib/eptts-cases/.",
+  "TS_RTRV_016": "needs a second manufacturer tenant or a defined all-or-nothing semantic for mixed EPC lists — confirm with the PO first",
+  "TS_RTRV_017": "needs a second manufacturer tenant or a defined all-or-nothing semantic for mixed EPC lists — confirm with the PO first",
+  "TS_RTRV_018": "needs a second manufacturer tenant or a defined all-or-nothing semantic for mixed EPC lists — confirm with the PO first",
+  "TS_RTRV_020": "needs a second manufacturer tenant or a defined all-or-nothing semantic for mixed EPC lists — confirm with the PO first",
+  "TS_RTRV_022": "needs a second manufacturer tenant or a defined all-or-nothing semantic for mixed EPC lists — confirm with the PO first",
+  "TS_RTRV_029": "platform validation gap: a disposition outside the CBV vocabulary is accepted (presence is checked, validity is not)"
+}
