@@ -13,6 +13,26 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-07T16-37-23-061Z",
+      "status": "fail",
+      "durationMs": 116619.801,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: dispense one pack: http=200 raw=\"E - Application Error\" state=FAILED polls=1 logs=[E: Dispensing event failed: Dispense events must be scoped to the caller's permitted GLNs. | E: Message processing failed — 1 of 1 event(s) encountered errors]",
+      "environment": "ngrok relay"
+    },
+    {
+      "ts": "2026-09-07T15-49-41-524Z",
+      "status": "fail",
+      "durationMs": 128075.874,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: dispense one pack: http=200 raw=\"E - Application Error\" state=FAILED polls=1 logs=[E: Dispensing event failed: Dispense events must be scoped to the caller's permitted GLNs. | E: Message processing failed — 1 of 1 event(s) encountered errors]",
+      "environment": "ngrok relay"
+    },
+    {
       "ts": "2026-09-07T10-49-04-977Z",
       "status": "fail",
       "durationMs": 6007.055,
@@ -72,9 +92,5 @@
     "destructive"
   ],
   "folder": "EPTTS APIs / api-dispensing",
-  "engine": "api",
-  "lastStatusByEnv": {
-    "ngrok relay": "fail",
-    "(no environment)": "pass"
-  }
+  "engine": "api"
 }

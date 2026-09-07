@@ -483,7 +483,12 @@ function classifyStatus(raw: string | null): MsgStatus['state'] {
   if (/partial/i.test(t)) return 'PARTIAL'
   // Match the leading letter code ("S - Successful") or the word form.
   if (/^S([^A-Za-z]|$)|success|complete/i.test(t)) return 'SUCCESS'
-  if (/^[EF]([^A-Za-z]|$)|error|fail|reject|invalid/i.test(t)) return 'FAILED'
+  // `A` is "A - Technical Error", the class the platform uses for a document it cannot route
+  // ("No valid events found in eventList"). It is absent from the status table in the contract
+  // notes, and a classifier matching only S/E/F reads it as "still pending" and polls to a
+  // timeout — a false platform defect was filed on exactly that mistake. Matched explicitly so
+  // it cannot depend on the reason text happening to contain the word "error".
+  if (/^[EFA]([^A-Za-z]|$)|error|fail|reject|invalid/i.test(t)) return 'FAILED'
   if (/^[PIQ]([^A-Za-z]|$)|process|initial|pending|queue|progress/i.test(t)) return 'PENDING'
   return null
 }
@@ -515,11 +520,32 @@ export function describeMsgStatus(m: MsgStatus): string {
 export async function pollMsgStatus(
   role: Role,
   instanceIdentifier: string,
-  opts: { timeoutMs?: number; intervalMs?: number } = {},
+  opts: { timeoutMs?: number; intervalMs?: number; maxIntervalMs?: number } = {},
 ): Promise<MsgStatus> {
   const timeoutMs = opts.timeoutMs ?? 90_000
-  // The 404 body itself recommends ~10 s; 2 s converges faster without hammering.
-  const intervalMs = opts.intervalMs ?? 2_000
+
+  /**
+   * EXPONENTIAL BACKOFF, because a fixed interval is wrong at both ends.
+   *
+   * It was a flat 2 s, which over the 90 s budget is up to 45 requests for a single message —
+   * and this suite submits several messages per case across 400 cases, on a relay that starts
+   * answering 502 under load. Measured: 45 polls to reach 90 s flat, versus 13 with the backoff
+   * below. A 71% cut in poll traffic.
+   *
+   * Backing off is also FASTER for the normal case, which is the part that looks
+   * counter-intuitive. Nearly every message here terminalises on the first poll; when one needs
+   * a second, the flat interval made it wait 2 s while this waits 500 ms. The crossover is the
+   * sixth poll (11.2 s vs 10 s), by which point the message is already anomalous — the platform
+   * answers recognised events in one poll, so anything still pending at 11 s is not a case where
+   * a second matters.
+   *
+   * The cap matters as much as the growth: without it the interval would reach 30 s+ and a
+   * message that terminalises just after a poll would sit unnoticed for half a minute. 10 s
+   * matches what the platform's own 404 body suggests waiting.
+   */
+  const startIntervalMs = opts.intervalMs ?? 500
+  const maxIntervalMs = opts.maxIntervalMs ?? 10_000
+  let intervalMs = startIntervalMs
   const deadline = Date.now() + timeoutMs
 
   let last: { status: number; body: unknown } = { status: 0, body: null }
@@ -544,6 +570,7 @@ export async function pollMsgStatus(
       return { status: res.status(), raw, state: classifyStatus(raw), terminal: false, logs: extractLogs(body), body, timedOut: false, pollCount }
     }
     await new Promise((r) => setTimeout(r, intervalMs))
+    intervalMs = Math.min(Math.round(intervalMs * 1.8), maxIntervalMs)
   }
 
   const raw = extractRawStatus(last.body)
@@ -569,7 +596,55 @@ export async function submitAndPoll(
         body: submitBody, timedOut: false, pollCount: 0,
       }
     : await pollMsgStatus(role, iid, { timeoutMs: opts.timeoutMs })
+
+  await recordPostState(role, document, msg)
   return { submitStatus: res.status(), submitBody, instanceIdentifier: iid, msg }
+}
+
+/**
+ * After the poll terminalises, read the EPCs back so the run RECORDS what the message did.
+ *
+ * Observation, not assertion — deliberately. submitAndPoll does not know what the document was
+ * meant to achieve (a commission, a ship and an unpack want different end states), so it cannot
+ * judge the result; only the case can. What it CAN do is put the post-state in the exchange log,
+ * which is what the evidence images render.
+ *
+ * That distinction is not theoretical. TC_SHIP_014's platform verdict was "S - Successful" and
+ * the pack afterwards had a changed status and unchanged custody — a half-applied event. Finding
+ * that took a hand probe, because nothing in the recorded exchange said what the pack looked
+ * like when the message finished. Now it does, on every message, without any case asking.
+ *
+ * Runs on SUCCESS as well as failure, because a wrong success is the dangerous case: a failure
+ * at least announces itself.
+ *
+ * Costs one read per message. Capped at MAX_POST_STATE_EPCS because a document may carry
+ * thousands — one security case submits 5000 EPCs, and reading them all would dwarf the suite.
+ * Turn the whole thing off with EPTTS_VERIFY_EFFECTS=0 for a throughput run.
+ */
+const MAX_POST_STATE_EPCS = 2
+
+async function recordPostState(role: Role, document: EpcisDocument, msg: MsgStatus): Promise<void> {
+  if (process.env.EPTTS_VERIFY_EFFECTS === '0') return
+  if (!msg.terminal) return // nothing settled yet, so nothing to describe
+
+  const event = document.epcisBody?.eventList?.[0] as Record<string, unknown> | undefined
+  if (!event) return
+  // VerifyProduct takes a serialized identifier — an SGTIN or an SSCC — so the parent and the
+  // children are both askable, and a bare GTIN is not (it answers 500).
+  const epcs = [
+    ...(Array.isArray(event.epcList) ? event.epcList as string[] : []),
+    ...(Array.isArray(event.childEPCs) ? event.childEPCs as string[] : []),
+    ...(typeof event.parentID === 'string' ? [event.parentID] : []),
+  ].filter((e) => /^urn:epc:id:(sgtin|sscc):/.test(e)).slice(0, MAX_POST_STATE_EPCS)
+
+  for (const epc of epcs) {
+    try {
+      await verifyProduct(role, epc)
+    } catch {
+      // A read-back that fails must never fail the case: it is describing what happened, not
+      // deciding it. The submission's own verdict already stands.
+    }
+  }
 }
 
 // ─── identifiers ─────────────────────────────────────────────────────────────
@@ -889,6 +964,88 @@ export function dispensingEvent(
     action: 'OBSERVE',
     bizStep: 'retail_selling',
     disposition: 'retail_sold',
+    epcList: o.epcList,
+  }
+  if (o.quantity !== undefined) ev.quantity = o.quantity
+  return ev
+}
+
+/**
+ * Reversing a dispense — THREE separate operations, and the platform names all three.
+ *
+ * VERIFIED LIVE on the ngrok relay, 2026-09-07, by submitting ten action/bizStep combinations
+ * against a pharmacy-held pack and reading which ones a handler answered. The refusals name
+ * the handler, which is what identifies it:
+ *
+ *   action=OBSERVE bizStep=patient_return      -> "Patient Return event failed: ..."
+ *   action=DELETE  bizStep=dispensing          -> "Dispensing Cancellation event failed: ..."
+ *   action=DELETE  bizStep=partial_dispensing  -> "Partial Dispensing Cancellation event failed: ..."
+ *
+ * Everything else tried — DELETE+patient_return, DELETE+retail_selling, ADD+patient_return,
+ * DELETE+void_dispensing, DELETE+patient_return with disposition returned, and
+ * DELETE+patient_return posted to /Dispensation — is REFUSED, promptly and clearly:
+ *
+ *   202, then MsgStatusQuery -> "A - Technical Error", logList [A: No valid events found in
+ *   eventList]
+ *
+ * on the FIRST poll. So those are not alternative spellings, and the platform says so.
+ *
+ * BEWARE THE "A" STATUS CLASS WHEN READING THAT BACK. The contract notes record the leading
+ * letter as S success / E,F failure / P,I,Q pending; `A - Technical Error` is a fourth class
+ * they do not list. A poller matching only ^[SEF] sees no terminal state and reports a
+ * timeout — which is exactly how an early version of this note came to claim these shapes
+ * were silently accepted forever, and a bug was filed against the platform for it before the
+ * real cause turned out to be the classifier. classifyStatus() catches it on the word
+ * "Error", and now on the letter too.
+ *
+ * WHICH ONE MODELS A PATIENT BRINGING MEDICINE BACK: **Dispense Cancellation**
+ *
+ * `DELETE` + `dispensing`. Confirmed by the product owner, and it is what API documentation
+ * section 3.04 describes in its own words — "Used to cancel a dispensing event. The dispensed
+ * medicine is returned to the pharmacy." The return and the cancellation are one operation on
+ * this platform: the goods come back and the original dispense is cancelled.
+ *
+ * `patient_return` also has a handler (it answers, as shown above), so it is kept available in
+ * `patientReturnEvent` — but it is NOT the operation to reach for when recording a return.
+ * Use `dispenseCancelEvent`.
+ *
+ * `disposition: active` on all three: the medicine is pharmacy stock again afterwards.
+ */
+export function patientReturnEvent(
+  o: BaseEventOpts & { epcList: string[]; quantity?: number },
+): Record<string, unknown> {
+  const ev: Record<string, unknown> = {
+    type: 'ObjectEvent',
+    ...baseEvent(o),
+    // OBSERVE, not DELETE. DELETE with this bizStep is unrouted — see above.
+    action: 'OBSERVE',
+    bizStep: 'patient_return',
+    disposition: 'active',
+    epcList: o.epcList,
+  }
+  if (o.quantity !== undefined) ev.quantity = o.quantity
+  return ev
+}
+
+/**
+ * Dispense Cancellation — how a patient return is recorded. THE ONE TO USE.
+ *
+ * Cancels the original dispensing event and puts the medicine back into pharmacy stock, per
+ * API doc 3.04. `partial: true` selects the partial-dispense variant, which the platform
+ * routes to its own handler ("Partial Dispensing Cancellation").
+ *
+ * `quantity` is required only when cancelling a PARTIAL dispense; sending one for a full pack
+ * describes a different operation.
+ */
+export function dispenseCancelEvent(
+  o: BaseEventOpts & { epcList: string[]; quantity?: number; partial?: boolean },
+): Record<string, unknown> {
+  const ev: Record<string, unknown> = {
+    type: 'ObjectEvent',
+    ...baseEvent(o),
+    action: 'DELETE',
+    bizStep: o.partial ? 'partial_dispensing' : 'dispensing',
+    disposition: 'active',
     epcList: o.epcList,
   }
   if (o.quantity !== undefined) ev.quantity = o.quantity

@@ -74,9 +74,5 @@
     "known-gap"
   ],
   "folder": "EPTTS APIs / api-commission",
-  "engine": "api",
-  "lastStatusByEnv": {
-    "ngrok relay": "fail",
-    "(no environment)": "fail"
-  }
+  "engine": "api"
 }

@@ -1,0 +1,23 @@
+{
+  "name": "eptts-api-packing-ts_pack_018",
+  "title": "TS_PACK_018 — packing a product whose pricing review is pending is refused",
+  "app": "eptts-api",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TS_PACK_018",
+  "linkedTestcase": {
+    "app": "eptts-api",
+    "feature": "api-packing",
+    "testcaseId": "TS_PACK_018"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "write",
+    "known-gap",
+    "blocked"
+  ],
+  "folder": "EPTTS APIs / api-packing",
+  "engine": "api"
+}

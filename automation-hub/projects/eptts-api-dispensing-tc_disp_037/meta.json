@@ -1,0 +1,22 @@
+{
+  "name": "eptts-api-dispensing-tc_disp_037",
+  "title": "TC_DISP_037 — an unsupported action + bizStep pairing is refused rather than silently accepted",
+  "app": "eptts-api",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TC_DISP_037",
+  "linkedTestcase": {
+    "app": "eptts-api",
+    "feature": "api-dispensing",
+    "testcaseId": "TC_DISP_037"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "destructive",
+    "known-gap"
+  ],
+  "folder": "EPTTS APIs / api-dispensing",
+  "engine": "api"
+}

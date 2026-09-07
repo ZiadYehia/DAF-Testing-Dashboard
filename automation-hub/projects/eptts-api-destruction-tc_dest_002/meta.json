@@ -43,9 +43,5 @@
     "destructive"
   ],
   "folder": "EPTTS APIs / api-destruction",
-  "engine": "api",
-  "lastStatusByEnv": {
-    "ngrok relay": "pass",
-    "(no environment)": "pass"
-  }
+  "engine": "api"
 }

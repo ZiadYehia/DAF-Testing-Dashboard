@@ -122,10 +122,5 @@
     "readonly"
   ],
   "folder": "EPTTS APIs / api-authentication",
-  "engine": "api",
-  "lastStatusByEnv": {
-    "ngrok relay": "pass",
-    "Production (devsim)": "pass",
-    "(no environment)": "fail"
-  }
+  "engine": "api"
 }

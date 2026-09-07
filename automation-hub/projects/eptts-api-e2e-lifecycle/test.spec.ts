@@ -8,8 +8,8 @@
  *   BRANCH                        receive ─→ ship
  *   PHARMACY                                 receive ─→ unpack ─→ dispense
  *   ── reverse ──────────────────────────────────────────────────────────────────
- *   PHARMACY       return-ship ─→
- *   BRANCH                        return-receive ─→ return-ship ─→
+ *   PHARMACY       patient return ─→ return-ship ─→
+ *   BRANCH                                          return-receive ─→ return-ship ─→
  *   MANUFACTURER                                    return-receive ─→ destroy
  *
  * HAPPY PATH ONLY. Every step here is a business operation that is supposed to succeed.
@@ -33,15 +33,20 @@
  *
  * ── WHY TWO PACKS AND NOT ONE ────────────────────────────────────────────────────────────
  *
- * A dispensed pack is consumed — it cannot then be returned upstream or destroyed, and it
- * should not be. So the SSCC carries two packs of the SAME product and the same lot:
+ * The SSCC carries two packs of the SAME product and the same lot, because the two ways stock
+ * comes back upstream have different provenance and both are worth showing:
  *
- *   PACK 1  is dispensed at the pharmacy       (the forward path's natural terminus)
- *   PACK 2  travels the whole reverse path back to the manufacturer and is destroyed
+ *   PACK 1  is dispensed to a patient, then the PATIENT RETURNS IT (step 09), which puts it
+ *           back into pharmacy stock — and from there it travels the reverse path
+ *   PACK 2  is never dispensed; it is ordinary unsold stock going back up the chain
+ *
+ * They then travel home together in ONE return consignment and are destroyed together, which
+ * is what actually happens: a pharmacy sends back a mixed carton of unsold and
+ * patient-returned medicine, and patient-returned medicine cannot be re-sold.
  *
  * Both are verified at every shared step, which also proves the SSCC cascade reaches every
- * child rather than just the first — and from the dispense onward each is verified
- * separately, which proves an operation touched only the pack it named.
+ * child rather than just the first — and around the dispense each is verified separately,
+ * which proves an operation touched only the pack it named.
  *
  * ── ASSERTED VS OBSERVED ─────────────────────────────────────────────────────────────────
  *
@@ -67,7 +72,7 @@ import {
   submitAndPoll, dispensation, pollMsgStatus, describeMsgStatus, bodyOf, getMasar,
   authenticate, decodeClaims, platformRoleFor, productByGtin,
   epcisDocument, commissionEvent, aggregationEvent, shippingEvent, receivingEvent,
-  dispensingEvent, destructionEvent,
+  dispensingEvent, destructionEvent, dispenseCancelEvent,
   freshDispensableSgtin, freshSscc, sglnOf, glnFor, runId, ssccUrnToDigits,
   uniqueBizTransaction, disposeApi,
   MFG_DISPENSABLE_GTINS,
@@ -95,15 +100,17 @@ const EXPIRY = '2030-12-31'
 const PACK_COUNT = 2
 
 /** The last step's id — the run's combined request/response log is written from it. */
-const FINAL_STEP = '14'
+const FINAL_STEP = '15'
 
 // ─── shared journey state ────────────────────────────────────────────────────
 
 let sgtins: string[] = []
-/** The pack dispensed at the pharmacy. */
+/** The pack dispensed to a patient, then handed back by that patient in step 09. */
 let sgtinDispensed = ''
-/** The pack returned all the way to the manufacturer and destroyed. */
-let sgtinReturned = ''
+/** The pack that is never dispensed — ordinary unsold stock. */
+let sgtinUnsold = ''
+/** Both packs, once they are travelling home in one consignment. */
+let sgtinsReturning: string[] = []
 let sscc = ''
 let lot = ''
 /** Return reference for the pharmacy → branch leg, quoted again by the branch's receive. */
@@ -265,7 +272,7 @@ test.describe.serial('EPTTS end-to-end lifecycle: manufacturer → branch → ph
     test.slow()
     sgtins = Array.from({ length: PACK_COUNT }, () => freshDispensableSgtin(DEMO_GTIN))
     sgtinDispensed = sgtins[0]
-    sgtinReturned = sgtins[1]
+    sgtinUnsold = sgtins[1]
     lot = `ZTG-${runId()}`
 
     beginStep({
@@ -490,14 +497,13 @@ test.describe.serial('EPTTS end-to-end lifecycle: manufacturer → branch → ph
       }, `PACK ${i + 1}`)
     }
   })
-
   test('STEP 08 — PHARMACY dispenses PACK 1 to a patient', async () => {
     test.slow()
     beginStep({
       n: '08', title: 'dispense', role: 'pharmacy',
       operation: 'POST /Dispensation · ObjectEvent · bizStep=retail_selling · disposition=retail_sold',
-      expectedState: 'PACK 1 becomes dispensed and stays with the PHARMACY (dispensing consumes, ' +
-        'it does not transfer); PACK 2 is untouched',
+      expectedState: 'PACK 1 becomes dispensed and stays with the PHARMACY (dispensing consumes, '
+        + 'it does not transfer); PACK 2 is untouched',
       epcs: [sgtinDispensed],
     })
 
@@ -513,38 +519,104 @@ test.describe.serial('EPTTS end-to-end lifecycle: manufacturer → branch → ph
       status: 'dispensed',
       custodyGln: PHARMACY(),
       parentSscc: null,
-    }, 'PACK 1 (dispensed)')
+    }, 'PACK 1 (dispensed to a patient)')
 
     // The operation must have touched only the pack it named. This is the cheapest proof
     // that a per-EPC event is not quietly applying to the whole former container.
-    await verifyPack('pharmacy', sgtinReturned, {
+    await verifyPack('pharmacy', sgtinUnsold, {
       status: 'active',
       custodyGln: PHARMACY(),
       parentSscc: null,
     }, 'PACK 2 (must be untouched)')
   })
 
-  test('STEP 09 — PHARMACY returns PACK 2 upstream to the BRANCH', async () => {
+  test('STEP 09 — the PATIENT brings PACK 1 back to the PHARMACY', async () => {
     test.slow()
     /**
+     * The patient hands the medicine back, and the only step here that moves a pack OUT of a
+     * state the platform's own lifecycle diagram calls terminal.
+     *
+     * A patient return IS a **Dispense Cancellation** on this platform — `ObjectEvent` /
+     * `action: DELETE` / `bizStep: dispensing` / `disposition: active`, via `/scp/SendEPCIS`.
+     * Confirmed by the product owner, and it is what API doc 3.04 says in its own words: "Used
+     * to cancel a dispensing event. The dispensed medicine is returned to the pharmacy." The
+     * goods coming back and the original dispense being cancelled are one operation, not two.
+     *
+     * The shape was VERIFIED LIVE against the relay rather than taken off the page: of ten
+     * action/bizStep combinations submitted, only three reached a handler at all, and this one
+     * answers as "Dispensing Cancellation". `OBSERVE` + `patient_return` also answers and is
+     * available as `patientReturnEvent`, but it is not the operation a return is recorded
+     * with. `DELETE` + `patient_return` — which the doc's table could be read as implying — is
+     * refused outright: "A - Technical Error", "No valid events found in eventList". See
+     * `dispenseCancelEvent` in lib/eptts-api.ts for the full matrix.
+     *
+     * WHAT IS STILL UNPROVEN, AND WHY: that it SUCCEEDS. It cannot be shown on this tenant,
+     * because no dispensed pack is reachable — the pharmacy's dispensing is refused by the
+     * permitted-GLN defect, and the branch is refused for a correct reason ("Cannot dispense:
+     * 1 pack(s) have not been received at the pharmacy"). Against a never-dispensed pack the
+     * handler answers "All dispensed pills for this pack have already been returned", which is
+     * the right refusal for zero outstanding pills. So the shape is settled and the outcome is
+     * not; the read-back below is what will settle it the moment a dispense can complete.
+     */
+    beginStep({
+      n: '09', title: 'patient return', role: 'pharmacy',
+      operation: 'ObjectEvent · action=DELETE · bizStep=dispensing · disposition=active'
+        + ' — Dispense Cancellation (via /scp/SendEPCIS; verified live 2026-09-07)',
+      expectedState: 'PACK 1 comes back out of "dispensed" into PHARMACY stock as active, '
+        + 'custody unchanged, still loose',
+      epcs: [sgtinDispensed],
+    })
+
+    await submitStep('pharmacy', epcisDocument(
+      [dispenseCancelEvent({ epcList: [sgtinDispensed], readPointSgln: sglnOf('pharmacy') })],
+      { senderGln: PHARMACY(), receiverGln: PHARMACY() },
+    ), 'PACK 1 handed back by the patient')
+
+    // The whole point: it is sellable-state stock at the pharmacy again, not still consumed.
+    await verifyPack('pharmacy', sgtinDispensed, {
+      verified: true,
+      status: 'active',
+      custodyGln: PHARMACY(),
+      parentSscc: null,
+      batchNumber: lot,       // same physical pack, same lot — not a new record
+    }, 'PACK 1 (handed back by the patient)')
+
+    // And the pack the patient never touched is unaffected by the reversal.
+    await verifyPack('pharmacy', sgtinUnsold, {
+      status: 'active',
+      custodyGln: PHARMACY(),
+    }, 'PACK 2 (must be untouched)')
+
+    // From here the two packs are indistinguishable to the supply chain and travel home
+    // together — which is exactly why they are worth carrying side by side.
+    sgtinsReturning = [sgtinDispensed, sgtinUnsold]
+  })
+
+  test('STEP 10 — PHARMACY returns both packs upstream to the BRANCH', async () => {
+    test.slow()
+    /**
+     * ONE consignment, TWO provenances: a patient-returned pack and a never-dispensed one.
+     * That is the realistic shape of pharmacy returns, and it also proves the return path
+     * does not care how the stock came to be surplus.
+     *
      * A return is shipping with `disposition: returned` plus a return reference, and it must
-     * travel back to the partner that SUPPLIED the pack — the branch, not the manufacturer.
-     * The same reference is quoted by the branch's return receiving in step 10; that is how
-     * the platform matches the two halves.
+     * travel back to the partner that SUPPLIED the packs — the branch, not the manufacturer
+     * (API doc 3.05 Pharmacy - Return Request to Branch). The same reference is quoted by
+     * the branch's return receiving in step 11; that is how the platform matches the halves.
      */
     returnRefToBranch = uniqueBizTransaction('RET')
 
     beginStep({
-      n: '09', title: 'return-ship → branch', role: 'pharmacy',
+      n: '10', title: 'return-ship → branch', role: 'pharmacy',
       operation: `ObjectEvent · bizStep=shipping · disposition=returned · ref ${returnRefToBranch}`,
-      expectedState: 'PACK 2 leaves pharmacy stock (in_transit/returned) while custody stays ' +
-        'with the PHARMACY until the branch receives it',
-      epcs: [sgtinReturned],
+      expectedState: 'both packs leave pharmacy stock (in_transit/returned) while custody stays '
+        + 'with the PHARMACY until the branch receives them',
+      epcs: sgtinsReturning,
     })
 
     await submitStep('pharmacy', epcisDocument(
       [shippingEvent({
-        epcList: [sgtinReturned],
+        epcList: sgtinsReturning,
         sourceSgln: sglnOf('pharmacy'),
         destinationSgln: sglnOf('branch'),
         bizTransaction: returnRefToBranch,
@@ -552,29 +624,31 @@ test.describe.serial('EPTTS end-to-end lifecycle: manufacturer → branch → ph
         readPointSgln: sglnOf('pharmacy'),
       })],
       { senderGln: PHARMACY(), receiverGln: BRANCH() },
-    ), 'return PACK 2 to the branch')
+    ), 'return both packs to the branch')
 
-    await verifyPack('pharmacy', sgtinReturned, {
-      // The contract pins "not ordinary stock any more" but not which of the two labels a
-      // return in flight carries, so both are accepted and the row prints the real one.
-      status: ['in_transit', 'returned'],
-      custodyGln: PHARMACY(),
-      parentSscc: null,
-    }, 'PACK 2 (in return transit)')
+    for (const [i, sgtin] of sgtinsReturning.entries()) {
+      await verifyPack('pharmacy', sgtin, {
+        // The contract pins "not ordinary stock any more" but not which of the two labels a
+        // return in flight carries, so both are accepted and the row prints the real one.
+        status: ['in_transit', 'returned'],
+        custodyGln: PHARMACY(),
+        parentSscc: null,
+      }, `PACK ${i + 1} ${i === 0 ? '(patient-returned)' : '(unsold)'} in return transit`)
+    }
   })
 
-  test('STEP 10 — BRANCH return-receives PACK 2', async () => {
+  test('STEP 11 — BRANCH return-receives both packs', async () => {
     test.slow()
     beginStep({
-      n: '10', title: 'return-receive at branch', role: 'branch',
+      n: '11', title: 'return-receive at branch', role: 'branch',
       operation: `ObjectEvent · bizStep=receiving · disposition=returned · ref ${returnRefToBranch}`,
-      expectedState: 'custody returns to the BRANCH and PACK 2 is back in its inventory',
-      epcs: [sgtinReturned],
+      expectedState: 'custody returns to the BRANCH and both packs are back in its inventory',
+      epcs: sgtinsReturning,
     })
 
     await submitStep('branch', epcisDocument(
       [receivingEvent({
-        epcList: [sgtinReturned],
+        epcList: sgtinsReturning,
         sourceSgln: sglnOf('pharmacy'),
         bizTransaction: returnRefToBranch,
         disposition: 'returned',
@@ -585,53 +659,41 @@ test.describe.serial('EPTTS end-to-end lifecycle: manufacturer → branch → ph
 
     // Return receiving is the ONE transition that moves stock out of a terminal-looking
     // state back into a partner's inventory, so custody landing is the whole point.
-    await verifyPack('branch', sgtinReturned, {
-      status: ['active', 'returned'],
-      custodyGln: BRANCH(),
-      parentSscc: null,
-    }, 'PACK 2 (back at the branch)')
-
-    // …and the return must not have disturbed the pack it never named.
-    await verifyPack('pharmacy', sgtinDispensed, {
-      status: 'dispensed',
-      custodyGln: PHARMACY(),
-    }, 'PACK 1 (must stay dispensed)')
+    for (const [i, sgtin] of sgtinsReturning.entries()) {
+      await verifyPack('branch', sgtin, {
+        status: ['active', 'returned'],
+        custodyGln: BRANCH(),
+        parentSscc: null,
+      }, `PACK ${i + 1} (back at the branch)`)
+    }
   })
 
-  test('STEP 11 — BRANCH returns PACK 2 on to the MANUFACTURER', async () => {
+  test('STEP 12 — BRANCH returns both packs on to the MANUFACTURER', async () => {
     test.slow()
     /**
      * The second leg of the reverse chain, and the one that makes it a chain rather than a
      * single hop: a return travels upstream one partner at a time, so the branch returns to
-     * the party that supplied IT — the manufacturer.
+     * the party that supplied IT — the manufacturer (API doc 2.09 Return to Manufacturer).
      *
-     * THE LEAST-PROVEN STEP IN THIS JOURNEY, AND WORTH WATCHING ON THE FIRST LIVE RUN.
-     * Both halves exist as green per-case tests — a branch returning to the manufacturer
-     * (TS_RTN_001) and the manufacturer receiving it (TS_RTRV_001) — but in those the pack
-     * reached the branch by an ordinary receive. Here it reached the branch by a RETURN, so
-     * this is the same pack being returned a second time, one hop further up. TS_RTN_017
-     * refuses re-returning stock the branch already returned, and TS_RTN_018 (the SGTIN
-     * variant) is unwritten pending a PO decision, so whether a multi-hop return is allowed
-     * is not established by any existing test.
-     *
-     * It has to be attempted, because a reverse supply chain that cannot pass goods beyond
-     * the first partner upstream is not a reverse supply chain. If the platform refuses it,
-     * this step fails with the platform's own reason and that IS the finding — not a defect
-     * in the journey.
+     * PROVEN ON THE RELAY, 2026-09-07. This was the least-established step in the journey
+     * (the packs reach the branch by a RETURN here, not by an ordinary receive, and
+     * TS_RTN_017 refuses re-returning stock the branch already returned). It was exercised
+     * end to end against the ngrok relay and both this and step 13 succeeded, with custody
+     * landing back on the manufacturer.
      */
     returnRefToMfg = uniqueBizTransaction('RET')
 
     beginStep({
-      n: '11', title: 'return-ship → manufacturer', role: 'branch',
+      n: '12', title: 'return-ship → manufacturer', role: 'branch',
       operation: `ObjectEvent · bizStep=shipping · disposition=returned · ref ${returnRefToMfg}`,
-      expectedState: 'PACK 2 leaves branch stock while custody stays with the BRANCH until the ' +
-        'manufacturer receives it',
-      epcs: [sgtinReturned],
+      expectedState: 'both packs leave branch stock while custody stays with the BRANCH until '
+        + 'the manufacturer receives them',
+      epcs: sgtinsReturning,
     })
 
     await submitStep('branch', epcisDocument(
       [shippingEvent({
-        epcList: [sgtinReturned],
+        epcList: sgtinsReturning,
         sourceSgln: sglnOf('branch'),
         destinationSgln: sglnOf('manufacturer'),
         bizTransaction: returnRefToMfg,
@@ -639,27 +701,29 @@ test.describe.serial('EPTTS end-to-end lifecycle: manufacturer → branch → ph
         readPointSgln: sglnOf('branch'),
       })],
       { senderGln: BRANCH(), receiverGln: MFG() },
-    ), 'return PACK 2 to the manufacturer')
+    ), 'return both packs to the manufacturer')
 
-    await verifyPack('branch', sgtinReturned, {
-      status: ['in_transit', 'returned'],
-      custodyGln: BRANCH(),
-      parentSscc: null,
-    }, 'PACK 2 (in return transit)')
+    for (const [i, sgtin] of sgtinsReturning.entries()) {
+      await verifyPack('branch', sgtin, {
+        status: ['in_transit', 'returned'],
+        custodyGln: BRANCH(),
+        parentSscc: null,
+      }, `PACK ${i + 1} in return transit`)
+    }
   })
 
-  test('STEP 12 — MANUFACTURER return-receives PACK 2 and has custody again', async () => {
+  test('STEP 13 — MANUFACTURER return-receives both packs and has custody again', async () => {
     test.slow()
     beginStep({
-      n: '12', title: 'return-receive at mfg', role: 'manufacturer',
+      n: '13', title: 'return-receive at mfg', role: 'manufacturer',
       operation: `ObjectEvent · bizStep=receiving · disposition=returned · ref ${returnRefToMfg}`,
       expectedState: `custody returns to the MANUFACTURER (${MFG()}) — the round trip closes`,
-      epcs: [sgtinReturned],
+      epcs: sgtinsReturning,
     })
 
     await submitStep('manufacturer', epcisDocument(
       [receivingEvent({
-        epcList: [sgtinReturned],
+        epcList: sgtinsReturning,
         sourceSgln: sglnOf('branch'),
         bizTransaction: returnRefToMfg,
         disposition: 'returned',
@@ -668,38 +732,45 @@ test.describe.serial('EPTTS end-to-end lifecycle: manufacturer → branch → ph
       { senderGln: MFG(), receiverGln: BRANCH() },
     ), 'receive the return at the manufacturer')
 
-    // The requirement this journey exists to demonstrate: the manufacturer holds it again.
-    await verifyPack('manufacturer', sgtinReturned, {
-      verified: true,
-      status: ['active', 'returned'],
-      custodyGln: MFG(),
-      parentSscc: null,
-      gtin: DEMO_GTIN,
-      batchNumber: lot,      // still the same physical pack, same lot, after ten transitions
-      isRecalled: false,
-    }, 'PACK 2 (back with the manufacturer)')
+    // The requirement this journey exists to demonstrate: the manufacturer holds them again.
+    for (const [i, sgtin] of sgtinsReturning.entries()) {
+      await verifyPack('manufacturer', sgtin, {
+        verified: true,
+        status: ['active', 'returned'],
+        custodyGln: MFG(),
+        parentSscc: null,
+        gtin: DEMO_GTIN,
+        batchNumber: lot,   // still the same physical packs, same lot, after eleven transitions
+        isRecalled: false,
+      }, `PACK ${i + 1} (back with the manufacturer)`)
+    }
   })
 
-  test('STEP 13 — MANUFACTURER destroys PACK 2', async () => {
+  test('STEP 14 — MANUFACTURER destroys both returned packs', async () => {
     test.slow()
     // Destroying is only for the party that holds the goods (a pack owned by another party
-    // cannot be destroyed — TC_DEST_014), which is precisely why step 12 had to land first.
+    // cannot be destroyed — TC_DEST_014), which is precisely why step 13 had to land first.
+    // Destroying BOTH is the honest end for this consignment: patient-returned medicine
+    // cannot re-enter the supply chain, and the unsold pack has been handled enough times
+    // that putting it back on sale is a separate business decision, not part of this flow.
     beginStep({
-      n: '13', title: 'destroy', role: 'manufacturer',
+      n: '14', title: 'destroy', role: 'manufacturer',
       operation: 'ObjectEvent · action=DELETE · bizStep=destroying · disposition=destroyed',
-      expectedState: 'PACK 2 becomes destroyed and permanently leaves the supply chain',
-      epcs: [sgtinReturned],
+      expectedState: 'both packs become destroyed and permanently leave the supply chain',
+      epcs: sgtinsReturning,
     })
 
     await submitStep('manufacturer', epcisDocument(
-      [destructionEvent({ epcList: [sgtinReturned], readPointSgln: sglnOf('manufacturer') })],
+      [destructionEvent({ epcList: sgtinsReturning, readPointSgln: sglnOf('manufacturer') })],
       { senderGln: MFG(), receiverGln: MFG() },
-    ), 'destroy PACK 2')
+    ), 'destroy both returned packs')
 
-    await verifyPack('manufacturer', sgtinReturned, {
-      status: 'destroyed',
-      custodyGln: MFG(),
-    }, 'PACK 2 (destroyed)')
+    for (const [i, sgtin] of sgtinsReturning.entries()) {
+      await verifyPack('manufacturer', sgtin, {
+        status: 'destroyed',
+        custodyGln: MFG(),
+      }, `PACK ${i + 1} (destroyed)`)
+    }
   })
 
   test(`STEP ${FINAL_STEP} — the final state of both packs, and the audit trail`, async () => {
@@ -707,29 +778,30 @@ test.describe.serial('EPTTS end-to-end lifecycle: manufacturer → branch → ph
     beginStep({
       n: FINAL_STEP, title: 'final state & audit', role: 'manufacturer',
       operation: 'POST /VerifyProduct on both packs · GET /epcis for the message history',
-      expectedState: 'PACK 1 dispensed at the pharmacy, PACK 2 destroyed at the manufacturer, ' +
-        'and the tenant has an EPCIS message history',
+      expectedState: 'both packs destroyed at the manufacturer after a full round trip — one of '
+        + 'them having been dispensed to a patient and handed back — and the tenant has an '
+        + 'EPCIS message history',
       epcs: sgtins,
     })
     recordNoSubmission('read-only — no business event is submitted by this step')
 
-    // Read the terminal state of each pack back one final time, from the party that holds
-    // it. Two different terminal states from one lot and one container.
-    await verifyPack('pharmacy', sgtinDispensed, {
-      verified: true,
-      status: 'dispensed',
-      custodyGln: PHARMACY(),
-      gtin: DEMO_GTIN,
-      batchNumber: lot,
-    }, 'PACK 1 FINAL — dispensed to a patient')
-
-    await verifyPack('manufacturer', sgtinReturned, {
+    // Read the terminal state of each pack back one final time. Same lot, same container,
+    // different journeys: one was sold and un-sold, the other never left the shelf.
+    await verifyPack('manufacturer', sgtinDispensed, {
       verified: true,
       status: 'destroyed',
       custodyGln: MFG(),
       gtin: DEMO_GTIN,
       batchNumber: lot,
-    }, 'PACK 2 FINAL — returned and destroyed')
+    }, 'PACK 1 FINAL — dispensed, patient-returned, sent home, destroyed')
+
+    await verifyPack('manufacturer', sgtinUnsold, {
+      verified: true,
+      status: 'destroyed',
+      custodyGln: MFG(),
+      gtin: DEMO_GTIN,
+      batchNumber: lot,
+    }, 'PACK 2 FINAL — unsold, sent home, destroyed')
 
     /**
      * The message history, asserted for exactly what it can prove.

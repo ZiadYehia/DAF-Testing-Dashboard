@@ -44,9 +44,5 @@
     "destructive"
   ],
   "folder": "EPTTS APIs / api-partial-dispensing",
-  "engine": "api",
-  "lastStatusByEnv": {
-    "ngrok relay": "fail",
-    "(no environment)": "pass"
-  }
+  "engine": "api"
 }

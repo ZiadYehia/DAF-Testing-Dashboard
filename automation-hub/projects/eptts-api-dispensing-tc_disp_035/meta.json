@@ -1,0 +1,21 @@
+{
+  "name": "eptts-api-dispensing-tc_disp_035",
+  "title": "TC_DISP_035 — a patient return is recorded as a Dispensing Cancellation and restores pharmacy stock",
+  "app": "eptts-api",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TC_DISP_035",
+  "linkedTestcase": {
+    "app": "eptts-api",
+    "feature": "api-dispensing",
+    "testcaseId": "TC_DISP_035"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "destructive"
+  ],
+  "folder": "EPTTS APIs / api-dispensing",
+  "engine": "api"
+}

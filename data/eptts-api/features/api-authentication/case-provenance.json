@@ -1,0 +1,52 @@
+[
+  {
+    "id": "TC_AUTH_004",
+    "text": "In new version, it depends only on apikey",
+    "bug": ""
+  },
+  {
+    "id": "TC_AUTH_006",
+    "text": "In new version, it depends only on apikey",
+    "bug": ""
+  },
+  {
+    "id": "TC_AUTH_007",
+    "text": "In new version, it depends only on apikey",
+    "bug": ""
+  },
+  {
+    "id": "TC_AUTH_008",
+    "text": "In new version, it depends only on apikey",
+    "bug": ""
+  },
+  {
+    "id": "TC_AUTH_009",
+    "text": "In new version, it depends only on apikey",
+    "bug": ""
+  },
+  {
+    "id": "TC_AUTH_010",
+    "text": "In new version, it depends only on apikey",
+    "bug": ""
+  },
+  {
+    "id": "TC_AUTH_011",
+    "text": "In new version, it depends only on apikey",
+    "bug": ""
+  },
+  {
+    "id": "TC_AUTH_012",
+    "text": "In new version, it depends only on apikey",
+    "bug": ""
+  },
+  {
+    "id": "TC_AUTH_013",
+    "text": "In new version, it depends only on apikey",
+    "bug": ""
+  },
+  {
+    "id": "TC_AUTH_013",
+    "text": "_Authored, not from the source sheet:_ Source has a title but empty Steps and Expected Results.",
+    "bug": ""
+  }
+]

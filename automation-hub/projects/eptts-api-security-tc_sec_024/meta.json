@@ -36,9 +36,5 @@
     "security"
   ],
   "folder": "EPTTS APIs / api-security",
-  "engine": "api",
-  "lastStatusByEnv": {
-    "ngrok relay": "pass",
-    "(no environment)": "pass"
-  }
+  "engine": "api"
 }

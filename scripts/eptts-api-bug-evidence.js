@@ -95,8 +95,17 @@ function exchangesByCase(reportPaths) {
 
 function keyExchanges(list) {
   const isPoll = (e) => /MsgStatusQuery/i.test(e.url)
+  /**
+   * A read-back, not a submission.
+   *
+   * submitAndPoll now calls VerifyProduct after each message settles, to record what the message
+   * did to the pack. Those are POSTs that are neither polls nor /auth, so the "last business
+   * call" rule would pick the trailing read-back as the subject and render a bug's evidence as a
+   * VerifyProduct response — hiding the submission that caused the defect.
+   */
+  const isReadBack = (e) => /VerifyProduct/i.test(e.url)
   const isBusiness = (e) => /SendEPCIS|Dispensation|epcis\/json/i.test(e.url)
-    || (e.method === 'POST' && !isPoll(e) && !/auth/i.test(e.url))
+    || (e.method === 'POST' && !isPoll(e) && !isReadBack(e) && !/auth/i.test(e.url))
 
   let idx = -1
   for (let i = 0; i < list.length; i++) if (isBusiness(list[i])) idx = i
@@ -111,9 +120,12 @@ function keyExchanges(list) {
    */
   if (idx === -1) {
     for (let i = 0; i < list.length; i++) {
-      if (!isPoll(list[i]) && !/\/auth\b/i.test(list[i].url)) idx = i
+      if (!isPoll(list[i]) && !isReadBack(list[i]) && !/\/auth\b/i.test(list[i].url)) idx = i
     }
   }
+  // Only then a read-back, for a case whose sole call IS one — a pack-state check with no
+  // submission of its own. Ranked below a real read so a GET-based finding still shows the GET.
+  if (idx === -1) for (let i = 0; i < list.length; i++) if (isReadBack(list[i])) idx = i
   // Only now is /auth the subject — that is the authentication cases, where it genuinely is.
   if (idx === -1) for (let i = 0; i < list.length; i++) if (/auth/i.test(list[i].url)) idx = i
   if (idx === -1) return { submission: null, verdict: null, fixtures: 0 }

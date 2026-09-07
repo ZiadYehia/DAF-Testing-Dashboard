@@ -1,0 +1,17 @@
+[
+  {
+    "id": "TC_PDISP_018",
+    "text": "https://dafholding.atlassian.net/browse/DW-897",
+    "bug": "DW-897"
+  },
+  {
+    "id": "TC_PDISP_019",
+    "text": "https://dafholding.atlassian.net/browse/DW-897",
+    "bug": "DW-897"
+  },
+  {
+    "id": "TC_PDISP_037",
+    "text": "_Authored, not from the source sheet:_ No sheet row covers reversing a partial dispense. Confirmed live 2026-09-07 that action DELETE with bizStep partial_dispensing is answered by the platform's own Partial Dispensing Cancellation handler, a third operation distinct from the full-pack cancellation.",
+    "bug": ""
+  }
+]

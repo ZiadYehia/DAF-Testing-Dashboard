@@ -1,0 +1,22 @@
+{
+  "name": "eptts-api-partial-dispensing-tc_pdisp_037",
+  "title": "TC_PDISP_037 — cancelling a partial dispense returns the dispensed units to the pack",
+  "app": "eptts-api",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TC_PDISP_037",
+  "linkedTestcase": {
+    "app": "eptts-api",
+    "feature": "api-partial-dispensing",
+    "testcaseId": "TC_PDISP_037"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "destructive",
+    "blocked"
+  ],
+  "folder": "EPTTS APIs / api-partial-dispensing",
+  "engine": "api"
+}

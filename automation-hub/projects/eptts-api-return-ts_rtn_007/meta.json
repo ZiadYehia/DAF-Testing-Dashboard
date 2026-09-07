@@ -55,9 +55,5 @@
     "write"
   ],
   "folder": "EPTTS APIs / api-return",
-  "engine": "api",
-  "lastStatusByEnv": {
-    "ngrok relay": "fail",
-    "(no environment)": "fail"
-  }
+  "engine": "api"
 }

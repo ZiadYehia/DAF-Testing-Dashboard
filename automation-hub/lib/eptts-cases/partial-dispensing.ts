@@ -199,8 +199,28 @@ const FIELD_MAP: Partial<Record<string, MutationName>> = {
   TC_PDISP_036: 'invalidReceiver',
 }
 
+/**
+ * Reversing a partial dispense — a third, distinct operation.
+ *
+ * `action: DELETE` + `bizStep: partial_dispensing` is answered by the platform's own "Partial
+ * Dispensing Cancellation" handler (confirmed live 2026-09-07), separately from the full-pack
+ * "Dispensing Cancellation". It carries the `quantity` to give back.
+ *
+ * Blocked for the same reason as every other quantity case here: no partial pack can be
+ * created on this tenant, so there is nothing partially dispensed to reverse.
+ */
+const reversal: ApiCase[] = [
+  {
+    id: 'TC_PDISP_037', feature: FEATURE, slow: true,
+    title: 'cancelling a partial dispense returns the dispensed units to the pack',
+    skip: BLOCKED,
+    run: async () => { /* unreachable while skipped */ },
+  },
+]
+
 export const PARTIAL_DISPENSING_CASES: ApiCase[] = [
   ...blocked,
+  ...reversal,
   ...runnable,
   ...fieldCases({
     // These reached a correct refusal in the clean run, so the shared KNOWN_GAPS marker

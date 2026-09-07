@@ -1,0 +1,102 @@
+[
+  {
+    "id": "TC_SHIP_025",
+    "text": "_Authored, not from the source sheet:_ Empty reserved slot. Continues the mandatory-field sequence begun at TC_SHIP_020.",
+    "bug": ""
+  },
+  {
+    "id": "TC_SHIP_026",
+    "text": "_Authored, not from the source sheet:_ Empty reserved slot.",
+    "bug": ""
+  },
+  {
+    "id": "TC_SHIP_027",
+    "text": "_Authored, not from the source sheet:_ Empty reserved slot.",
+    "bug": ""
+  },
+  {
+    "id": "TC_SHIP_028",
+    "text": "_Authored, not from the source sheet:_ Empty reserved slot.",
+    "bug": ""
+  },
+  {
+    "id": "TC_SHIP_029",
+    "text": "_Authored, not from the source sheet:_ Empty reserved slot.",
+    "bug": ""
+  },
+  {
+    "id": "TC_SHIP_030",
+    "text": "_Authored, not from the source sheet:_ Empty reserved slot.",
+    "bug": ""
+  },
+  {
+    "id": "TC_SHIP_031",
+    "text": "_Authored, not from the source sheet:_ Empty reserved slot.",
+    "bug": ""
+  },
+  {
+    "id": "TC_SHIP_032",
+    "text": "_Authored, not from the source sheet:_ Empty reserved slot.",
+    "bug": ""
+  },
+  {
+    "id": "TC_SHIP_033",
+    "text": "_Authored, not from the source sheet:_ Empty reserved slot.",
+    "bug": ""
+  },
+  {
+    "id": "TC_SHIP_034",
+    "text": "_Authored, not from the source sheet:_ Empty reserved slot.",
+    "bug": ""
+  },
+  {
+    "id": "TC_SHIP_035",
+    "text": "_Authored, not from the source sheet:_ Empty reserved slot. Format-validation variant.",
+    "bug": ""
+  },
+  {
+    "id": "TC_SHIP_036",
+    "text": "_Authored, not from the source sheet:_ Empty reserved slot.",
+    "bug": ""
+  },
+  {
+    "id": "TC_SHIP_037",
+    "text": "_Authored, not from the source sheet:_ Empty reserved slot.",
+    "bug": ""
+  },
+  {
+    "id": "TC_SHIP_038",
+    "text": "_Authored, not from the source sheet:_ Empty reserved slot.",
+    "bug": ""
+  },
+  {
+    "id": "TC_SHIP_039",
+    "text": "_Authored, not from the source sheet:_ Empty reserved slot.",
+    "bug": ""
+  },
+  {
+    "id": "TC_SHIP_040",
+    "text": "_Authored, not from the source sheet:_ Empty reserved slot. GLN-ownership negative — the platform's most important authorization rule.",
+    "bug": ""
+  },
+  {
+    "id": "TC_SHIP_041",
+    "text": "_Authored, not from the source sheet:_ Empty reserved slot. Role-authorization negative.",
+    "bug": ""
+  },
+  {
+    "id": "TC_SHIP_042",
+    "text": "_Authored, not from the source sheet:_ Empty reserved slot. Idempotency/replay negative.",
+    "bug": ""
+  },
+  {
+    "id": "TC_SHIP_043",
+    "text": "_Authored, not from the source sheet:_ Empty reserved slot. Content-type negative.",
+    "bug": ""
+  },
+  {
+    "id": "TC_SHIP_044",
+    "text": "_Authored, not from the source sheet:_ Empty reserved slot. Security negative.",
+    "bug": ""
+  }
+]

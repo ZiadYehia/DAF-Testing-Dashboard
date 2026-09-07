@@ -15,9 +15,15 @@
     "",
     "GLNs: newly authored cases use the devsim tenant's manufacturer GLN (8435308300002). Cases",
     "extracted from the sheet still carry the old staging GLNs (5413868000009 etc.) and must be",
-    "re-mapped once Phase 2 recon confirms the devsim branch/pharmacy GLNs."
+    "re-mapped once Phase 2 recon confirms the devsim branch/pharmacy GLNs.",
+    "",
+    "_additions (added 2026-09-07) is a SEPARATE mechanism from the overrides above. An override",
+    "fills fields on an ID the sheet already has; an addition introduces an ID the sheet never",
+    "had. It exists because the platform implements three dispense-reversal operations the sheet",
+    "has no row for - Dispensing Cancellation, Partial Dispensing Cancellation and Patient",
+    "Return - each confirmed live against the relay on 2026-09-07 by submitting ten action and",
+    "bizStep combinations and reading which ones a handler answered. Keyed by sheet name."
   ],
-
   "TC_AUTH_013": {
     "_authored": "Source has a title but empty Steps and Expected Results.",
     "steps": [
@@ -31,7 +37,6 @@
       "The old credentials are rejected for every subsequent request"
     ]
   },
-
   "TC_COMM_040": {
     "_authored": "Source has Steps but empty Expected Results. Recorded Status=Pass, i.e. the platform correctly rejects a foreign sender identifier.",
     "expected": [
@@ -54,186 +59,630 @@
       "No pack is commissioned"
     ]
   },
-
   "TC_SHIP_025": {
     "_authored": "Empty reserved slot. Continues the mandatory-field sequence begun at TC_SHIP_020.",
     "title": "Verify shipping with an empty event time.",
     "validity": "Negative",
-    "pre": ["Citrix VPN connected", "Authenticated as Manufacturer (GLN = 8435308300002)", "There is an existing sealed SSCC to ship"],
-    "data": ["Source GLN: 8435308300002", "Destination GLN: EPTTS_BRANCH_GLN", "eventTime: \"\" (empty)", "epcList: [\"urn:epc:id:sscc:05413868.0099000001\"]"],
-    "steps": ["Post a Shipping (Object) event request with an empty eventTime field", "Observe the synchronous API response"],
-    "expected": ["The request is rejected synchronously with 400 Bad Request", "The response body indicates eventTime is mandatory and cannot be empty", "No event is queued and no MsgStatusQuery record is created"]
+    "pre": [
+      "Citrix VPN connected",
+      "Authenticated as Manufacturer (GLN = 8435308300002)",
+      "There is an existing sealed SSCC to ship"
+    ],
+    "data": [
+      "Source GLN: 8435308300002",
+      "Destination GLN: EPTTS_BRANCH_GLN",
+      "eventTime: \"\" (empty)",
+      "epcList: [\"urn:epc:id:sscc:05413868.0099000001\"]"
+    ],
+    "steps": [
+      "Post a Shipping (Object) event request with an empty eventTime field",
+      "Observe the synchronous API response"
+    ],
+    "expected": [
+      "The request is rejected synchronously with 400 Bad Request",
+      "The response body indicates eventTime is mandatory and cannot be empty",
+      "No event is queued and no MsgStatusQuery record is created"
+    ]
   },
   "TC_SHIP_026": {
     "_authored": "Empty reserved slot.",
     "title": "Verify shipping with a missing event time zone offset.",
     "validity": "Negative",
-    "pre": ["Citrix VPN connected", "Authenticated as Manufacturer (GLN = 8435308300002)", "There is an existing sealed SSCC to ship"],
-    "data": ["Source GLN: 8435308300002", "Destination GLN: EPTTS_BRANCH_GLN", "eventTimeZoneOffset: (field omitted)", "epcList: [\"urn:epc:id:sscc:05413868.0099000001\"]"],
-    "steps": ["Post a Shipping (Object) event request omitting the eventTimeZoneOffset field entirely", "Observe the synchronous API response"],
-    "expected": ["The request is rejected synchronously with 400 Bad Request", "The response body indicates eventTimeZoneOffset is mandatory", "No event is queued and no MsgStatusQuery record is created"]
+    "pre": [
+      "Citrix VPN connected",
+      "Authenticated as Manufacturer (GLN = 8435308300002)",
+      "There is an existing sealed SSCC to ship"
+    ],
+    "data": [
+      "Source GLN: 8435308300002",
+      "Destination GLN: EPTTS_BRANCH_GLN",
+      "eventTimeZoneOffset: (field omitted)",
+      "epcList: [\"urn:epc:id:sscc:05413868.0099000001\"]"
+    ],
+    "steps": [
+      "Post a Shipping (Object) event request omitting the eventTimeZoneOffset field entirely",
+      "Observe the synchronous API response"
+    ],
+    "expected": [
+      "The request is rejected synchronously with 400 Bad Request",
+      "The response body indicates eventTimeZoneOffset is mandatory",
+      "No event is queued and no MsgStatusQuery record is created"
+    ]
   },
   "TC_SHIP_027": {
     "_authored": "Empty reserved slot.",
     "title": "Verify shipping with an invalid action value.",
     "validity": "Negative",
-    "pre": ["Citrix VPN connected", "Authenticated as Manufacturer (GLN = 8435308300002)", "There is an existing sealed SSCC to ship"],
-    "data": ["Source GLN: 8435308300002", "Destination GLN: EPTTS_BRANCH_GLN", "action: \"MODIFY\" (not a valid EPCIS action)", "epcList: [\"urn:epc:id:sscc:05413868.0099000001\"]"],
-    "steps": ["Post a Shipping (Object) event request with action set to an unsupported value", "Observe the synchronous API response"],
-    "expected": ["The request is rejected synchronously with 400 Bad Request", "The response body indicates action must be one of ADD, OBSERVE or DELETE", "No event is queued and no MsgStatusQuery record is created"]
+    "pre": [
+      "Citrix VPN connected",
+      "Authenticated as Manufacturer (GLN = 8435308300002)",
+      "There is an existing sealed SSCC to ship"
+    ],
+    "data": [
+      "Source GLN: 8435308300002",
+      "Destination GLN: EPTTS_BRANCH_GLN",
+      "action: \"MODIFY\" (not a valid EPCIS action)",
+      "epcList: [\"urn:epc:id:sscc:05413868.0099000001\"]"
+    ],
+    "steps": [
+      "Post a Shipping (Object) event request with action set to an unsupported value",
+      "Observe the synchronous API response"
+    ],
+    "expected": [
+      "The request is rejected synchronously with 400 Bad Request",
+      "The response body indicates action must be one of ADD, OBSERVE or DELETE",
+      "No event is queued and no MsgStatusQuery record is created"
+    ]
   },
   "TC_SHIP_028": {
     "_authored": "Empty reserved slot.",
     "title": "Verify shipping with an empty business step.",
     "validity": "Negative",
-    "pre": ["Citrix VPN connected", "Authenticated as Manufacturer (GLN = 8435308300002)", "There is an existing sealed SSCC to ship"],
-    "data": ["Source GLN: 8435308300002", "Destination GLN: EPTTS_BRANCH_GLN", "bizStep: \"\" (empty)", "epcList: [\"urn:epc:id:sscc:05413868.0099000001\"]"],
-    "steps": ["Post a Shipping (Object) event request with an empty bizStep field", "Observe the synchronous API response"],
-    "expected": ["The request is rejected synchronously with 400 Bad Request", "The response body indicates bizStep is mandatory and must be a valid CBV value", "No event is queued and no MsgStatusQuery record is created"]
+    "pre": [
+      "Citrix VPN connected",
+      "Authenticated as Manufacturer (GLN = 8435308300002)",
+      "There is an existing sealed SSCC to ship"
+    ],
+    "data": [
+      "Source GLN: 8435308300002",
+      "Destination GLN: EPTTS_BRANCH_GLN",
+      "bizStep: \"\" (empty)",
+      "epcList: [\"urn:epc:id:sscc:05413868.0099000001\"]"
+    ],
+    "steps": [
+      "Post a Shipping (Object) event request with an empty bizStep field",
+      "Observe the synchronous API response"
+    ],
+    "expected": [
+      "The request is rejected synchronously with 400 Bad Request",
+      "The response body indicates bizStep is mandatory and must be a valid CBV value",
+      "No event is queued and no MsgStatusQuery record is created"
+    ]
   },
   "TC_SHIP_029": {
     "_authored": "Empty reserved slot.",
     "title": "Verify shipping with an invalid disposition.",
     "validity": "Negative",
-    "pre": ["Citrix VPN connected", "Authenticated as Manufacturer (GLN = 8435308300002)", "There is an existing sealed SSCC to ship"],
-    "data": ["Source GLN: 8435308300002", "Destination GLN: EPTTS_BRANCH_GLN", "disposition: \"teleported\" (not a valid CBV disposition)", "epcList: [\"urn:epc:id:sscc:05413868.0099000001\"]"],
-    "steps": ["Post a Shipping (Object) event request with a disposition outside the CBV vocabulary", "Observe the synchronous API response"],
-    "expected": ["The request is rejected synchronously with 400 Bad Request", "The response body indicates disposition must be a valid CBV value", "No event is queued and no MsgStatusQuery record is created"]
+    "pre": [
+      "Citrix VPN connected",
+      "Authenticated as Manufacturer (GLN = 8435308300002)",
+      "There is an existing sealed SSCC to ship"
+    ],
+    "data": [
+      "Source GLN: 8435308300002",
+      "Destination GLN: EPTTS_BRANCH_GLN",
+      "disposition: \"teleported\" (not a valid CBV disposition)",
+      "epcList: [\"urn:epc:id:sscc:05413868.0099000001\"]"
+    ],
+    "steps": [
+      "Post a Shipping (Object) event request with a disposition outside the CBV vocabulary",
+      "Observe the synchronous API response"
+    ],
+    "expected": [
+      "The request is rejected synchronously with 400 Bad Request",
+      "The response body indicates disposition must be a valid CBV value",
+      "No event is queued and no MsgStatusQuery record is created"
+    ]
   },
   "TC_SHIP_030": {
     "_authored": "Empty reserved slot.",
     "title": "Verify shipping with an empty read point.",
     "validity": "Negative",
-    "pre": ["Citrix VPN connected", "Authenticated as Manufacturer (GLN = 8435308300002)", "There is an existing sealed SSCC to ship"],
-    "data": ["Source GLN: 8435308300002", "Destination GLN: EPTTS_BRANCH_GLN", "readPoint.id: \"\" (empty)", "epcList: [\"urn:epc:id:sscc:05413868.0099000001\"]"],
-    "steps": ["Post a Shipping (Object) event request with an empty readPoint identifier", "Observe the synchronous API response"],
-    "expected": ["The request is rejected synchronously with 400 Bad Request", "The response body indicates readPoint is mandatory and cannot be empty", "No event is queued and no MsgStatusQuery record is created"]
+    "pre": [
+      "Citrix VPN connected",
+      "Authenticated as Manufacturer (GLN = 8435308300002)",
+      "There is an existing sealed SSCC to ship"
+    ],
+    "data": [
+      "Source GLN: 8435308300002",
+      "Destination GLN: EPTTS_BRANCH_GLN",
+      "readPoint.id: \"\" (empty)",
+      "epcList: [\"urn:epc:id:sscc:05413868.0099000001\"]"
+    ],
+    "steps": [
+      "Post a Shipping (Object) event request with an empty readPoint identifier",
+      "Observe the synchronous API response"
+    ],
+    "expected": [
+      "The request is rejected synchronously with 400 Bad Request",
+      "The response body indicates readPoint is mandatory and cannot be empty",
+      "No event is queued and no MsgStatusQuery record is created"
+    ]
   },
   "TC_SHIP_031": {
     "_authored": "Empty reserved slot.",
     "title": "Verify shipping with an empty business location.",
     "validity": "Negative",
-    "pre": ["Citrix VPN connected", "Authenticated as Manufacturer (GLN = 8435308300002)", "There is an existing sealed SSCC to ship"],
-    "data": ["Source GLN: 8435308300002", "Destination GLN: EPTTS_BRANCH_GLN", "bizLocation.id: \"\" (empty)", "epcList: [\"urn:epc:id:sscc:05413868.0099000001\"]"],
-    "steps": ["Post a Shipping (Object) event request with an empty bizLocation identifier", "Observe the synchronous API response"],
-    "expected": ["The request is rejected synchronously with 400 Bad Request", "The response body indicates bizLocation is mandatory and cannot be empty", "No event is queued and no MsgStatusQuery record is created"]
+    "pre": [
+      "Citrix VPN connected",
+      "Authenticated as Manufacturer (GLN = 8435308300002)",
+      "There is an existing sealed SSCC to ship"
+    ],
+    "data": [
+      "Source GLN: 8435308300002",
+      "Destination GLN: EPTTS_BRANCH_GLN",
+      "bizLocation.id: \"\" (empty)",
+      "epcList: [\"urn:epc:id:sscc:05413868.0099000001\"]"
+    ],
+    "steps": [
+      "Post a Shipping (Object) event request with an empty bizLocation identifier",
+      "Observe the synchronous API response"
+    ],
+    "expected": [
+      "The request is rejected synchronously with 400 Bad Request",
+      "The response body indicates bizLocation is mandatory and cannot be empty",
+      "No event is queued and no MsgStatusQuery record is created"
+    ]
   },
   "TC_SHIP_032": {
     "_authored": "Empty reserved slot.",
     "title": "Verify shipping with an empty SBDH sender identifier.",
     "validity": "Negative",
-    "pre": ["Citrix VPN connected", "Authenticated as Manufacturer (GLN = 8435308300002)", "There is an existing sealed SSCC to ship"],
-    "data": ["sbdh.sender.identifier: \"\" (empty)", "Destination GLN: EPTTS_BRANCH_GLN", "epcList: [\"urn:epc:id:sscc:05413868.0099000001\"]"],
-    "steps": ["Post a Shipping (Object) event request with an empty SBDH sender identifier", "Observe the synchronous API response"],
-    "expected": ["The request is rejected synchronously with 400 Bad Request", "The response body indicates the SBDH sender identifier is mandatory", "No event is queued and no MsgStatusQuery record is created"]
+    "pre": [
+      "Citrix VPN connected",
+      "Authenticated as Manufacturer (GLN = 8435308300002)",
+      "There is an existing sealed SSCC to ship"
+    ],
+    "data": [
+      "sbdh.sender.identifier: \"\" (empty)",
+      "Destination GLN: EPTTS_BRANCH_GLN",
+      "epcList: [\"urn:epc:id:sscc:05413868.0099000001\"]"
+    ],
+    "steps": [
+      "Post a Shipping (Object) event request with an empty SBDH sender identifier",
+      "Observe the synchronous API response"
+    ],
+    "expected": [
+      "The request is rejected synchronously with 400 Bad Request",
+      "The response body indicates the SBDH sender identifier is mandatory",
+      "No event is queued and no MsgStatusQuery record is created"
+    ]
   },
   "TC_SHIP_033": {
     "_authored": "Empty reserved slot.",
     "title": "Verify shipping with an empty SBDH receiver identifier.",
     "validity": "Negative",
-    "pre": ["Citrix VPN connected", "Authenticated as Manufacturer (GLN = 8435308300002)", "There is an existing sealed SSCC to ship"],
-    "data": ["Source GLN: 8435308300002", "sbdh.receiver.identifier: \"\" (empty)", "epcList: [\"urn:epc:id:sscc:05413868.0099000001\"]"],
-    "steps": ["Post a Shipping (Object) event request with an empty SBDH receiver identifier", "Observe the synchronous API response"],
-    "expected": ["The request is rejected synchronously with 400 Bad Request", "The response body indicates the SBDH receiver identifier is mandatory", "No event is queued and no MsgStatusQuery record is created"]
+    "pre": [
+      "Citrix VPN connected",
+      "Authenticated as Manufacturer (GLN = 8435308300002)",
+      "There is an existing sealed SSCC to ship"
+    ],
+    "data": [
+      "Source GLN: 8435308300002",
+      "sbdh.receiver.identifier: \"\" (empty)",
+      "epcList: [\"urn:epc:id:sscc:05413868.0099000001\"]"
+    ],
+    "steps": [
+      "Post a Shipping (Object) event request with an empty SBDH receiver identifier",
+      "Observe the synchronous API response"
+    ],
+    "expected": [
+      "The request is rejected synchronously with 400 Bad Request",
+      "The response body indicates the SBDH receiver identifier is mandatory",
+      "No event is queued and no MsgStatusQuery record is created"
+    ]
   },
   "TC_SHIP_034": {
     "_authored": "Empty reserved slot.",
     "title": "Verify shipping with an empty instance identifier.",
     "validity": "Negative",
-    "pre": ["Citrix VPN connected", "Authenticated as Manufacturer (GLN = 8435308300002)", "There is an existing sealed SSCC to ship"],
-    "data": ["Source GLN: 8435308300002", "Destination GLN: EPTTS_BRANCH_GLN", "sbdh.documentIdentification.instanceIdentifier: \"\" (empty)", "epcList: [\"urn:epc:id:sscc:05413868.0099000001\"]"],
-    "steps": ["Post a Shipping (Object) event request with an empty instanceIdentifier", "Observe the synchronous API response"],
-    "expected": ["The request is rejected synchronously with 400 Bad Request", "The response body indicates instanceIdentifier is mandatory", "No event is queued and the submission cannot be tracked via MsgStatusQuery"]
+    "pre": [
+      "Citrix VPN connected",
+      "Authenticated as Manufacturer (GLN = 8435308300002)",
+      "There is an existing sealed SSCC to ship"
+    ],
+    "data": [
+      "Source GLN: 8435308300002",
+      "Destination GLN: EPTTS_BRANCH_GLN",
+      "sbdh.documentIdentification.instanceIdentifier: \"\" (empty)",
+      "epcList: [\"urn:epc:id:sscc:05413868.0099000001\"]"
+    ],
+    "steps": [
+      "Post a Shipping (Object) event request with an empty instanceIdentifier",
+      "Observe the synchronous API response"
+    ],
+    "expected": [
+      "The request is rejected synchronously with 400 Bad Request",
+      "The response body indicates instanceIdentifier is mandatory",
+      "No event is queued and the submission cannot be tracked via MsgStatusQuery"
+    ]
   },
   "TC_SHIP_035": {
     "_authored": "Empty reserved slot. Format-validation variant.",
     "title": "Verify shipping with a source GLN that has an invalid check digit.",
     "validity": "Negative",
-    "pre": ["Citrix VPN connected", "Authenticated as Manufacturer (GLN = 8435308300002)", "There is an existing sealed SSCC to ship"],
-    "data": ["Source GLN: 8435308300003 (invalid check digit)", "Destination GLN: EPTTS_BRANCH_GLN", "epcList: [\"urn:epc:id:sscc:05413868.0099000001\"]"],
-    "steps": ["Post a Shipping (Object) event request with a source GLN whose GS1 check digit is invalid", "Observe the synchronous API response"],
-    "expected": ["The request is rejected with 400 Bad Request", "The response body indicates the source GLN fails GS1 check-digit validation", "No event is queued and no MsgStatusQuery record is created"]
+    "pre": [
+      "Citrix VPN connected",
+      "Authenticated as Manufacturer (GLN = 8435308300002)",
+      "There is an existing sealed SSCC to ship"
+    ],
+    "data": [
+      "Source GLN: 8435308300003 (invalid check digit)",
+      "Destination GLN: EPTTS_BRANCH_GLN",
+      "epcList: [\"urn:epc:id:sscc:05413868.0099000001\"]"
+    ],
+    "steps": [
+      "Post a Shipping (Object) event request with a source GLN whose GS1 check digit is invalid",
+      "Observe the synchronous API response"
+    ],
+    "expected": [
+      "The request is rejected with 400 Bad Request",
+      "The response body indicates the source GLN fails GS1 check-digit validation",
+      "No event is queued and no MsgStatusQuery record is created"
+    ]
   },
   "TC_SHIP_036": {
     "_authored": "Empty reserved slot.",
     "title": "Verify shipping to a destination GLN that is not registered on the platform.",
     "validity": "Negative",
-    "pre": ["Citrix VPN connected", "Authenticated as Manufacturer (GLN = 8435308300002)", "There is an existing sealed SSCC to ship", "The destination GLN is not registered as a trade partner"],
-    "data": ["Source GLN: 8435308300002", "Destination GLN: 1111111111116 (unregistered)", "epcList: [\"urn:epc:id:sscc:05413868.0099000001\"]"],
-    "steps": ["Post a Shipping (Object) event request to an unregistered destination GLN", "Poll MsgStatusQuery with the instanceIdentifier"],
-    "expected": ["The response is 202 Accepted", "MsgStatusQuery eventually returns FAILED", "The failure reason indicates the destination GLN is not a registered trade partner", "The SSCC state is unchanged and remains available at the manufacturer"]
+    "pre": [
+      "Citrix VPN connected",
+      "Authenticated as Manufacturer (GLN = 8435308300002)",
+      "There is an existing sealed SSCC to ship",
+      "The destination GLN is not registered as a trade partner"
+    ],
+    "data": [
+      "Source GLN: 8435308300002",
+      "Destination GLN: 1111111111116 (unregistered)",
+      "epcList: [\"urn:epc:id:sscc:05413868.0099000001\"]"
+    ],
+    "steps": [
+      "Post a Shipping (Object) event request to an unregistered destination GLN",
+      "Poll MsgStatusQuery with the instanceIdentifier"
+    ],
+    "expected": [
+      "The response is 202 Accepted",
+      "MsgStatusQuery eventually returns FAILED",
+      "The failure reason indicates the destination GLN is not a registered trade partner",
+      "The SSCC state is unchanged and remains available at the manufacturer"
+    ]
   },
   "TC_SHIP_037": {
     "_authored": "Empty reserved slot.",
     "title": "Verify shipping with a malformed SGTIN URN.",
     "validity": "Negative",
-    "pre": ["Citrix VPN connected", "Authenticated as Manufacturer (GLN = 8435308300002)", "There is an existing sealed SSCC to ship"],
-    "data": ["Source GLN: 8435308300002", "Destination GLN: EPTTS_BRANCH_GLN", "epcList: [\"urn:epc:id:sgtin:NOT-A-VALID-SGTIN\"]"],
-    "steps": ["Post a Shipping (Object) event request with a malformed SGTIN URN in epcList", "Observe the synchronous API response"],
-    "expected": ["The request is rejected with 400 Bad Request", "The response body indicates the EPC is not a well-formed SGTIN URN", "No event is queued and no MsgStatusQuery record is created"]
+    "pre": [
+      "Citrix VPN connected",
+      "Authenticated as Manufacturer (GLN = 8435308300002)",
+      "There is an existing sealed SSCC to ship"
+    ],
+    "data": [
+      "Source GLN: 8435308300002",
+      "Destination GLN: EPTTS_BRANCH_GLN",
+      "epcList: [\"urn:epc:id:sgtin:NOT-A-VALID-SGTIN\"]"
+    ],
+    "steps": [
+      "Post a Shipping (Object) event request with a malformed SGTIN URN in epcList",
+      "Observe the synchronous API response"
+    ],
+    "expected": [
+      "The request is rejected with 400 Bad Request",
+      "The response body indicates the EPC is not a well-formed SGTIN URN",
+      "No event is queued and no MsgStatusQuery record is created"
+    ]
   },
   "TC_SHIP_038": {
     "_authored": "Empty reserved slot.",
     "title": "Verify shipping with a malformed SSCC URN.",
     "validity": "Negative",
-    "pre": ["Citrix VPN connected", "Authenticated as Manufacturer (GLN = 8435308300002)", "There is an existing sealed SSCC to ship"],
-    "data": ["Source GLN: 8435308300002", "Destination GLN: EPTTS_BRANCH_GLN", "epcList: [\"urn:epc:id:sscc:05413868\"] (truncated serial reference)"],
-    "steps": ["Post a Shipping (Object) event request with a malformed SSCC URN in epcList", "Observe the synchronous API response"],
-    "expected": ["The request is rejected with 400 Bad Request", "The response body indicates the EPC is not a well-formed SSCC URN", "No event is queued and no MsgStatusQuery record is created"]
+    "pre": [
+      "Citrix VPN connected",
+      "Authenticated as Manufacturer (GLN = 8435308300002)",
+      "There is an existing sealed SSCC to ship"
+    ],
+    "data": [
+      "Source GLN: 8435308300002",
+      "Destination GLN: EPTTS_BRANCH_GLN",
+      "epcList: [\"urn:epc:id:sscc:05413868\"] (truncated serial reference)"
+    ],
+    "steps": [
+      "Post a Shipping (Object) event request with a malformed SSCC URN in epcList",
+      "Observe the synchronous API response"
+    ],
+    "expected": [
+      "The request is rejected with 400 Bad Request",
+      "The response body indicates the EPC is not a well-formed SSCC URN",
+      "No event is queued and no MsgStatusQuery record is created"
+    ]
   },
   "TC_SHIP_039": {
     "_authored": "Empty reserved slot.",
     "title": "Verify shipping with an invalid event time format.",
     "validity": "Negative",
-    "pre": ["Citrix VPN connected", "Authenticated as Manufacturer (GLN = 8435308300002)", "There is an existing sealed SSCC to ship"],
-    "data": ["Source GLN: 8435308300002", "Destination GLN: EPTTS_BRANCH_GLN", "eventTime: \"05-05-2026 10:00\" (not ISO 8601)", "epcList: [\"urn:epc:id:sscc:05413868.0099000001\"]"],
-    "steps": ["Post a Shipping (Object) event request with eventTime in a non-ISO-8601 format", "Observe the synchronous API response"],
-    "expected": ["The request is rejected with 400 Bad Request", "The response body indicates eventTime must be an ISO 8601 timestamp with a time zone offset", "No event is queued and no MsgStatusQuery record is created"]
+    "pre": [
+      "Citrix VPN connected",
+      "Authenticated as Manufacturer (GLN = 8435308300002)",
+      "There is an existing sealed SSCC to ship"
+    ],
+    "data": [
+      "Source GLN: 8435308300002",
+      "Destination GLN: EPTTS_BRANCH_GLN",
+      "eventTime: \"05-05-2026 10:00\" (not ISO 8601)",
+      "epcList: [\"urn:epc:id:sscc:05413868.0099000001\"]"
+    ],
+    "steps": [
+      "Post a Shipping (Object) event request with eventTime in a non-ISO-8601 format",
+      "Observe the synchronous API response"
+    ],
+    "expected": [
+      "The request is rejected with 400 Bad Request",
+      "The response body indicates eventTime must be an ISO 8601 timestamp with a time zone offset",
+      "No event is queued and no MsgStatusQuery record is created"
+    ]
   },
   "TC_SHIP_040": {
     "_authored": "Empty reserved slot. GLN-ownership negative — the platform's most important authorization rule.",
     "title": "Verify shipping an SSCC that is owned by a different GLN.",
     "validity": "Negative",
-    "pre": ["Citrix VPN connected", "Authenticated as Manufacturer (GLN = 8435308300002)", "The SSCC exists but is owned by a different trade partner GLN"],
-    "data": ["Source GLN: 8435308300002", "Destination GLN: EPTTS_BRANCH_GLN", "epcList: [\"urn:epc:id:sscc:05413868.0099000099\"] (owned by another GLN)"],
-    "steps": ["Post a Shipping (Object) event request referencing an SSCC owned by another GLN", "Poll MsgStatusQuery with the instanceIdentifier"],
-    "expected": ["The response is 202 Accepted", "MsgStatusQuery eventually returns FAILED", "The failure reason indicates the acting GLN does not own the referenced EPC", "The SSCC remains under its original owner and its state is unchanged"]
+    "pre": [
+      "Citrix VPN connected",
+      "Authenticated as Manufacturer (GLN = 8435308300002)",
+      "The SSCC exists but is owned by a different trade partner GLN"
+    ],
+    "data": [
+      "Source GLN: 8435308300002",
+      "Destination GLN: EPTTS_BRANCH_GLN",
+      "epcList: [\"urn:epc:id:sscc:05413868.0099000099\"] (owned by another GLN)"
+    ],
+    "steps": [
+      "Post a Shipping (Object) event request referencing an SSCC owned by another GLN",
+      "Poll MsgStatusQuery with the instanceIdentifier"
+    ],
+    "expected": [
+      "The response is 202 Accepted",
+      "MsgStatusQuery eventually returns FAILED",
+      "The failure reason indicates the acting GLN does not own the referenced EPC",
+      "The SSCC remains under its original owner and its state is unchanged"
+    ]
   },
   "TC_SHIP_041": {
     "_authored": "Empty reserved slot. Role-authorization negative.",
     "title": "Verify a Pharmacy role cannot post a manufacturer-to-branch shipping event.",
     "validity": "Negative",
-    "pre": ["Citrix VPN connected", "Authenticated as Pharmacy with a valid Pharmacy API key", "There is an existing sealed SSCC owned by the manufacturer"],
-    "data": ["API Key: EPTTS_PHARMACY_APIKEY", "Source GLN: 8435308300002 (the manufacturer, not the caller)", "Destination GLN: EPTTS_BRANCH_GLN", "epcList: [\"urn:epc:id:sscc:05413868.0099000001\"]"],
-    "steps": ["Post a Shipping (Object) event request authenticated as Pharmacy but with the manufacturer as source GLN", "Observe the API response and poll MsgStatusQuery if accepted"],
-    "expected": ["The request is rejected with 403 Forbidden, or MsgStatusQuery returns FAILED", "The failure reason indicates the authenticated role is not permitted to act for the given source GLN", "The SSCC state is unchanged"]
+    "pre": [
+      "Citrix VPN connected",
+      "Authenticated as Pharmacy with a valid Pharmacy API key",
+      "There is an existing sealed SSCC owned by the manufacturer"
+    ],
+    "data": [
+      "API Key: EPTTS_PHARMACY_APIKEY",
+      "Source GLN: 8435308300002 (the manufacturer, not the caller)",
+      "Destination GLN: EPTTS_BRANCH_GLN",
+      "epcList: [\"urn:epc:id:sscc:05413868.0099000001\"]"
+    ],
+    "steps": [
+      "Post a Shipping (Object) event request authenticated as Pharmacy but with the manufacturer as source GLN",
+      "Observe the API response and poll MsgStatusQuery if accepted"
+    ],
+    "expected": [
+      "The request is rejected with 403 Forbidden, or MsgStatusQuery returns FAILED",
+      "The failure reason indicates the authenticated role is not permitted to act for the given source GLN",
+      "The SSCC state is unchanged"
+    ]
   },
   "TC_SHIP_042": {
     "_authored": "Empty reserved slot. Idempotency/replay negative.",
     "title": "Verify re-submitting a shipping event with an already-used instance identifier.",
     "validity": "Negative",
-    "pre": ["Citrix VPN connected", "Authenticated as Manufacturer (GLN = 8435308300002)", "A shipping event has already been submitted successfully with a known instanceIdentifier"],
-    "data": ["Source GLN: 8435308300002", "Destination GLN: EPTTS_BRANCH_GLN", "instanceIdentifier: (reuse the identifier from the previous successful submission)", "epcList: [\"urn:epc:id:sscc:05413868.0099000002\"]"],
-    "steps": ["Post a second Shipping (Object) event request reusing the previous instanceIdentifier", "Poll MsgStatusQuery with that instanceIdentifier", "Query the EPCIS message list for events sharing the identifier"],
-    "expected": ["The duplicate submission is rejected, or is treated as idempotent and does not create a second event", "MsgStatusQuery still reflects the original submission's outcome", "The SSCC in the second request is not shipped (as per business rules)"]
+    "pre": [
+      "Citrix VPN connected",
+      "Authenticated as Manufacturer (GLN = 8435308300002)",
+      "A shipping event has already been submitted successfully with a known instanceIdentifier"
+    ],
+    "data": [
+      "Source GLN: 8435308300002",
+      "Destination GLN: EPTTS_BRANCH_GLN",
+      "instanceIdentifier: (reuse the identifier from the previous successful submission)",
+      "epcList: [\"urn:epc:id:sscc:05413868.0099000002\"]"
+    ],
+    "steps": [
+      "Post a second Shipping (Object) event request reusing the previous instanceIdentifier",
+      "Poll MsgStatusQuery with that instanceIdentifier",
+      "Query the EPCIS message list for events sharing the identifier"
+    ],
+    "expected": [
+      "The duplicate submission is rejected, or is treated as idempotent and does not create a second event",
+      "MsgStatusQuery still reflects the original submission's outcome",
+      "The SSCC in the second request is not shipped (as per business rules)"
+    ]
   },
   "TC_SHIP_043": {
     "_authored": "Empty reserved slot. Content-type negative.",
     "title": "Verify shipping with a Content-Type that does not match the request body.",
     "validity": "Negative",
-    "pre": ["Citrix VPN connected", "Authenticated as Manufacturer (GLN = 8435308300002)", "There is an existing sealed SSCC to ship"],
-    "data": ["Content-Type: application/xml", "Body: a valid EPCIS 2.0 JSON shipping document", "epcList: [\"urn:epc:id:sscc:05413868.0099000001\"]"],
-    "steps": ["Post a Shipping event request with Content-Type application/xml and a JSON body", "Observe the synchronous API response"],
-    "expected": ["The request is rejected with 400 Bad Request or 415 Unsupported Media Type", "The response body indicates the payload could not be parsed as the declared content type", "No event is queued and no MsgStatusQuery record is created"]
+    "pre": [
+      "Citrix VPN connected",
+      "Authenticated as Manufacturer (GLN = 8435308300002)",
+      "There is an existing sealed SSCC to ship"
+    ],
+    "data": [
+      "Content-Type: application/xml",
+      "Body: a valid EPCIS 2.0 JSON shipping document",
+      "epcList: [\"urn:epc:id:sscc:05413868.0099000001\"]"
+    ],
+    "steps": [
+      "Post a Shipping event request with Content-Type application/xml and a JSON body",
+      "Observe the synchronous API response"
+    ],
+    "expected": [
+      "The request is rejected with 400 Bad Request or 415 Unsupported Media Type",
+      "The response body indicates the payload could not be parsed as the declared content type",
+      "No event is queued and no MsgStatusQuery record is created"
+    ]
   },
   "TC_SHIP_044": {
     "_authored": "Empty reserved slot. Security negative.",
     "title": "Verify shipping rejects injection payloads in the invoice number.",
     "validity": "Negative",
-    "pre": ["Citrix VPN connected", "Authenticated as Manufacturer (GLN = 8435308300002)", "There is an existing sealed SSCC to ship"],
-    "data": ["Source GLN: 8435308300002", "Destination GLN: EPTTS_BRANCH_GLN", "bizTransactionList: [{ \"type\": \"inv\", \"bizTransaction\": \"' OR 1=1 --\" }]", "Second attempt bizTransaction: \"<script>alert(1)</script>\""],
-    "steps": ["Post a Shipping event request with a SQL injection string as the invoice number", "Observe the response", "Repeat with an XSS payload as the invoice number", "Query the EPCIS message list and the invoice listing"],
-    "expected": ["Both requests are rejected by input validation, or the value is stored inert and never interpreted", "No SQL error is returned and no database behaviour changes", "The payload is escaped wherever it is rendered and no script executes", "No unintended shipment is created"],
+    "pre": [
+      "Citrix VPN connected",
+      "Authenticated as Manufacturer (GLN = 8435308300002)",
+      "There is an existing sealed SSCC to ship"
+    ],
+    "data": [
+      "Source GLN: 8435308300002",
+      "Destination GLN: EPTTS_BRANCH_GLN",
+      "bizTransactionList: [{ \"type\": \"inv\", \"bizTransaction\": \"' OR 1=1 --\" }]",
+      "Second attempt bizTransaction: \"<script>alert(1)</script>\""
+    ],
+    "steps": [
+      "Post a Shipping event request with a SQL injection string as the invoice number",
+      "Observe the response",
+      "Repeat with an XSS payload as the invoice number",
+      "Query the EPCIS message list and the invoice listing"
+    ],
+    "expected": [
+      "Both requests are rejected by input validation, or the value is stored inert and never interpreted",
+      "No SQL error is returned and no database behaviour changes",
+      "The payload is escaped wherever it is rendered and no script executes",
+      "No unintended shipment is created"
+    ],
     "type": "Security"
+  },
+  "_additions": {
+    "Dispensing": [
+      {
+        "id": "TC_DISP_035",
+        "_authored": "No sheet row covers reversing a dispense, though the feature workflow lists Dispense Cancel as required coverage. Shape confirmed live 2026-09-07: action DELETE with bizStep dispensing is answered by the platform's own Dispensing Cancellation handler, and per the product owner this is how a patient return is recorded.",
+        "validity": "Positive",
+        "title": "Verify a patient return is recorded as a Dispensing Cancellation and puts the pack back into pharmacy stock.",
+        "pre": [
+          "Citrix VPN connected (or the ngrok relay reachable)",
+          "Authenticated as Pharmacy",
+          "A pack of a non-Dawana, dispensable product has been received by this pharmacy",
+          "The pack has just been dispensed (status = Dispensed)"
+        ],
+        "data": [
+          "action: DELETE",
+          "bizStep: dispensing",
+          "disposition: active",
+          "epcList: [the dispensed SGTIN]",
+          "Endpoint: POST /masar-service/api/v1/scp/SendEPCIS"
+        ],
+        "steps": [
+          "Dispense the pack with a full Dispensing (Object) event and confirm its status becomes Dispensed",
+          "Post a Dispensing Cancellation (Object) event with action DELETE, bizStep dispensing and disposition active for the same SGTIN",
+          "Poll MsgStatusQuery until the message reaches a terminal state",
+          "Read the pack back with POST /VerifyProduct"
+        ],
+        "expected": [
+          "202 Accepted on submission, then MsgStatusQuery reports S - Successful",
+          "The original dispensing event is cancelled",
+          "pack.status returns to active - the medicine is pharmacy stock again",
+          "pack.currentGln is unchanged and still the pharmacy: a return from a patient does not move custody between trade partners"
+        ]
+      },
+      {
+        "id": "TC_DISP_036",
+        "_authored": "Companion to TC_DISP_035. bizStep patient_return also has a live handler (Patient Return event failed: ...), so what it does relative to Dispensing Cancellation needs pinning down rather than assuming the two are interchangeable.",
+        "validity": "Positive",
+        "title": "Verify the platform routes a Patient Return event and record how its effect compares with a Dispensing Cancellation.",
+        "pre": [
+          "Citrix VPN connected (or the ngrok relay reachable)",
+          "Authenticated as Pharmacy",
+          "A pack of a non-Dawana, dispensable product has been received by this pharmacy",
+          "The pack has just been dispensed (status = Dispensed)"
+        ],
+        "data": [
+          "action: OBSERVE",
+          "bizStep: patient_return",
+          "disposition: active",
+          "epcList: [the dispensed SGTIN]",
+          "Endpoint: POST /masar-service/api/v1/scp/SendEPCIS"
+        ],
+        "steps": [
+          "Dispense the pack and confirm its status becomes Dispensed",
+          "Post an Object event with action OBSERVE, bizStep patient_return and disposition active for the same SGTIN",
+          "Poll MsgStatusQuery until the message reaches a terminal state",
+          "Read the pack back with POST /VerifyProduct"
+        ],
+        "expected": [
+          "The event is routed to the platform's Patient Return handler rather than being ignored",
+          "202 Accepted on submission, then MsgStatusQuery reaches a terminal state naming Patient Return",
+          "The resulting pack.status is recorded, so any divergence from TC_DISP_035 is visible rather than assumed"
+        ]
+      },
+      {
+        "id": "TC_DISP_037",
+        "_authored": "Authored while establishing the reversal contract. Guards two things at once: that the platform refuses an action/bizStep pairing it cannot route (it does, with A - Technical Error / No valid events found in eventList), and that our own poller recognises the A status class — misreading A as pending produced a false bug report on 2026-09-07.",
+        "validity": "Negative",
+        "title": "Verify an event whose action and business-step combination the platform does not support is refused rather than silently accepted.",
+        "pre": [
+          "Citrix VPN connected (or the ngrok relay reachable)",
+          "Authenticated as Pharmacy",
+          "A pack of a non-Dawana, dispensable product has been received by this pharmacy"
+        ],
+        "data": [
+          "action: DELETE",
+          "bizStep: patient_return (an unsupported pairing; DELETE goes with dispensing, OBSERVE with patient_return)",
+          "disposition: active",
+          "epcList: [an SGTIN held by this pharmacy]",
+          "Endpoint: POST /masar-service/api/v1/scp/SendEPCIS"
+        ],
+        "steps": [
+          "Post an Object event pairing action DELETE with bizStep patient_return for a pack the pharmacy holds",
+          "Poll MsgStatusQuery for at least 90 seconds"
+        ],
+        "expected": [
+          "The document is refused, not silently accepted",
+          "MsgStatusQuery reports A - Technical Error with logList entry \"No valid events found in eventList\" on the first poll",
+          "The submission does not remain pending indefinitely",
+          "The pack is left untouched, still active in the pharmacy's stock"
+        ]
+      }
+    ],
+    "Partial Dispensing": [
+      {
+        "id": "TC_PDISP_037",
+        "_authored": "No sheet row covers reversing a partial dispense. Confirmed live 2026-09-07 that action DELETE with bizStep partial_dispensing is answered by the platform's own Partial Dispensing Cancellation handler, a third operation distinct from the full-pack cancellation.",
+        "validity": "Positive",
+        "title": "Verify cancelling a partial dispense returns the dispensed units to the pack.",
+        "pre": [
+          "Citrix VPN connected (or the ngrok relay reachable)",
+          "Authenticated as Pharmacy",
+          "A pack of a product registered with dispenseType partial has been received by this pharmacy",
+          "Part of the pack has been dispensed (status = Partially dispensed)"
+        ],
+        "data": [
+          "action: DELETE",
+          "bizStep: partial_dispensing",
+          "disposition: active",
+          "quantity: the number of units to return (required for a partial cancellation)",
+          "epcList: [the partially dispensed SGTIN]",
+          "Endpoint: POST /masar-service/api/v1/scp/SendEPCIS"
+        ],
+        "steps": [
+          "Partially dispense a quantity from the pack and confirm the remaining quantity",
+          "Post a Partial Dispensing Cancellation (Object) event with action DELETE, bizStep partial_dispensing, disposition active and the quantity to return",
+          "Poll MsgStatusQuery until the message reaches a terminal state",
+          "Read the pack back with POST /VerifyProduct"
+        ],
+        "expected": [
+          "202 Accepted on submission, then MsgStatusQuery reports S - Successful",
+          "The returned units are added back to the pack's remaining quantity",
+          "pack.currentGln is unchanged and still the pharmacy"
+        ]
+      }
+    ]
   }
 }

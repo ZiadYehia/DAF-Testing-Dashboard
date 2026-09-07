@@ -1,0 +1,57 @@
+[
+  {
+    "id": "TC_COMM_003",
+    "text": "How is that positive case ? system should reject an already commissioned pack",
+    "bug": ""
+  },
+  {
+    "id": "TC_COMM_005",
+    "text": "what is the diff here ?",
+    "bug": ""
+  },
+  {
+    "id": "TC_COMM_006",
+    "text": "what is the diff here ?",
+    "bug": ""
+  },
+  {
+    "id": "TC_COMM_007",
+    "text": "what is the diff here ?",
+    "bug": ""
+  },
+  {
+    "id": "TC_COMM_010",
+    "text": "Return to dev make sure is this valid case or not as in dashboard you can't with batch no.",
+    "bug": ""
+  },
+  {
+    "id": "TC_COMM_011",
+    "text": "how msgquery success and information didn't get updated if so don't return success",
+    "bug": ""
+  },
+  {
+    "id": "TC_COMM_012",
+    "text": "same",
+    "bug": ""
+  },
+  {
+    "id": "TC_COMM_017",
+    "text": "Could be authenticated without apikey",
+    "bug": ""
+  },
+  {
+    "id": "TC_COMM_040",
+    "text": "_Authored, not from the source sheet:_ Source has Steps but empty Expected Results. Recorded Status=Pass, i.e. the platform correctly rejects a foreign sender identifier.",
+    "bug": ""
+  },
+  {
+    "id": "TC_COMM_041",
+    "text": "_Authored, not from the source sheet:_ Source has Steps but empty Expected Results. Recorded Status=Fail — the platform currently ACCEPTS a foreign readPoint. Expected Results state the correct behaviour, so the case legitimately fails until fixed.",
+    "bug": ""
+  },
+  {
+    "id": "TC_COMM_042",
+    "text": "_Authored, not from the source sheet:_ Source has Steps but empty Expected Results. Recorded Status=Fail — the platform currently ACCEPTS a foreign bizLocation. Expected Results state the correct behaviour, so the case legitimately fails until fixed.",
+    "bug": ""
+  }
+]

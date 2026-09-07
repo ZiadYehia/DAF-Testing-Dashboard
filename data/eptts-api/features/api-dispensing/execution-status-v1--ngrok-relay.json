@@ -1,14 +1,14 @@
 {
   "TC_DISP_001": "fail",
   "TC_DISP_002": "blocked",
-  "TC_DISP_003": "blocked",
+  "TC_DISP_003": "fail",
   "TC_DISP_004": "blocked",
   "TC_DISP_005": "blocked",
   "TC_DISP_006": "blocked",
   "TC_DISP_007": "blocked",
   "TC_DISP_008": "blocked",
   "TC_DISP_009": "blocked",
-  "TC_DISP_010": "blocked",
+  "TC_DISP_010": "fail",
   "TC_DISP_011": "blocked",
   "TC_DISP_012": "blocked",
   "TC_DISP_013": "blocked",
@@ -28,9 +28,12 @@
   "TC_DISP_027": "pass",
   "TC_DISP_028": "pass",
   "TC_DISP_029": "pass",
-  "TC_DISP_030": "blocked",
+  "TC_DISP_030": "fail",
   "TC_DISP_031": "pass",
   "TC_DISP_032": "pass",
   "TC_DISP_033": "pass",
-  "TC_DISP_034": "pass"
+  "TC_DISP_034": "pass",
+  "TC_DISP_035": "fail",
+  "TC_DISP_036": "fail",
+  "TC_DISP_037": "pass"
 }

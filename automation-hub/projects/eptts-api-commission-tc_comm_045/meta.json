@@ -1,0 +1,23 @@
+{
+  "name": "eptts-api-commission-tc_comm_045",
+  "title": "TC_COMM_045 — commissioning a product whose pricing review is pending is refused",
+  "app": "eptts-api",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TC_COMM_045",
+  "linkedTestcase": {
+    "app": "eptts-api",
+    "feature": "api-commission",
+    "testcaseId": "TC_COMM_045"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "write",
+    "known-gap",
+    "blocked"
+  ],
+  "folder": "EPTTS APIs / api-commission",
+  "engine": "api"
+}

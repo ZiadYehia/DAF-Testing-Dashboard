@@ -1,0 +1,21 @@
+{
+  "name": "eptts-api-dispensing-tc_disp_036",
+  "title": "TC_DISP_036 — a Patient Return event is routed, and its effect is recorded against the cancellation",
+  "app": "eptts-api",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "TC_DISP_036",
+  "linkedTestcase": {
+    "app": "eptts-api",
+    "feature": "api-dispensing",
+    "testcaseId": "TC_DISP_036"
+  },
+  "createdAt": "2026-08-31T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "api",
+    "destructive"
+  ],
+  "folder": "EPTTS APIs / api-dispensing",
+  "engine": "api"
+}

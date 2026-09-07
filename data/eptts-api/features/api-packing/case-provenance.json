@@ -1,0 +1,22 @@
+[
+  {
+    "id": "TS_PACK_005",
+    "text": "https://dafholding.atlassian.net/browse/DW-846",
+    "bug": "DW-846"
+  },
+  {
+    "id": "TS_PACK_009",
+    "text": "N/A",
+    "bug": ""
+  },
+  {
+    "id": "TS_PACK_015",
+    "text": "https://dafholding.atlassian.net/browse/DW-848",
+    "bug": "DW-848"
+  },
+  {
+    "id": "TS_PACK_017",
+    "text": "https://dafholding.atlassian.net/browse/DW-851",
+    "bug": "DW-851"
+  }
+]

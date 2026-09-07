@@ -1,0 +1,17 @@
+[
+  {
+    "id": "TC_DISP_035",
+    "text": "_Authored, not from the source sheet:_ No sheet row covers reversing a dispense, though the feature workflow lists Dispense Cancel as required coverage. Shape confirmed live 2026-09-07: action DELETE with bizStep dispensing is answered by the platform's own Dispensing Cancellation handler, and per the product owner this is how a patient return is recorded.",
+    "bug": ""
+  },
+  {
+    "id": "TC_DISP_036",
+    "text": "_Authored, not from the source sheet:_ Companion to TC_DISP_035. bizStep patient_return also has a live handler (Patient Return event failed: ...), so what it does relative to Dispensing Cancellation needs pinning down rather than assuming the two are interchangeable.",
+    "bug": ""
+  },
+  {
+    "id": "TC_DISP_037",
+    "text": "_Authored, not from the source sheet:_ Authored while establishing the reversal contract. Guards two things at once: that the platform refuses an action/bizStep pairing it cannot route (it does, with A - Technical Error / No valid events found in eventList), and that our own poller recognises the A status class — misreading A as pending produced a false bug report on 2026-09-07.",
+    "bug": ""
+  }
+]

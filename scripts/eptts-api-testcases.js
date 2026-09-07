@@ -14,7 +14,9 @@
  *   <slug>-testcases.md        canonical 13-column table + Notes & Known Defects
  *   <slug>-testcases-v1.md     identical; the versioned file is what execution reads
  *                              (src/lib/execution.ts, features.ts getTestcaseVersions)
- *   execution-status-v1.json   TestCase ID -> ExecutionStatus, seeded from Status
+ *   execution-status-v1.json   TestCase ID -> ExecutionStatus. Seeded from the sheet's
+ *                              Status for IDs it does not already hold; existing entries are
+ *                              left alone, because real runs own them after the first seed.
  *   metadata.json              { module: "eptts-apis" }
  *   screenshots/               empty dir
  *
@@ -164,11 +166,15 @@ const DIVIDER = '|' + '---|'.repeat(COLUMNS.length)
 
 async function main() {
   const overrides = JSON.parse(fs.readFileSync(OVERRIDES_PATH, 'utf8'))
+  // Keyed by SHEET NAME, so an addition sits with the feature it belongs to. Excluded
+  // from the overrides-completeness check below by the leading underscore.
+  const additions = overrides._additions || {}
   const wb = new ExcelJS.Workbook()
   await wb.xlsx.readFile(SRC)
 
   const summary = []
   const overridesApplied = []
+  const additionsApplied = []
   const scrubbed = []
 
   for (const ws of wb.worksheets) {
@@ -253,6 +259,44 @@ async function main() {
       if (ov && ov._authored) notes.push({ id, text: `_Authored, not from the source sheet:_ ${ov._authored}`, bug: '' })
     }
 
+    // ─── authored additions: cases the sheet does not contain at all ─────────
+    //
+    // DIFFERENT FROM AN OVERRIDE, AND THE DISTINCTION MATTERS. An override fills in fields on
+    // an ID the sheet already has (TC_SHIP_025..044 are empty reserved slots). An addition
+    // introduces an ID the sheet never had, which is the only way to cover an operation the
+    // sheet's author did not know existed — the platform turned out to implement Dispensing
+    // Cancellation, Partial Dispensing Cancellation and Patient Return, and there is no row
+    // for any of them.
+    //
+    // Appended, never interleaved, and each one lands in case-provenance.json through
+    // `_authored`, so authored content still cannot be mistaken for extracted content. The
+    // mapping back to the spreadsheet is preserved in the direction that matters: every sheet
+    // row still produces exactly one case.
+    for (const add of (additions[ws.name] || [])) {
+      if (rows.some((r) => r.id === add.id)) {
+        console.warn(`!! addition ${add.id} collides with a sheet row — SKIPPED`)
+        continue
+      }
+      const cells = [
+        cfg.featureId,
+        add.id,
+        add.tester || 'Claude (automated API suite)',
+        add.validity || 'Positive',
+        add.title,
+        ENVIRONMENT,
+        numbered(Array.isArray(add.pre) ? add.pre : [VPN_PRECONDITION, ...items(add.pre || '')]),
+        testData(Array.isArray(add.data) ? add.data : items(add.data || '')),
+        numbered(Array.isArray(add.steps) ? add.steps : items(add.steps || '')),
+        numbered(Array.isArray(add.expected) ? add.expected : items(add.expected || '')),
+        tableStatus(add.status),
+        add.attachment || '',
+        add.type || 'Functional',
+      ].map((c) => cellSafe(scrub(String(c))))
+      rows.push({ id: add.id, cells, execStatus: execStatus(add.status) })
+      additionsApplied.push(add.id)
+      notes.push({ id: add.id, text: `_Authored, not from the source sheet:_ ${add._authored}`, bug: '' })
+    }
+
     // ─── assemble the markdown ───
     const body = [`# ${cfg.title} Test Cases`, '', HEADER, DIVIDER]
     for (const r of rows) body.push(`| ${r.cells.join(' | ')} |`)
@@ -280,9 +324,24 @@ async function main() {
       fs.writeFileSync(path.join(dir, `${cfg.slug}-testcases.md`), md, 'utf8')
       fs.writeFileSync(path.join(dir, `${cfg.slug}-testcases-v1.md`), md, 'utf8')
       fs.writeFileSync(path.join(dir, 'metadata.json'), JSON.stringify({ module: 'eptts-apis' }, null, 2) + '\n', 'utf8')
-      const exec = {}
-      for (const r of rows) exec[r.id] = r.execStatus
-      fs.writeFileSync(path.join(dir, 'execution-status-v1.json'), JSON.stringify(exec, null, 2) + '\n', 'utf8')
+      // MERGE, NEVER OVERWRITE. This file starts life as the sheet's Status column but is
+      // afterwards owned by real runs — scripts/eptts-record-run.js writes measured results
+      // into it. A plain overwrite silently replaces those with the spreadsheet's staging-era
+      // values: re-running this extractor to add four cases reset 138 recorded statuses across
+      // eleven features, turning measured fails and blocks back into "pass" from a sheet that
+      // predates this environment. So an ID already present keeps its recorded status, and
+      // only genuinely new IDs are seeded from the sheet.
+      const execPath = path.join(dir, 'execution-status-v1.json')
+      let exec = {}
+      if (fs.existsSync(execPath)) {
+        try { exec = JSON.parse(fs.readFileSync(execPath, 'utf8')) } catch { exec = {} }
+      }
+      const seeded = []
+      for (const r of rows) {
+        if (exec[r.id] === undefined) { exec[r.id] = r.execStatus; seeded.push(r.id) }
+      }
+      if (seeded.length) console.log(`  ${cfg.slug}: seeded status for ${seeded.join(', ')}`)
+      fs.writeFileSync(execPath, JSON.stringify(exec, null, 2) + '\n', 'utf8')
     }
 
     const tally = rows.reduce((a, r) => ((a[r.execStatus] = (a[r.execStatus] || 0) + 1), a), {})
@@ -301,6 +360,8 @@ async function main() {
   }
   console.log(`\nfeatures: ${summary.length}   TOTAL TEST CASES: ${total}`)
   console.log(`overrides applied (${overridesApplied.length}): ${overridesApplied.join(', ')}`)
+  console.log(`authored additions, no sheet row (${additionsApplied.length}): `
+    + (additionsApplied.join(', ') || 'none'))
   console.log(`rows with scrubbed credential literals (${new Set(scrubbed).size}): ${[...new Set(scrubbed)].join(', ')}`)
 
   const expectedOverrides = Object.keys(overrides).filter((k) => !k.startsWith('_'))

@@ -36,9 +36,5 @@
     "write"
   ],
   "folder": "EPTTS APIs / api-shipping",
-  "engine": "api",
-  "lastStatusByEnv": {
-    "ngrok relay": "fail",
-    "(no environment)": "pass"
-  }
+  "engine": "api"
 }

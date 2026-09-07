@@ -30,6 +30,7 @@ import { expect } from '@playwright/test'
 import {
   dispensation, pollMsgStatus, packOf, describeMsgStatus, errorOf, bodyOf,
   epcisDocument, dispensingEvent, destructionEvent, submitAndPoll,
+  dispenseCancelEvent, patientReturnEvent,
   freshDispensableSgtin, sglnOf, glnFor,
   type EpcisDocument, type Role,
 } from '../eptts-api'
@@ -324,6 +325,144 @@ const business: ApiCase[] = [
   },
 ]
 
+// ─── reversing a dispense ────────────────────────────────────────────────────
+//
+// Three operations, none of them in the source spreadsheet, all three confirmed to have a
+// live handler on 2026-09-07 by submitting ten action/bizStep combinations and reading which
+// ones the platform answered:
+//
+//   action=DELETE  bizStep=dispensing          -> "Dispensing Cancellation event ..."
+//   action=DELETE  bizStep=partial_dispensing  -> "Partial Dispensing Cancellation event ..."
+//   action=OBSERVE bizStep=patient_return      -> "Patient Return event ..."
+//
+// A PATIENT RETURN IS RECORDED AS A DISPENSING CANCELLATION (the first of the three) — the
+// product owner's answer, and what API doc 3.04 describes in its own words: "Used to cancel a
+// dispensing event. The dispensed medicine is returned to the pharmacy." Cancelling the sale
+// and the goods coming back are one operation here, not two.
+//
+// All three go to `/scp/SendEPCIS`, NOT `/Dispensation` — the forward sale is the only part of
+// this feature with its own endpoint.
+
+/** Dispense a pack and require it to actually reach `dispensed`, or fail saying why. */
+async function dispensedPack(): Promise<string> {
+  const a = await atPharmacy(1)
+  const sgtin = a.sgtins[0]
+  const r = await dispense('pharmacy', dispDoc([sgtin]))
+  const v = await packOf('pharmacy', sgtin)
+  if (v.pack?.status !== 'dispensed') {
+    throw new Error(
+      `fixture: could not dispense ${sgtin}, so there is nothing to reverse — ` +
+      `${r.msg ? describeMsgStatus(r.msg) : `http ${r.status}`}. On a tenant where dispensing ` +
+      'is refused outright see data/eptts-api/bugs/api-dispensing/ — the reversal cases cannot ' +
+      'run until a dispense can complete.',
+    )
+  }
+  return sgtin
+}
+
+const reversal: ApiCase[] = [
+  {
+    id: 'TC_DISP_035', feature: FEATURE, slow: true,
+    title: 'a patient return is recorded as a Dispensing Cancellation and restores pharmacy stock',
+    run: async () => {
+      const sgtin = await dispensedPack()
+
+      const doc = epcisDocument(
+        [dispenseCancelEvent({ epcList: [sgtin], readPointSgln: sglnOf('pharmacy') })],
+        { senderGln: PHARMACY(), receiverGln: PHARMACY() },
+      )
+      const { submitStatus, msg } = await submitAndPoll('pharmacy', doc)
+      console.log(`[disp] dispense cancellation -> ${submitStatus} ${describeMsgStatus(msg)}`)
+      expect(submitStatus, 'the cancellation is accepted for processing').toBe(202)
+      expect(msg.state, `cancelling the dispense — ${describeMsgStatus(msg)}`).toBe('SUCCESS')
+
+      // The point of the operation: the medicine is sellable stock again, and it never
+      // changed hands — a patient is not a trade partner, so custody must not move.
+      const v = await packOf('pharmacy', sgtin)
+      const seen = `status=${v.pack?.status} currentGln=${v.pack?.currentGln}`
+      console.log(`[disp] after the patient return: ${seen}`)
+      expect.soft(v.pack?.status, `the pack returns to pharmacy stock. ${seen}`).toBe('active')
+      expect.soft(v.pack?.currentGln, `a patient return does not move custody. ${seen}`).toBe(PHARMACY())
+    },
+  },
+  {
+    id: 'TC_DISP_036', feature: FEATURE, slow: true,
+    title: 'a Patient Return event is routed, and its effect is recorded against the cancellation',
+    run: async () => {
+      // `patient_return` has its own handler, so the open question is not whether it is
+      // accepted but what it DOES relative to TC_DISP_035. Asserting only that it is routed
+      // and then recording the resulting state keeps this honest: the day the two diverge,
+      // the log says so instead of a guess being baked into an assertion.
+      const sgtin = await dispensedPack()
+
+      const doc = epcisDocument(
+        [patientReturnEvent({ epcList: [sgtin], readPointSgln: sglnOf('pharmacy') })],
+        { senderGln: PHARMACY(), receiverGln: PHARMACY() },
+      )
+      const { submitStatus, msg } = await submitAndPoll('pharmacy', doc, { timeoutMs: 45_000 })
+      console.log(`[disp] patient_return event -> ${submitStatus} ${describeMsgStatus(msg)}`)
+      expect(submitStatus, 'accepted for processing').toBe(202)
+
+      // Routed at all: an unhandled action/bizStep pair never reaches a terminal state
+      // (TC_DISP_037), so this is the assertion that distinguishes the two.
+      expect(msg.timedOut,
+        `bizStep patient_return must reach a handler — ${describeMsgStatus(msg)}`).toBe(false)
+
+      const v = await packOf('pharmacy', sgtin)
+      console.log(`[disp] after patient_return: status=${v.pack?.status} ` +
+        `currentGln=${v.pack?.currentGln} (compare with TC_DISP_035)`)
+      expect(v.pack?.currentGln, 'whatever it does, it must not move custody').toBe(PHARMACY())
+    },
+  },
+  {
+    id: 'TC_DISP_037', feature: FEATURE, slow: true,
+    title: 'an unsupported action + bizStep pairing is refused rather than silently accepted',
+    run: async () => {
+      // DELETE belongs with `dispensing` and OBSERVE with `patient_return`; crossing them
+      // gives a document the platform has no handler for. It is the exact pairing a reader of
+      // API doc 3.04's field table would send, so it is worth knowing what happens — and the
+      // answer is good: 202, then "A - Technical Error" / "No valid events found in eventList"
+      // on the first poll. The pack is left alone.
+      //
+      // This case also guards the CLASSIFIER, which is why it earns its place. `A` is not in
+      // the documented S/E/F/P/I/Q status table, and a poller that ignores it reads a prompt
+      // refusal as an eternal timeout. That misreading produced a false bug report against the
+      // platform on 2026-09-07; if classifyStatus ever loses the A branch, this case is where
+      // it surfaces.
+      const a = await atPharmacy(1)
+      const doc = epcisDocument(
+        [{
+          type: 'ObjectEvent',
+          eventTime: new Date().toISOString().replace(/\.\d+Z$/, '+03:00'),
+          eventTimeZoneOffset: '+03:00',
+          readPoint: { id: sglnOf('pharmacy') },
+          bizLocation: { id: sglnOf('pharmacy') },
+          action: 'DELETE',
+          bizStep: 'patient_return',
+          disposition: 'active',
+          epcList: [a.sgtins[0]],
+        }],
+        { senderGln: PHARMACY(), receiverGln: PHARMACY() },
+      )
+      // 30 s, not the 90 s default: a recognised event answers on the first poll, and the
+      // point here is that no verdict ever arrives — waiting three times as long to say so
+      // only makes the suite slower.
+      const { submitStatus, msg } = await submitAndPoll('pharmacy', doc, { timeoutMs: 30_000 })
+      console.log(`[disp] unroutable DELETE+patient_return -> ${submitStatus} ${describeMsgStatus(msg)}`)
+
+      // Either shape of refusal is acceptable; silence is not.
+      if (submitStatus >= 400) return
+      expect(msg.timedOut,
+        `an unroutable event must be refused, not left pending — ${describeMsgStatus(msg)}`).toBe(false)
+      expect(msg.state, `and the refusal must say so — ${describeMsgStatus(msg)}`).toBe('FAILED')
+
+      // Whatever the platform decides, it must not have consumed the pack.
+      const v = await packOf('pharmacy', a.sgtins[0])
+      expect(v.pack?.status, 'the pack is untouched by an unroutable event').toBe('active')
+    },
+  },
+]
+
 // ─── shared field negatives ──────────────────────────────────────────────────
 
 /**
@@ -358,6 +497,7 @@ const FIELD_MAP: Partial<Record<string, MutationName>> = {
 
 export const DISPENSING_CASES: ApiCase[] = [
   ...business,
+  ...reversal,
   // reject: expectRefused — these documents go to /Dispensation, NOT /scp/SendEPCIS.
   ...fieldCases({
     // These reached a correct refusal in the clean run, so the shared KNOWN_GAPS marker

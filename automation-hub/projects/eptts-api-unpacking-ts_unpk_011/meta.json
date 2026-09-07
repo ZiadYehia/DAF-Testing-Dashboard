@@ -37,9 +37,5 @@
     "write"
   ],
   "folder": "EPTTS APIs / api-unpacking",
-  "engine": "api",
-  "lastStatusByEnv": {
-    "ngrok relay": "fail",
-    "(no environment)": "fail"
-  }
+  "engine": "api"
 }
