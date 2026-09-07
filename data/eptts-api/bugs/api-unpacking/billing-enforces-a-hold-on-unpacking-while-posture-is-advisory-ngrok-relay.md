@@ -26,10 +26,10 @@ environment: ngrok relay
 **Steps to Reproduce:**
 
 1. Connect the Citrix VPN.
-2. As Daf admin, GET https://2e29-41-129-1-185.ngrok-free.app/masar-service/api/v1/billing/posture and note mode advisory, enforce false, record true.
-3. Authenticate as the manufacturer at POST https://12bc-41-129-1-185.ngrok-free.app/masar-service/api/v1/auth with header apikey: <manufacturer key>.
+2. As Daf admin, GET https://e7c0-41-129-1-185.ngrok-free.app/masar-service/api/v1/billing/posture and note mode advisory, enforce false, record true.
+3. Authenticate as the manufacturer at POST https://4430-41-129-1-185.ngrok-free.app/masar-service/api/v1/auth with header apikey: <manufacturer key>.
 4. Commission an SGTIN of 05413868110425 and pack it into a fresh SSCC. Both succeed.
-5. GET https://2e29-41-129-1-185.ngrok-free.app/masar-service/api/v1/billing/invoices and observe a new invoice with status PENDING for the packed unit.
+5. GET https://e7c0-41-129-1-185.ngrok-free.app/masar-service/api/v1/billing/invoices and observe a new invoice with status PENDING for the packed unit.
 6. Submit an unpacking AggregationEvent with action DELETE for that SSCC and poll MsgStatusQuery.
 
 ---
@@ -46,9 +46,9 @@ The event fails with `Unpacking event failed: SSCC 854138687876006223 has an act
 
 **Environment:**
 Masar B2B API over the ngrok relay
-POST https://448f-41-129-1-185.ngrok-free.app/masar-service/api/v1/scp/SendEPCIS
-Auth at https://12bc-41-129-1-185.ngrok-free.app/masar-service/api/v1/auth
-Billing at https://2e29-41-129-1-185.ngrok-free.app/masar-service/api/v1
+POST https://3e21-41-129-1-185.ngrok-free.app/masar-service/api/v1/scp/SendEPCIS
+Auth at https://4430-41-129-1-185.ngrok-free.app/masar-service/api/v1/auth
+Billing at https://e7c0-41-129-1-185.ngrok-free.app/masar-service/api/v1
 Tenant: Janssen, manufacturer GLN 5413868000009
 Billing posture at the time of the block: mode advisory, enforce false, record true, source BILLING_MODE=advisory
 Self-signed TLS upstream of the tunnel; certificate validation disabled for the run

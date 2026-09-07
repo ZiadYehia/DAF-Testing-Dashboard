@@ -26,7 +26,7 @@ environment: ngrok relay
 **Steps to Reproduce:**
 
 1. Connect the Citrix VPN.
-2. Authenticate as the manufacturer at POST https://12bc-41-129-1-185.ngrok-free.app/masar-service/api/v1/auth with header apikey: <manufacturer key>, and commission then pack an SGTIN of 05413868110425 into an SSCC.
+2. Authenticate as the manufacturer at POST https://4430-41-129-1-185.ngrok-free.app/masar-service/api/v1/auth with header apikey: <manufacturer key>, and commission then pack an SGTIN of 05413868110425 into an SSCC.
 3. Authenticate as the branch and POST that manufacturer-owned SSCC to /scp/SendEPCIS as a shipping event with the branch as sender. Poll MsgStatusQuery.
 4. As the manufacturer, ship a fresh SSCC to the branch, then submit the identical shipping event for that same SSCC a second time. Poll MsgStatusQuery.
 5. As the manufacturer, ship an SGTIN that was never commissioned. Poll MsgStatusQuery.
@@ -46,8 +46,8 @@ All four are accepted with `"messagestatus": "S - Successful"` and `Shipping eve
 
 **Environment:**
 Masar B2B API over the ngrok relay
-POST https://448f-41-129-1-185.ngrok-free.app/masar-service/api/v1/scp/SendEPCIS
-Auth at https://12bc-41-129-1-185.ngrok-free.app/masar-service/api/v1/auth
+POST https://3e21-41-129-1-185.ngrok-free.app/masar-service/api/v1/scp/SendEPCIS
+Auth at https://4430-41-129-1-185.ngrok-free.app/masar-service/api/v1/auth
 Tenant: Janssen, manufacturer GLN 5413868000009 and distributor GLN 0847976000005
 Self-signed TLS upstream of the tunnel; certificate validation disabled for the run
 

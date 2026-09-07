@@ -11,7 +11,7 @@
   "TC_SHIP_010": "pass",
   "TC_SHIP_011": "pass",
   "TC_SHIP_012": "pass",
-  "TC_SHIP_013": "pass",
+  "TC_SHIP_013": "fail",
   "TC_SHIP_014": "fail",
   "TC_SHIP_015": "fail",
   "TC_SHIP_016": "pass",

@@ -26,8 +26,8 @@ Authenticated responses carry no `X-RateLimit-Limit`, `X-RateLimit-Remaining` or
 **Steps to Reproduce:**
 
 1. Connect the Citrix VPN.
-2. Authenticate as the manufacturer at POST https://12bc-41-129-1-185.ngrok-free.app/masar-service/api/v1/auth with header apikey: <manufacturer key>.
-3. GET https://448f-41-129-1-185.ngrok-free.app/masar-service/api/v1/epcis?limit=1 with that bearer and inspect the response headers.
+2. Authenticate as the manufacturer at POST https://4430-41-129-1-185.ngrok-free.app/masar-service/api/v1/auth with header apikey: <manufacturer key>.
+3. GET https://3e21-41-129-1-185.ngrok-free.app/masar-service/api/v1/epcis?limit=1 with that bearer and inspect the response headers.
 4. Repeat the same GET and compare the two header sets.
 
 ---
@@ -44,8 +44,8 @@ No `X-RateLimit-*` header is present on either response and no `Content-Security
 
 **Environment:**
 Masar B2B API over the ngrok relay
-GET https://448f-41-129-1-185.ngrok-free.app/masar-service/api/v1/epcis?limit=1
-Auth at https://12bc-41-129-1-185.ngrok-free.app/masar-service/api/v1/auth
+GET https://3e21-41-129-1-185.ngrok-free.app/masar-service/api/v1/epcis?limit=1
+Auth at https://4430-41-129-1-185.ngrok-free.app/masar-service/api/v1/auth
 Tenant: Janssen, manufacturer GLN 5413868000009
 Self-signed TLS upstream of the tunnel; certificate validation disabled for the run
 

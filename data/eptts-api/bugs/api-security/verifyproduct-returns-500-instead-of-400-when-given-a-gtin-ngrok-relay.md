@@ -24,9 +24,9 @@ environment: ngrok relay
 **Steps to Reproduce:**
 
 1. Connect the Citrix VPN.
-2. Authenticate as the manufacturer at POST https://12bc-41-129-1-185.ngrok-free.app/masar-service/api/v1/auth with header apikey: <manufacturer key>.
+2. Authenticate as the manufacturer at POST https://4430-41-129-1-185.ngrok-free.app/masar-service/api/v1/auth with header apikey: <manufacturer key>.
 3. Commission an SGTIN of 05413868110425 and wait for MsgStatusQuery to report success.
-4. POST https://448f-41-129-1-185.ngrok-free.app/masar-service/api/v1/VerifyProduct with body {"productId":"<that SGTIN URN>","geoLatitude":"","geoLongitude":""} — observe 200 and the pack object.
+4. POST https://3e21-41-129-1-185.ngrok-free.app/masar-service/api/v1/VerifyProduct with body {"productId":"<that SGTIN URN>","geoLatitude":"","geoLongitude":""} — observe 200 and the pack object.
 5. Repeat with body {"productId":"05413868110425"} — the GTIN of the same product.
 6. Repeat with an empty body, {} — this correctly returns 400.
 
@@ -44,8 +44,8 @@ Step 5 returns `500 {"logList":[{"type":"E","code":"E901","message":"Internal er
 
 **Environment:**
 Masar B2B API over the ngrok relay
-POST https://448f-41-129-1-185.ngrok-free.app/masar-service/api/v1/VerifyProduct
-Auth at https://12bc-41-129-1-185.ngrok-free.app/masar-service/api/v1/auth
+POST https://3e21-41-129-1-185.ngrok-free.app/masar-service/api/v1/VerifyProduct
+Auth at https://4430-41-129-1-185.ngrok-free.app/masar-service/api/v1/auth
 Tenant: Janssen, manufacturer GLN 5413868000009
 Also reproduced on the earlier relay pair (868c / 14b6), so it is not tunnel-specific
 Self-signed TLS upstream of the tunnel; certificate validation disabled for the run
