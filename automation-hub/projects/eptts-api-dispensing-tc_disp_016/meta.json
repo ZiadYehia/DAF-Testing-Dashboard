@@ -10,8 +10,17 @@
     "testcaseId": "TC_DISP_016"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "fail",
+  "lastStatus": "pass",
   "runs": [
+    {
+      "ts": "2026-09-07T19-18-13-964Z",
+      "status": "pass",
+      "durationMs": 68425,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "ngrok relay"
+    },
     {
       "ts": "2026-09-06T13-08-47-144Z",
       "status": "fail",
@@ -44,5 +53,9 @@
     "destructive"
   ],
   "folder": "EPTTS APIs / api-dispensing",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "ngrok relay": "pass",
+    "(no environment)": "pass"
+  }
 }

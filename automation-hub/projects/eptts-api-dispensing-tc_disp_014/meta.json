@@ -13,6 +13,15 @@
   "lastStatus": "pass",
   "runs": [
     {
+      "ts": "2026-09-07T19-18-13-250Z",
+      "status": "pass",
+      "durationMs": 671,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "ngrok relay"
+    },
+    {
       "ts": "2026-09-07T11-51-20-697Z",
       "status": "pass",
       "durationMs": 16803.06,
@@ -53,5 +62,9 @@
     "destructive"
   ],
   "folder": "EPTTS APIs / api-dispensing",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "ngrok relay": "pass",
+    "(no environment)": "pass"
+  }
 }

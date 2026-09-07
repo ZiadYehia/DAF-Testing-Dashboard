@@ -13,6 +13,16 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-07T19-18-13-921Z",
+      "status": "fail",
+      "durationMs": 68451,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: duplicate EPCs: refused, but for an INCIDENTAL reason — not the rule under test. Matched /must be scoped to the caller's permitted GLNs/i. The platform said: E - Application Error Dispensing event failed: Dispense events must be scoped to the caller's permitted GLNs. | Message processing failed — 1 of 1 event(s) encountered errors",
+      "environment": "ngrok relay"
+    },
+    {
       "ts": "2026-09-06T13-08-45-934Z",
       "status": "fail",
       "durationMs": 529,
@@ -44,5 +54,9 @@
     "destructive"
   ],
   "folder": "EPTTS APIs / api-dispensing",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "ngrok relay": "fail",
+    "(no environment)": "pass"
+  }
 }

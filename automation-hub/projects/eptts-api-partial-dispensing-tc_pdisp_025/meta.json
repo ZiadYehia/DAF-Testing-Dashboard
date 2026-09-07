@@ -10,8 +10,17 @@
     "testcaseId": "TC_PDISP_025"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "fail",
+  "lastStatus": "pass",
   "runs": [
+    {
+      "ts": "2026-09-07T19-22-03-240Z",
+      "status": "pass",
+      "durationMs": 1467,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "ngrok relay"
+    },
     {
       "ts": "2026-09-06T13-09-32-742Z",
       "status": "fail",
@@ -44,5 +53,9 @@
     "destructive"
   ],
   "folder": "EPTTS APIs / api-partial-dispensing",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "ngrok relay": "pass",
+    "(no environment)": "pass"
+  }
 }

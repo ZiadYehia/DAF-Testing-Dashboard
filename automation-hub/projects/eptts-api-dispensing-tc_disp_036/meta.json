@@ -10,12 +10,26 @@
     "testcaseId": "TC_DISP_036"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "never_run",
-  "runs": [],
+  "lastStatus": "fail",
+  "runs": [
+    {
+      "ts": "2026-09-07T19-20-23-693Z",
+      "status": "fail",
+      "durationMs": 78026,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: fixture: could not dispense urn:epc:id:sgtin:5413868.011045.ZTGMTRML5YV23M0001, so there is nothing to reverse — http=200 raw=\"E - Application Error\" state=FAILED polls=1 logs=[E: Dispensing event failed: Dispense events must be scoped to the caller's permitted GLNs. | E: Message processing failed — 1 of 1 event(s) encountered errors]. On a tenant where dispensing is refused outright see data/eptts-api/bugs/api-dispensing/ — the reversal cases cannot run until a dispense can complete.",
+      "environment": "ngrok relay"
+    }
+  ],
   "tags": [
     "api",
     "destructive"
   ],
   "folder": "EPTTS APIs / api-dispensing",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "ngrok relay": "fail"
+  }
 }

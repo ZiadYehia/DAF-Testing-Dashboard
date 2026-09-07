@@ -13,6 +13,15 @@
   "lastStatus": "pass",
   "runs": [
     {
+      "ts": "2026-09-07T19-14-03-363Z",
+      "status": "pass",
+      "durationMs": 1957,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "ngrok relay"
+    },
+    {
       "ts": "2026-09-06T12-06-30-461Z",
       "status": "pass",
       "durationMs": 1519,
@@ -43,5 +52,9 @@
     "destructive"
   ],
   "folder": "EPTTS APIs / api-destruction",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "ngrok relay": "pass",
+    "(no environment)": "pass"
+  }
 }
