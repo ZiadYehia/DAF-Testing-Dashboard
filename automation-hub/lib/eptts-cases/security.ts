@@ -718,6 +718,16 @@ const TRANSPORT: ApiCase[] = [
       expect(hdr(res, 'x-powered-by'), 'no X-Powered-By banner').toBeFalsy()
       const server = hdr(res, 'server') ?? ''
       expect(server, 'the server header carries no version number').not.toMatch(/\d+\.\d+/)
+      /**
+       * The disclosure sweep was only ever applied to response BODIES, so internal detail in a
+       * HEADER passed unnoticed: every response carries
+       * `X-Gateway-Target: http://localhost:3013`, which the same DISCLOSURE pattern already
+       * matches on `localhost:\d`. Two named banners were checked and the rest of the header set
+       * was not looked at at all.
+       */
+      const headerDump = Object.entries(res.headers())
+        .map(([k, v]) => `${k}: ${v}`).join('\n')
+      assertNoDisclosure(headerDump, 'the response headers')
     },
   },
   {

@@ -141,6 +141,12 @@ function isInfrastructureFailure(error) {
     // own timeout fired first and all we kept was "Timeout 45000ms exceeded".
     || /apiRequestContext\.\w+: Timeout \d+ms exceeded|durable object storage not confirmed|temporarily unavailable/i
       .test(error)
+    // OUR harness dying is not a verdict either. A killed or crashed Playwright worker reports
+    // "worker process exited unexpectedly" for every case it still had in hand — a re-verify run
+    // that was stopped near the end left 8 cases carrying that message, and without this they
+    // would have been recorded as 8 platform defects. code=3221225794 is Windows
+    // STATUS_DLL_INIT_FAILED, which is what a terminated worker looks like here.
+    || /worker process exited unexpectedly|Worker teardown timeout|Test ended\b/i.test(error)
   )
 }
 

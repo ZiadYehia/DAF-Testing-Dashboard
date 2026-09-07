@@ -7,7 +7,7 @@
   "TC_SEC_032": "no verified XML submission endpoint on the B2B API; covered on the dashboard EPCIS XML upload (Phase 5)",
   "TC_SEC_037": "a positive rate-limit ceiling is advertised",
   "TC_SEC_038": "would push 2000+ requests/window at a shared platform; needs an agreed maintenance window",
-  "TC_SEC_041": "TypeError: expect(received).toMatch(expected) Matcher error: received value must be a string Received has value: undefined",
+  "TC_SEC_041": "a CSP restricts default-src",
   "TC_SEC_046": "auth failed for role \"ef_distributor\": 401 {\"statusCode\":401,\"timestamp\":\"2026-09-07T07:07:51.646Z\",\"path\":\"/masar-service/api/v1/auth\",\"method\":\"POST\",\"correlationId\":\"no-context\",\"message\":\"Http Exception\"} — check EPTTS_EF_DISTRIBUTOR_APIKEY in automation-hub/.env (keys cannot be re-read from the platform; if lost they must be rotated again)",
   "TC_SEC_047": "auth failed for role \"ef_pharmacy\": 401 {\"statusCode\":401,\"timestamp\":\"2026-09-07T07:09:03.653Z\",\"path\":\"/masar-service/api/v1/auth\",\"method\":\"POST\",\"correlationId\":\"no-context\",\"message\":\"Http Exception\"} — check EPTTS_EF_PHARMACY_APIKEY in automation-hub/.env (keys cannot be re-read from the platform; if lost they must be rotated again)",
   "TC_SEC_048": "auth failed for role \"ef_manufacturer\": 401 {\"statusCode\":401,\"timestamp\":\"2026-09-07T07:09:16.767Z\",\"path\":\"/masar-service/api/v1/auth\",\"method\":\"POST\",\"correlationId\":\"no-context\",\"message\":\"Http Exception\"} — check EPTTS_EF_MAH_APIKEY in automation-hub/.env (keys cannot be re-read from the platform; if lost they must be rotated again)"

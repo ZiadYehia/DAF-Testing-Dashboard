@@ -121,6 +121,27 @@ function keyExchanges(list) {
 const CREDENTIAL_FIELD =
   /("(?:password|passwd|pwd|apikey|api_key|secret|client_secret|access_token|refresh_token|id_token|token)"\s*:\s*)"[^"]*"/gi
 
+/**
+ * Header names whose VALUE is a credential, masked by name rather than by shape.
+ *
+ * `redact()` works on value patterns — a JWT's three segments, a `Bearer ` prefix — and an API
+ * key matches none of them: it is just 64 hex characters. So every rendered attachment printed
+ * `apikey: cf464ab9…` in full, into a .jpg under data/, which is committed and goes out with the
+ * Jira report. Worse than the bearer token that was leaking here before: a bearer expires in 15
+ * minutes, whereas this platform cannot re-read a key, so a leaked one has to be rotated.
+ *
+ * Matching on the name means a new credential header is covered the moment it is added here,
+ * without having to guess what its value will look like.
+ */
+const CREDENTIAL_HEADER =
+  /^(apikey|api[-_]key|x-api-key|authorization|proxy-authorization|cookie|set-cookie|x-auth-token|x-access-token)$/i
+
+/** Mask a header value when the header NAME says it is a credential; else redact by pattern. */
+function redactHeader(name, value) {
+  if (CREDENTIAL_HEADER.test(String(name).trim())) return '«redacted»'
+  return redact(value)
+}
+
 function redact(body) {
   if (!body) return body
   return String(body)
@@ -149,7 +170,21 @@ function exchangeHtml(caseId, list) {
   // committed and goes out with the Jira report. Short-lived is not the same as safe to publish,
   // and a footer that promises masking has to be true.
   const headers = Object.entries(submission.requestHeaders ?? {})
-    .map(([k, v]) => `${esc(k)}: ${esc(redact(v))}`).join('\n')
+    .map(([k, v]) => `${esc(k)}: ${esc(redactHeader(k, v))}`).join('\n')
+
+  /**
+   * RESPONSE headers, which some defects live entirely inside.
+   *
+   * A missing rate-limit ceiling, an absent CSP, or an internal target leaking in
+   * `X-Gateway-Target` cannot be shown by a body — the evidence IS the header set, and its
+   * absences. Only the security-relevant ones, so the attachment stays readable: a full dump is
+   * mostly Date and Content-Length.
+   */
+  const RESP_HEADERS_OF_INTEREST =
+    /^(strict-transport-security|content-security-policy|x-frame-options|x-content-type-options|referrer-policy|x-xss-protection|x-powered-by|server|x-ratelimit|ratelimit|retry-after|x-gateway|x-request-id|cross-origin|x-permitted|x-download|x-dns)/i
+  const respHeaders = Object.entries(submission.responseHeaders ?? {})
+    .filter(([k]) => RESP_HEADERS_OF_INTEREST.test(k))
+    .map(([k, v]) => `${esc(k)}: ${esc(redactHeader(k, v))}`).join('\n')
   const ok = submission.status < 400
 
   return `<div class="wrap">
@@ -165,6 +200,7 @@ ${esc(trim(redact(submission.requestBody), 2600) ?? '(no body)')}</pre>
 
   <h2>Response <span class="${ok ? 'ok' : 'bad'}">${submission.status} ${esc(submission.statusText)}</span>
     <span class="ms">${Math.round(submission.durationMs)} ms</span></h2>
+  ${respHeaders ? `<pre class="req">${respHeaders}</pre>` : ''}
   <pre>${esc(trim(redact(submission.responseBody), 1000) ?? '(no body)')}</pre>
 
   ${verdict ? `<h2>Platform verdict <span class="ms">POST /MsgStatusQuery</span></h2>
