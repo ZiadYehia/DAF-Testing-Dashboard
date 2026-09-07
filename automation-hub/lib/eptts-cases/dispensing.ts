@@ -73,11 +73,12 @@ async function expectDispensed(
   role: Role, doc: EpcisDocument, what: string, epcs: string[] = [],
 ) {
   const r = await dispense(role, doc)
-  // `/Dispensation` acknowledges with **200**, unlike `/scp/SendEPCIS` which uses 202 — but it
-  // is still asynchronous, so the 200 means "queued", not "dispensed". Both are accepted here
-  // because the status code is not the interesting part; the polled outcome is. Asserting 202
-  // (as the docs and I both previously had it) fails against the real platform, and asserting
-  // that 200 means success would pass while the dispense actually failed.
+  // Both codes stay accepted, but not for the reason previously written here. This comment
+  // claimed /Dispensation answers 200 while /scp/SendEPCIS answers 202; measured 2026-09-07,
+  // /Dispensation answers 202 as well and settles through MsgStatusQuery exactly like the
+  // unified endpoint. Dispensing is asynchronous now, so either code means "queued" and only
+  // the polled outcome decides. The tolerance is kept so an older deployment still answering
+  // 200 does not fail for the wrong reason.
   expect([200, 202], `${what}: acknowledged — got ${r.status}`).toContain(r.status)
   expect(r.msg?.state, `${what}: ${r.msg ? describeMsgStatus(r.msg) : 'no poll'}`).toBe('SUCCESS')
 

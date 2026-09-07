@@ -367,7 +367,20 @@ export async function sendEpcis(
   return postMasar(role, opts.endpoint ?? '/scp/SendEPCIS', document, opts)
 }
 
-/** POST /Dispensation — synchronous (200), no polling. Manufacturer gets 403 here. */
+/**
+ * POST /Dispensation — the legacy dispensing endpoint. Manufacturer gets 403 here.
+ *
+ * NOT synchronous, and no longer answers 200. Measured 2026-09-07 against the relay: it
+ * answers 202 with the same `Message accepted for EPTTS Processing` envelope as
+ * /scp/SendEPCIS, and the outcome only arrives via MsgStatusQuery. Dispensing was made
+ * asynchronous like every other business step, so this endpoint now behaves as an alias.
+ *
+ * It is also NOT the cause of the caller-scope refusal. The suggestion that the legacy route
+ * resolves the acting identity as the parent pharmacy_admin was tested directly: the same
+ * document, same JWT, same readPoint, sent to /scp/SendEPCIS instead, is refused with the
+ * identical `Dispense events must be scoped to the caller's permitted GLNs`. The endpoint is
+ * not the variable.
+ */
 export async function dispensation(
   role: Role,
   document: unknown,
