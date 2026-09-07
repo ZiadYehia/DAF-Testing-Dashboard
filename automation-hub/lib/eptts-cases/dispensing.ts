@@ -59,7 +59,18 @@ async function dispense(role: Role, doc: EpcisDocument) {
   return { status: res.status(), body, msg }
 }
 
-async function expectDispensed(role: Role, doc: EpcisDocument, what: string) {
+/**
+ * A dispense that the platform accepted AND that actually retired the packs.
+ *
+ * The polled verdict says the message processed; it does not say the packs changed state. Pass
+ * the SGTINs to have that checked: each must end up `dispensed` and still in the dispensing
+ * party's custody. Several cases already asserted this inline, which meant every case that did
+ * not was trusting the verdict alone — the same gap TC_SHIP_014 had, where an accepted event
+ * moved status without moving custody.
+ */
+async function expectDispensed(
+  role: Role, doc: EpcisDocument, what: string, epcs: string[] = [],
+) {
   const r = await dispense(role, doc)
   // `/Dispensation` acknowledges with **200**, unlike `/scp/SendEPCIS` which uses 202 — but it
   // is still asynchronous, so the 200 means "queued", not "dispensed". Both are accepted here
@@ -68,6 +79,16 @@ async function expectDispensed(role: Role, doc: EpcisDocument, what: string) {
   // that 200 means success would pass while the dispense actually failed.
   expect([200, 202], `${what}: acknowledged — got ${r.status}`).toContain(r.status)
   expect(r.msg?.state, `${what}: ${r.msg ? describeMsgStatus(r.msg) : 'no poll'}`).toBe('SUCCESS')
+
+  for (const epc of epcs) {
+    const v = await packOf(role, epc)
+    const seen = `status=${v.pack?.status} currentGln=${v.pack?.currentGln}`
+    console.log(`[disp] ${what}: ${epc} ${seen}`)
+    expect.soft(v.pack?.status,
+      `${what}: ${epc} must be dispensed afterwards. ${seen}`).toBe('dispensed')
+    expect.soft(v.pack?.currentGln,
+      `${what}: dispensing must not move custody. ${seen}`).toBe(glnFor(role))
+  }
 }
 
 async function expectRefused(role: Role, doc: EpcisDocument, what: string, reason?: RegExp) {
@@ -96,7 +117,7 @@ const business: ApiCase[] = [
     title: 'a pharmacy dispenses a valid SGTIN',
     run: async () => {
       const a = await atPharmacy(1)
-      await expectDispensed('pharmacy', dispDoc([a.sgtins[0]]), 'dispense one pack')
+      await expectDispensed('pharmacy', dispDoc([a.sgtins[0]]), 'dispense one pack', [a.sgtins[0]])
       const v = await packOf('pharmacy', a.sgtins[0])
       expect(v.pack?.status, 'the pack becomes dispensed').toBe('dispensed')
     },
@@ -126,7 +147,7 @@ const business: ApiCase[] = [
       }
 
       // One at a time is the supported path, so prove that still works.
-      await expectDispensed('pharmacy', dispDoc([a.sgtins[0]]), 'one pack per request')
+      await expectDispensed('pharmacy', dispDoc([a.sgtins[0]]), 'one pack per request', [a.sgtins[0]])
       const first = await packOf('pharmacy', a.sgtins[0])
       expect(first.pack?.status, 'the single dispense applied').toBe('dispensed')
     },
@@ -140,7 +161,7 @@ const business: ApiCase[] = [
       expect(before.pack?.status, 'in stock before dispensing').toBe('active')
       expect(before.pack?.currentGln, 'held by the pharmacy').toBe(PHARMACY())
 
-      await expectDispensed('pharmacy', dispDoc([a.sgtins[0]]), 'dispense the pack')
+      await expectDispensed('pharmacy', dispDoc([a.sgtins[0]]), 'dispense the pack', [a.sgtins[0]])
 
       const after = await packOf('pharmacy', a.sgtins[0])
       expect(after.pack?.status, 'no longer available as stock').toBe('dispensed')
@@ -211,7 +232,7 @@ const business: ApiCase[] = [
     title: 'dispensing an already-dispensed SGTIN is refused',
     run: async () => {
       const a = await atPharmacy(1)
-      await expectDispensed('pharmacy', dispDoc([a.sgtins[0]]), 'first dispense')
+      await expectDispensed('pharmacy', dispDoc([a.sgtins[0]]), 'first dispense', [a.sgtins[0]])
       await expectRefused('pharmacy', dispDoc([a.sgtins[0]]), 'second dispense')
     },
   },
@@ -280,7 +301,7 @@ const business: ApiCase[] = [
     title: 'a duplicate dispensing request is refused',
     run: async () => {
       const a = await atPharmacy(1)
-      await expectDispensed('pharmacy', dispDoc([a.sgtins[0]]), 'first request')
+      await expectDispensed('pharmacy', dispDoc([a.sgtins[0]]), 'first request', [a.sgtins[0]])
       await expectRefused('pharmacy', dispDoc([a.sgtins[0]]), 'identical second request')
     },
   },

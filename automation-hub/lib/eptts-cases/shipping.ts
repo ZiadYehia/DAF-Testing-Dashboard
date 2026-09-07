@@ -363,10 +363,8 @@ const receivingBusiness: ApiCase[] = [
       // Recorded as FAILING against DW-878 in the source spreadsheet. Walked end to end on
       // 2026-08-31 it succeeds — this case is the standing check on that.
       const t = await inTransitToBranch(1)
-      await expectAccepted('branch', recvDoc([t.sscc], 'branch', 'manufacturer'), 'receive at the branch')
-      const v = await packOf('branch', t.sgtins[0])
-      expect(v.pack?.status, 'back to active once received').toBe('active')
-      expect(v.pack?.currentGln, 'custody transfers to the branch').toBe(BRANCH())
+      await expectReceived('branch', recvDoc([t.sscc], 'branch', 'manufacturer'),
+        'receive at the branch', t.sgtins)
     },
   },
   {
@@ -374,11 +372,8 @@ const receivingBusiness: ApiCase[] = [
     title: 'a branch receives multiple SGTINs in one request',
     run: async () => {
       const t = await inTransitToBranch(3)
-      await expectAccepted('branch', recvDoc([t.sscc], 'branch', 'manufacturer'), 'receive three children')
-      for (const s of t.sgtins) {
-        const v = await packOf('branch', s)
-        expect(v.pack?.currentGln, `${s} custody is the branch`).toBe(BRANCH())
-      }
+      await expectReceived('branch', recvDoc([t.sscc], 'branch', 'manufacturer'),
+        'receive three children', t.sgtins)
     },
   },
   {
@@ -433,7 +428,8 @@ const receivingBusiness: ApiCase[] = [
     title: 'a duplicate receiving request is refused',
     run: async () => {
       const t = await inTransitToBranch(1)
-      await expectAccepted('branch', recvDoc([t.sscc], 'branch', 'manufacturer'), 'first receive')
+      await expectReceived('branch', recvDoc([t.sscc], 'branch', 'manufacturer'),
+        'first receive', t.sgtins)
       await expectRejected('branch', recvDoc([t.sscc], 'branch', 'manufacturer'), 'identical second receive')
     },
   },
@@ -442,9 +438,8 @@ const receivingBusiness: ApiCase[] = [
     title: 'a branch receives a shipment from a manufacturer',
     run: async () => {
       const t = await inTransitToBranch(1)
-      await expectAccepted('branch', recvDoc([t.sscc], 'branch', 'manufacturer'), 'branch ← manufacturer')
-      const v = await packOf('branch', t.sgtins[0])
-      expect(v.pack?.currentGln, 'custody is the branch').toBe(BRANCH())
+      await expectReceived('branch', recvDoc([t.sscc], 'branch', 'manufacturer'),
+        'branch ← manufacturer', t.sgtins)
     },
   },
   {
@@ -512,6 +507,29 @@ const RECV_FIELDS: Partial<Record<string, MutationName>> = {
   TS_RECV_037: 'badSchemaVersion',
   TS_RECV_038: 'invalidSender',
   TS_RECV_039: 'invalidReceiver',
+}
+
+/**
+ * A receive that the platform accepted AND that actually transferred custody.
+ *
+ * Receiving is the custody-transfer step, so the post-condition is the whole point: the goods
+ * must now be held by the receiver and be active rather than in_transit. Three of the four
+ * successful-receive cases checked some of that inline and one checked none of it, so what got
+ * verified depended on which case you happened to be reading. This makes it uniform.
+ */
+async function expectReceived(
+  receiver: Role, doc: EpcisDocument, what: string, epcs: string[],
+): Promise<void> {
+  await expectAccepted(receiver, doc, what)
+  for (const epc of epcs) {
+    const v = await packOf(receiver, epc)
+    const seen = `currentGln=${v.pack?.currentGln} status=${v.pack?.status}`
+    console.log(`[recv] ${what}: ${epc} ${seen}`)
+    expect.soft(v.pack?.currentGln,
+      `${what}: custody must transfer to ${receiver}. ${seen}`).toBe(glnFor(receiver))
+    expect.soft(v.pack?.status,
+      `${what}: a received pack must be active, not in transit. ${seen}`).toBe('active')
+  }
 }
 
 export const RECEIVING_CASES: ApiCase[] = [

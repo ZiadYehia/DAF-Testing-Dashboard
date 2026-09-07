@@ -18,7 +18,7 @@ import {
   submitAndPoll, packOf, describeMsgStatus,
   epcisDocument, aggregationEvent,
   freshSgtin, freshSscc, sglnOf, glnFor, sameSscc, productByGtin, MFG_GTINS,
-  type EpcisDocument,
+  type EpcisDocument, type Role,
 } from '../eptts-api'
 import { expectRejected as expectRejectedStrict } from './field-mutations'
 import type { ApiCase } from './index'
@@ -54,10 +54,27 @@ async function expectRejected(doc: EpcisDocument, what: string, reason?: RegExp)
 }
 
 /** Assert a child now reports the given SSCC as its parent. */
-async function expectParent(sgtin: string, sscc: string): Promise<void> {
-  const v = await packOf('manufacturer', sgtin)
-  console.log(`[pack] ${sgtin} parentSscc=${v.pack?.parentSscc}`)
-  expect(sameSscc(sscc, v.pack?.parentSscc), `${sgtin} reports ${sscc} as its parent`).toBe(true)
+/**
+ * The pack's state after a successful packing, not just its parent.
+ *
+ * Checking parentSscc alone leaves two other post-conditions unasserted, and packing is a
+ * containment change only: the packer already held the goods, so custody must NOT move and the
+ * pack must stay active. A packing event that also shifted custody, or left the pack
+ * in_transit, would satisfy the old check while having done something wrong — the same shape
+ * as TC_SHIP_014, where an accepted shipment moved status without moving custody.
+ */
+async function expectParent(
+  sgtin: string, sscc: string, holder: Role = 'manufacturer',
+): Promise<void> {
+  const v = await packOf(holder, sgtin)
+  const seen = `parentSscc=${v.pack?.parentSscc} currentGln=${v.pack?.currentGln} `
+    + `status=${v.pack?.status}`
+  console.log(`[pack] ${sgtin} ${seen}`)
+  expect.soft(sameSscc(sscc, v.pack?.parentSscc),
+    `${sgtin} reports ${sscc} as its parent. ${seen}`).toBe(true)
+  expect.soft(v.pack?.currentGln,
+    `packing must not move custody. ${seen}`).toBe(glnFor(holder))
+  expect.soft(v.pack?.status, `packing must leave the pack active. ${seen}`).toBe('active')
 }
 
 // ─── packing ─────────────────────────────────────────────────────────────────
@@ -306,10 +323,22 @@ export const PACKING_CASES: ApiCase[] = [
 // ─── unpacking ───────────────────────────────────────────────────────────────
 
 /** Assert a child no longer reports a parent SSCC. */
-async function expectNoParent(sgtin: string): Promise<void> {
-  const v = await packOf('manufacturer', sgtin)
-  console.log(`[unpk] ${sgtin} parentSscc=${v.pack?.parentSscc}`)
-  expect(v.pack?.parentSscc, `${sgtin} no longer reports a parent SSCC`).toBeFalsy()
+/**
+ * The pack's state after a successful unpacking.
+ *
+ * Losing the parent is the point, but the item must survive it intact: unpacking takes a pack
+ * out of a container, it does not hand it to anyone else or retire it.
+ */
+async function expectNoParent(sgtin: string, holder: Role = 'manufacturer'): Promise<void> {
+  const v = await packOf(holder, sgtin)
+  const seen = `parentSscc=${v.pack?.parentSscc} currentGln=${v.pack?.currentGln} `
+    + `status=${v.pack?.status}`
+  console.log(`[unpk] ${sgtin} ${seen}`)
+  expect.soft(v.pack?.parentSscc,
+    `${sgtin} no longer reports a parent SSCC. ${seen}`).toBeFalsy()
+  expect.soft(v.pack?.currentGln,
+    `unpacking must not move custody. ${seen}`).toBe(glnFor(holder))
+  expect.soft(v.pack?.status, `unpacking must leave the pack active. ${seen}`).toBe('active')
 }
 
 export const UNPACKING_CASES: ApiCase[] = [
