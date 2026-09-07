@@ -1,14 +1,14 @@
 /**
  * EPTTS_API_10 — Dispensing (33 cases).
  *
- * `POST /Dispensation` (not /scp/SendEPCIS), `ObjectEvent`, `action: OBSERVE`,
+ * `POST /scp/SendEPCIS` (the deprecated `/Dispensation` is an alias), `ObjectEvent`, `action: OBSERVE`,
  * `bizStep: retail_selling`, `disposition: retail_sold`.
  *
  * THREE THINGS THAT DECIDE WHETHER A CASE HERE IS WRITTEN CORRECTLY
  *
  * 1. **It is asynchronous, and it acknowledges with 200 — not 202.** The spreadsheet and the
  *    vendor collection both say "200 Success", meaning synchronously complete. The code is
- *    right; the meaning is wrong. `/scp/SendEPCIS` uses 202, `/Dispensation` uses 200, and
+ *    right; the meaning is wrong. Both routes answer 202 and settle via MsgStatusQuery, and
  *    both must be polled. So do not assert the status code here — assert the polled
  *    `messagestatus`. Asserting 202 fails against the real platform; treating 200 as success
  *    passes while the dispense actually failed, which is the worse mistake.
@@ -28,7 +28,7 @@
  */
 import { expect } from '@playwright/test'
 import {
-  dispensation, pollMsgStatus, packOf, describeMsgStatus, errorOf, bodyOf,
+  dispensation, packOf, describeMsgStatus, errorOf,
   epcisDocument, dispensingEvent, destructionEvent, submitAndPoll,
   dispenseCancelEvent, patientReturnEvent,
   freshDispensableSgtin, sglnOf, glnFor,
@@ -49,15 +49,19 @@ function dispDoc(epcList: string[], readPointRole: Role = 'pharmacy'): EpcisDocu
   )
 }
 
-/** Submit a dispense and poll it. Returns both halves so a case can assert either. */
+/**
+ * Submit a dispense and poll it. Returns both halves so a case can assert either.
+ *
+ * Goes to /scp/SendEPCIS, the supported endpoint. /Dispensation is deprecated: measured
+ * 2026-09-07, for the same caller and the same body the two are indistinguishable — same 202
+ * envelope, same MsgStatusQuery settlement, same verdict — so this is the unified route rather
+ * than a behaviour change. (They are NOT identical for every caller: /Dispensation carries an
+ * endpoint-level role gate that SendEPCIS lacks. See dispensation() in ../eptts-api.ts.)
+ */
 async function dispense(role: Role, doc: EpcisDocument) {
-  const res = await dispensation(role, doc)
-  const body = await bodyOf(res)
-  if (res.status() >= 400) {
-    return { status: res.status(), body, msg: null }
-  }
-  const msg = await pollMsgStatus(role, doc.sbdh.documentIdentification.instanceIdentifier)
-  return { status: res.status(), body, msg }
+  const { submitStatus, submitBody, msg } = await submitAndPoll(role, doc)
+  if (submitStatus >= 400) return { status: submitStatus, body: submitBody, msg: null }
+  return { status: submitStatus, body: submitBody, msg }
 }
 
 /**
@@ -341,8 +345,8 @@ const business: ApiCase[] = [
 // dispensing event. The dispensed medicine is returned to the pharmacy." Cancelling the sale
 // and the goods coming back are one operation here, not two.
 //
-// All three go to `/scp/SendEPCIS`, NOT `/Dispensation` — the forward sale is the only part of
-// this feature with its own endpoint.
+// All three go to `/scp/SendEPCIS`, as the forward sale now does too — this feature no
+// longer has an endpoint of its own.
 
 /** Dispense a pack and require it to actually reach `dispensed`, or fail saying why. */
 async function dispensedPack(): Promise<string> {
@@ -499,7 +503,7 @@ const FIELD_MAP: Partial<Record<string, MutationName>> = {
 export const DISPENSING_CASES: ApiCase[] = [
   ...business,
   ...reversal,
-  // reject: expectRefused — these documents go to /Dispensation, NOT /scp/SendEPCIS.
+  // reject: expectRefused — these go through the dispense helper, now /scp/SendEPCIS.
   ...fieldCases({
     // These reached a correct refusal in the clean run, so the shared KNOWN_GAPS marker
     // would claim a defect this endpoint does not have — and hide that it validates.

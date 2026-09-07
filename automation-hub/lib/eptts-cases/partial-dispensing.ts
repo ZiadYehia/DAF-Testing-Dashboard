@@ -43,7 +43,8 @@
  */
 import { expect } from '@playwright/test'
 import {
-  dispensation, pollMsgStatus, describeMsgStatus, errorOf, bodyOf,
+  submitAndPoll,
+  dispensation, describeMsgStatus, errorOf,
   epcisDocument, dispensingEvent,
   freshDispensableSgtin, sglnOf, glnFor,
   type EpcisDocument, type Role,
@@ -69,12 +70,19 @@ function partialDoc(epcList: string[], quantity: number | undefined, role: Role 
   )
 }
 
+/**
+ * Submit a dispense and poll it. Returns both halves so a case can assert either.
+ *
+ * Goes to /scp/SendEPCIS, the supported endpoint. /Dispensation is deprecated: measured
+ * 2026-09-07, for the same caller and the same body the two are indistinguishable — same 202
+ * envelope, same MsgStatusQuery settlement, same verdict — so this is the unified route rather
+ * than a behaviour change. (They are NOT identical for every caller: /Dispensation carries an
+ * endpoint-level role gate that SendEPCIS lacks. See dispensation() in ../eptts-api.ts.)
+ */
 async function dispense(role: Role, doc: EpcisDocument) {
-  const res = await dispensation(role, doc)
-  const body = await bodyOf(res)
-  if (res.status() >= 400) return { status: res.status(), body, msg: null }
-  const msg = await pollMsgStatus(role, doc.sbdh.documentIdentification.instanceIdentifier)
-  return { status: res.status(), body, msg }
+  const { submitStatus, submitBody, msg } = await submitAndPoll(role, doc)
+  if (submitStatus >= 400) return { status: submitStatus, body: submitBody, msg: null }
+  return { status: submitStatus, body: submitBody, msg }
 }
 
 async function expectRefused(role: Role, doc: EpcisDocument, what: string) {

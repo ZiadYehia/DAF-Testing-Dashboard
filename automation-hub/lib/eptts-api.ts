@@ -368,7 +368,26 @@ export async function sendEpcis(
 }
 
 /**
- * POST /Dispensation — the legacy dispensing endpoint. Manufacturer gets 403 here.
+ * POST /Dispensation — DEPRECATED. Use sendEpcis/submitAndPoll; dispensing goes through
+ * /scp/SendEPCIS like every other business step.
+ *
+ * Kept only for the cases that deliberately exercise the legacy route: the smoke spec's
+ * role-gating probe, and the security negatives that assert a synchronous 403. Those assert
+ * status codes this endpoint returns, and re-pointing them needs each assertion reworked
+ * for an async refusal — separate work from switching the dispensing flow.
+ *
+ * @deprecated
+ *
+ * The one behaviour that is NOT shared, and the reason the sites above cannot simply be
+ * re-pointed: this route carries an endpoint-level ROLE gate, and /scp/SendEPCIS does not.
+ * Measured 2026-09-07 — a manufacturer POSTing a dispense document gets a synchronous
+ * `403 Access denied` here, while the same document to /scp/SendEPCIS is accepted `202` and
+ * refused later by the business rule instead (`Cannot dispense: 1 pack(s) have not been
+ * received at the pharmacy`, for a pack legitimately commissioned and held by that
+ * manufacturer; the pack read back active at its own GLN, so nothing was half-applied).
+ * The net effect is the same — a manufacturer cannot dispense either way — but the refusal
+ * moves from the edge to the processor, so an assertion written against a synchronous 403
+ * has to be rewritten as an async verdict rather than re-aimed.
  *
  * NOT synchronous, and no longer answers 200. Measured 2026-09-07 against the relay: it
  * answers 202 with the same `Message accepted for EPTTS Processing` envelope as

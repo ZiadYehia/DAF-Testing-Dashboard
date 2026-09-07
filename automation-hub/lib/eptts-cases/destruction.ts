@@ -16,8 +16,9 @@
  */
 import { expect } from '@playwright/test'
 import {
-  packOf, epcisDocument, destructionEvent, dispensingEvent, dispensation,
-  freshSgtin, sglnOf, glnFor, describeMsgStatus, pollMsgStatus,
+  submitAndPoll,
+  packOf, epcisDocument, destructionEvent, dispensingEvent,
+  freshSgtin, sglnOf, glnFor, describeMsgStatus,
   type EpcisDocument,
 } from '../eptts-api'
 import type { ApiCase } from './index'
@@ -162,10 +163,10 @@ const business: ApiCase[] = [
         [dispensingEvent({ epcList: [a.sgtins[0]], readPointSgln: sglnOf('pharmacy') })],
         { senderGln: glnFor('pharmacy'), receiverGln: glnFor('branch') },
       )
-      const res = await dispensation('pharmacy', disp)
-      // /Dispensation acknowledges with 200 (not 202 like /scp/SendEPCIS) and is still async.
-      expect([200, 202], `fixture: dispense acknowledged — got ${res.status()}`).toContain(res.status())
-      const msg = await pollMsgStatus('pharmacy', disp.sbdh.documentIdentification.instanceIdentifier)
+      // /scp/SendEPCIS, the supported route — /Dispensation is deprecated and behaves as an
+      // alias for it on this build.
+      const { submitStatus, msg } = await submitAndPoll('pharmacy', disp)
+      expect(submitStatus, `fixture: dispense acknowledged — got ${submitStatus}`).toBe(202)
       expect(msg.state, `fixture: dispense — ${describeMsgStatus(msg)}`).toBe('SUCCESS')
 
       await expectRejected('manufacturer', destroyDoc([a.sgtins[0]]), 'destroy a dispensed pack')
@@ -224,5 +225,8 @@ export const DESTRUCTION_CASES: ApiCase[] = [
   ...business,
   duplicateRequest,
   ...fieldCases({
-    validates: ['TC_DEST_018'], feature: FEATURE, role: 'manufacturer', verb: 'destroying', baseDoc, map: FIELD_MAP }),
+    // TC_DEST_005: the shared emptyEpcList gap does NOT apply here. Destruction refuses a
+    // zero-EPC event (measured twice, 2026-09-07); commission still accepts one, which is why
+    // the marker stays in KNOWN_GAPS and is opted out of per-feature instead of deleted.
+    validates: ['TC_DEST_018', 'TC_DEST_005'], feature: FEATURE, role: 'manufacturer', verb: 'destroying', baseDoc, map: FIELD_MAP }),
 ]

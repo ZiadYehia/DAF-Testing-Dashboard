@@ -259,7 +259,7 @@ const INCIDENTAL_REJECTION = [
  * rule the case is about.
  *
  * Exported because the tripwire has to be reachable from every refusal helper, not just this
- * one. Dispensing posts to /Dispensation rather than SendEPCIS, so it has its own
+ * one. Dispensing has its own
  * expectRefused, and that one asserted only `state === FAILED` — any refusal satisfied it.
  * With the platform rejecting every dispense as out of the caller's permitted GLNs, TC_DISP_002
  * passed on a message that had nothing to do with what it was testing. A tripwire only guards
@@ -346,7 +346,7 @@ export interface FieldCaseOpts {
   validates?: string[]
   /**
    * How to submit and assert a refusal. Defaults to /scp/SendEPCIS via `expectRejected`.
-   * Dispensing MUST override this — it posts to /Dispensation, and submitting its
+   * Dispensing MUST override this — it has its own submit path, and submitting its
    * documents to /scp/SendEPCIS would test the wrong endpoint entirely while still
    * producing a plausible-looking refusal.
    */

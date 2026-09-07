@@ -24,7 +24,7 @@ import { expect } from '@playwright/test'
 import {
   submitAndPoll, sendEpcis, packOf, describeMsgStatus, bodyOf,
   epcisDocument, shippingEvent, receivingEvent,
-  freshSgtin, freshSscc, sglnOf, glnFor, uniqueInstanceId, assertPackState, sameSscc,
+  freshSgtin, freshSscc, sglnOf, glnFor, uniqueInstanceId, sameSscc,
   type EpcisDocument, type Role,
   uniqueBizTransaction,
 } from '../eptts-api'

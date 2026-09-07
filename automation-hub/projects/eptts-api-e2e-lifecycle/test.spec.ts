@@ -166,13 +166,13 @@ function noteVerdict(msg: MsgStatus): void {
  * acknowledged just as cheerfully. The polled status is the only verdict.
  */
 async function dispenseStep(role: Role, doc: EpcisDocument, what: string): Promise<void> {
-  const res = await dispensation(role, doc)
-  const body = await bodyOf(res)
-  expect([200, 202], `${what}: not acknowledged — HTTP ${res.status()} ${JSON.stringify(body).slice(0, 200)}`)
-    .toContain(res.status())
-  const msg = await pollMsgStatus(role, doc.sbdh.documentIdentification.instanceIdentifier)
+  // /scp/SendEPCIS — /Dispensation is deprecated, and measured 2026-09-07 the two are
+  // indistinguishable on this build: same 202, same MsgStatusQuery settlement.
+  const { submitStatus: status, submitBody: body, msg } = await submitAndPoll(role, doc)
+  expect(status, `${what}: not acknowledged — HTTP ${status} ${JSON.stringify(body).slice(0, 200)}`)
+    .toBe(202)
   recordSubmission(
-    `POST /Dispensation → HTTP ${res.status()}  ·  MsgStatusQuery → "${msg.raw ?? '(no status)'}" ` +
+    `POST /scp/SendEPCIS → HTTP ${status}  ·  MsgStatusQuery → "${msg.raw ?? '(no status)'}" ` +
     `(${msg.state}, ${msg.pollCount} poll${msg.pollCount === 1 ? '' : 's'})`,
   )
   noteVerdict(msg)

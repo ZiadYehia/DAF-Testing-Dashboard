@@ -48,7 +48,7 @@
  */
 import { test, expect } from '@playwright/test'
 import {
-  submitAndPoll, packOf, disposeApi, describeMsgStatus,
+  submitAndPoll, sendEpcis, packOf, disposeApi, describeMsgStatus,
   dispensation, pollMsgStatus, bodyOf, errorOf, getMasar,
   epcisDocument, commissionEvent, aggregationEvent, shippingEvent, receivingEvent, dispensingEvent,
   freshDispensableSgtin, freshSscc, sglnOf, glnFor, runId, sameSscc, ssccUrnToDigits,
@@ -234,11 +234,9 @@ test.describe.serial('e2e journey: dispense and return', () => {
       [dispensingEvent({ epcList: [sgtins[0]], readPointSgln: sglnOf('pharmacy') })],
       { senderGln: PHARMACY(), receiverGln: BRANCH() },
     )
-    const res = await dispensation('pharmacy', doc)
-    console.log(`[e2e] full dispense -> ${res.status()} ${JSON.stringify(await bodyOf(res)).slice(0, 200)}`)
-    expect([200, 202], `dispensing acknowledged — got ${res.status()}`).toContain(res.status())
-
-    const msg = await pollMsgStatus('pharmacy', doc.sbdh.documentIdentification.instanceIdentifier)
+    const { submitStatus, submitBody, msg } = await submitAndPoll('pharmacy', doc)
+    console.log(`[e2e] full dispense -> ${submitStatus} ${JSON.stringify(submitBody).slice(0, 200)}`)
+    expect(submitStatus, `dispensing acknowledged — got ${submitStatus}`).toBe(202)
     expect(msg.state, `full dispensing: ${describeMsgStatus(msg)}`).toBe('SUCCESS')
 
     const v = await packOf('pharmacy', sgtins[0])
@@ -255,7 +253,7 @@ test.describe.serial('e2e journey: dispense and return', () => {
       [dispensingEvent({ epcList: [sgtins[0]], readPointSgln: sglnOf('pharmacy') })],
       { senderGln: PHARMACY(), receiverGln: BRANCH() },
     )
-    const res = await dispensation('pharmacy', doc)
+    const res = await sendEpcis('pharmacy', doc)
 
     if (res.status() >= 400) {
       const err = await errorOf(res)
@@ -288,7 +286,7 @@ test.describe.serial('e2e journey: dispense and return', () => {
       })],
       { senderGln: PHARMACY(), receiverGln: BRANCH() },
     )
-    const res = await dispensation('pharmacy', doc)
+    const res = await sendEpcis('pharmacy', doc)
     const body = await bodyOf(res)
     console.log(`[e2e] partial dispense qty=${PARTIAL_QUANTITY} -> ${res.status()} ${JSON.stringify(body).slice(0, 300)}`)
 

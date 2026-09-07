@@ -1,8 +1,7 @@
 {
-  "TC_DEST_005": "Previously a known platform gap; the platform now behaves correctly. Remove the expected-failure marker for this case in automation-hub/lib/eptts-cases/.",
-  "TC_DEST_008": "duplicate EPCs: the platform ACCEPTED input it should refuse — http=200 raw=\"S - Successful\" state=SUCCESS polls=1 logs=[I: Destruction event processed successfully | I: Message processed successfully — all 1 event(s) completed]",
+  "TC_DEST_008": "duplicate EPCs: the platform ACCEPTED input it should refuse — http=200 raw=\"S - Successful\" state=SUCCESS polls=6 logs=[I: Destruction event processed successfully | I: Message processed successfully — all 1 event(s) completed]",
   "TC_DEST_011": "blocked: expired stock cannot be created through the API. Commissioning with a past itemExpirationDate is itself refused (\"Cannot commission expired stock: itemExpirationDate 2020-01-01 is in the past\"), so the precondition is unreachable. Needs stock aged past its expiry, or a back-dated record created directly in the platform.",
-  "TC_DEST_013": "fixture: dispense — http=200 raw=\"E - Application Error\" state=FAILED polls=1 logs=[E: Dispensing event failed: Dispensing is not allowed for Dawana-integrated products via this channel. These products must be dispensed through the Dawana integration. | E: Message processing failed — 1 of 1 event(s) encountered errors]",
+  "TC_DEST_013": "fixture: dispense — http=200 raw=\"E - Application Error\" state=FAILED polls=1 logs=[E: Dispensing event failed: Dispense events must be scoped to the caller's permitted GLNs. | E: Message processing failed — 1 of 1 event(s) encountered errors]",
   "TC_DEST_019": "platform validation gap: a non-ISO-8601 eventTime is accepted and processed successfully",
   "TC_DEST_020": "platform validation gap: eventTimeZoneOffset +99:99 is accepted and processed successfully"
 }
