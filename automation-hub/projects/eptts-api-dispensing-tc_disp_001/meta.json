@@ -13,6 +13,36 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-07T20-34-11-611Z",
+      "status": "fail",
+      "durationMs": 4412.013,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: auth failed for role \"manufacturer\": 403 {} — check EPTTS_MFG_APIKEY in automation-hub/.env (keys cannot be re-read from the platform; if lost they must be rotated again)",
+      "environment": "ngrok relay"
+    },
+    {
+      "ts": "2026-09-07T20-33-44-161Z",
+      "status": "fail",
+      "durationMs": 4777.156,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: auth failed for role \"manufacturer\": 403 {} — check EPTTS_MFG_APIKEY in automation-hub/.env (keys cannot be re-read from the platform; if lost they must be rotated again)",
+      "environment": "ngrok relay"
+    },
+    {
+      "ts": "2026-09-07T20-27-23-991Z",
+      "status": "fail",
+      "durationMs": 34760.736,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: fixture: ship urn:epc:id:sscc:5413868.8812849581 to the branch did not succeed — http=200 raw=\"E - Application Error\" state=FAILED polls=1 logs=[E: Shipping event failed: Shipping blocked by unpaid invoices. Outstanding cents: 19000 | E: Message processing failed — 1 of 1 event(s) encountered errors]",
+      "environment": "ngrok relay"
+    },
+    {
       "ts": "2026-09-07T20-14-27-336Z",
       "status": "fail",
       "durationMs": 117941.22600000001,
@@ -80,16 +110,6 @@
       "hasTrace": false,
       "hasApiLog": true,
       "error": "Error: fixture: pack 1 SGTIN(s) into urn:epc:id:sscc:5413868.8766506381 did not succeed — http=200 raw=\"E - Application Error\" state=FAILED polls=6 logs=[E: Packing event failed: Cannot seal this container: no registered unit price for GTIN(s) 05413868110432. Register a unit price for the product in the registry, then retry — billing prices every packed unit from that price and cannot invoice without it. | E: Message processing failed — 1 of 1 event(s) encountered errors]",
-      "environment": "ngrok relay"
-    },
-    {
-      "ts": "2026-09-06T13-06-46-913Z",
-      "status": "fail",
-      "durationMs": 68595,
-      "hasVideo": false,
-      "hasTrace": false,
-      "hasApiLog": true,
-      "error": "Error: dispense one pack: http=200 raw=\"E - Application Error\" state=FAILED polls=1 logs=[E: Dispensing event failed: Dispensing is not allowed for Dawana-integrated products via this channel. These products must be dispensed through the Dawana integration. | E: Message processing failed — 1 of 1 event(s) encountered errors]",
       "environment": "ngrok relay"
     },
     {

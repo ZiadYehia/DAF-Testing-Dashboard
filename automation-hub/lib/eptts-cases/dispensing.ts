@@ -59,9 +59,9 @@ function dispDoc(epcList: string[], readPointRole: Role = 'pharmacy'): EpcisDocu
  * endpoint-level role gate that SendEPCIS lacks. See dispensation() in ../eptts-api.ts.)
  */
 async function dispense(role: Role, doc: EpcisDocument) {
-  const { submitStatus, submitBody, msg, postState } = await submitAndPoll(role, doc)
-  if (submitStatus >= 400) return { status: submitStatus, body: submitBody, msg: null, postState }
-  return { status: submitStatus, body: submitBody, msg, postState }
+  const { submitStatus, submitBody, msg } = await submitAndPoll(role, doc)
+  if (submitStatus >= 400) return { status: submitStatus, body: submitBody, msg: null }
+  return { status: submitStatus, body: submitBody, msg }
 }
 
 /**
@@ -86,12 +86,10 @@ async function expectDispensed(
   expect([200, 202], `${what}: acknowledged — got ${r.status}`).toContain(r.status)
   expect(r.msg?.state, `${what}: ${r.msg ? describeMsgStatus(r.msg) : 'no poll'}`).toBe('SUCCESS')
 
-  // Assert on the read submitAndPoll already made, and only ask again for an EPC it did not
-  // cover (it caps at MAX_POST_STATE_EPCS, and skips entirely under EPTTS_VERIFY_EFFECTS=0).
-  // Reading the same SGTIN twice a few milliseconds apart told us nothing the first read had
-  // not: TC_DISP_001 verified one pack three times and the first answer was already correct.
+  // packOf here is free: recordPostState already read these EPCs when the message settled,
+  // and nothing has been submitted since. See PACK_READS in ../eptts-api.ts.
   for (const epc of epcs) {
-    const pack = epc in r.postState ? r.postState[epc] : (await packOf(role, epc)).pack
+    const pack = (await packOf(role, epc)).pack
     const seen = `status=${pack?.status} currentGln=${pack?.currentGln}`
     console.log(`[disp] ${what}: ${epc} ${seen}`)
     expect.soft(pack?.status,

@@ -12,5 +12,6 @@
   "TC_COMM_002": "[automation 2026-09-07T20-04-46-823Z] Error: auth failed for role \"manufacturer\": 502 {} — check EPTTS_MFG_APIKEY in automation-hub/.env (keys cannot be re-read from the platform; if lost they must be rotated again)",
   "TC_COMM_005": "[automation 2026-09-07T20-05-05-755Z] Error: auth failed for role \"manufacturer\": 502 {} — check EPTTS_MFG_APIKEY in automation-hub/.env (keys cannot be re-read from the platform; if lost they must be rotated again)",
   "TC_COMM_016": "[automation 2026-09-07T20-06-10-009Z] Error: an empty token is unauthorized",
-  "TC_COMM_017": "[automation 2026-09-07T20-06-16-982Z] Error: the request still succeeds on the bearer token alone"
+  "TC_COMM_017": "[automation 2026-09-07T20-06-16-982Z] Error: the request still succeeds on the bearer token alone",
+  "TC_COMM_006": "[automation 2026-09-07T20-38-58-709Z] Error: auth failed for role \"manufacturer\": 403 {} — check EPTTS_MFG_APIKEY in automation-hub/.env (keys cannot be re-read from the platform; if lost they must be rotated again)"
 }

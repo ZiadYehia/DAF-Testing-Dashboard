@@ -272,6 +272,9 @@ export async function postMasar(
   const headers = { ...(await bearer(role)), ...(opts.headers ?? {}) }
   if (opts.contentType) headers['Content-Type'] = opts.contentType
   const target = url(masarBase(), path)
+  // Anything that is not purely a question may move a pack, so cached reads stop being
+  // trustworthy the moment it is sent. See PACK_READS.
+  if (!READ_ONLY_MASAR_PATHS.test(path)) endReadEpoch()
   const startedAt = Date.now()
   // A string payload goes through untouched, so malformed-JSON and XML cases work.
   const common = { headers, timeout: API_TIMEOUT_MS }
@@ -443,16 +446,56 @@ export interface VerifyResult {
  * Note VerifyProduct answers 200 with `verified: false` for an unknown pack, so the
  * HTTP status proves nothing — callers must inspect `verified` / `alerts` / `pack`.
  */
-export async function packOf(role: Role, epc: string): Promise<VerifyResult> {
+/**
+ * ONE PACK READ PER STATE EPOCH.
+ *
+ * The rule this encodes: ask the platform what a pack looks like once, when the message that
+ * changed it has finished, and reuse that answer until something could have changed it again.
+ *
+ * Measured before this existed: a 103-case run made 272 VerifyProduct calls, and 44 of 87 cases
+ * read the SAME EPC more than once — one case five times. The cause was structural, not a
+ * mistake at any one call site. Every business step does `submitAndPoll` then asserts, so each
+ * step read twice: once in recordPostState (which discarded the answer) and once in the
+ * assertion. A fixture chain of commission -> pack -> ship -> receive -> dispense multiplied that
+ * by five. Fixing the call sites one at a time would have left the next test free to
+ * reintroduce it, so the invariant lives here instead.
+ *
+ * An epoch ends in exactly two places, which between them cover every way a pack's state moves:
+ *   - a submission (postMasar with anything other than a read-only path), and
+ *   - a poll reaching a terminal state, which is the moment the change actually lands.
+ *
+ * Keyed by role as well as EPC, so "can this role see this pack" stays a real request rather
+ * than another role's cached answer. Pass `{ fresh: true }` to force a new read when re-asking
+ * IS the test.
+ */
+const PACK_READS = new Map<string, VerifyResult>()
+
+/** Paths that only ask questions. Everything else may move a pack, so it ends the epoch. */
+const READ_ONLY_MASAR_PATHS = /(VerifyProduct|MsgStatusQuery)/i
+
+function endReadEpoch(): void {
+  PACK_READS.clear()
+}
+
+export async function packOf(
+  role: Role, epc: string, opts: { fresh?: boolean } = {},
+): Promise<VerifyResult> {
+  const key = `${role} ${epc}`
+  if (!opts.fresh) {
+    const hit = PACK_READS.get(key)
+    if (hit) return hit
+  }
   const res = await verifyProduct(role, epc)
   const body = (await bodyOf(res)) as Partial<VerifyResult> | null
-  return {
+  const result: VerifyResult = {
     verified: body?.verified === true,
     sgtin: body?.sgtin ?? epc,
     pack: (body?.pack as PackState | null) ?? null,
     product: (body?.product as Record<string, unknown> | null) ?? null,
     alerts: Array.isArray(body?.alerts) ? (body!.alerts as string[]) : [],
   }
+  PACK_READS.set(key, result)
+  return result
 }
 
 // ─── MsgStatusQuery polling ──────────────────────────────────────────────────
@@ -594,6 +637,10 @@ export async function pollMsgStatus(
       const raw = extractRawStatus(body)
       const state = classifyStatus(raw)
       if (state && state !== 'PENDING') {
+        // The message has just settled, so whatever it did to the packs has now happened.
+        // Any read taken while it was still PENDING described the state before that, and must
+        // not be reused afterwards. This is the "verify once the poll finishes" boundary.
+        endReadEpoch()
         return { status: res.status(), raw, state, terminal: true, logs: extractLogs(body), body, timedOut: false, pollCount }
       }
     } else if (res.status() !== 404) {
@@ -617,19 +664,7 @@ export async function submitAndPoll(
   role: Role,
   document: EpcisDocument,
   opts: { endpoint?: '/scp/SendEPCIS' | '/epcis/json'; timeoutMs?: number } = {},
-): Promise<{
-  submitStatus: number
-  submitBody: unknown
-  instanceIdentifier: string
-  msg: MsgStatus
-  /**
-   * What the post-state read saw, keyed by EPC — so a case can assert on it instead of
-   * asking again. Empty when the read was skipped (EPTTS_VERIFY_EFFECTS=0, nothing settled,
-   * no serialized EPC in the document) and short of the document's EPCs beyond
-   * MAX_POST_STATE_EPCS, so a consumer must treat a missing key as "not read" and fall back.
-   */
-  postState: Record<string, PackState | null>
-}> {
+): Promise<{ submitStatus: number; submitBody: unknown; instanceIdentifier: string; msg: MsgStatus }> {
   const iid = document.sbdh.documentIdentification.instanceIdentifier
   const res = await sendEpcis(role, document, { endpoint: opts.endpoint })
   let submitBody: unknown = null
@@ -641,8 +676,8 @@ export async function submitAndPoll(
       }
     : await pollMsgStatus(role, iid, { timeoutMs: opts.timeoutMs })
 
-  const postState = await recordPostState(role, document, msg)
-  return { submitStatus: res.status(), submitBody, instanceIdentifier: iid, msg, postState }
+  await recordPostState(role, document, msg)
+  return { submitStatus: res.status(), submitBody, instanceIdentifier: iid, msg }
 }
 
 /**
@@ -665,23 +700,20 @@ export async function submitAndPoll(
  * thousands — one security case submits 5000 EPCs, and reading them all would dwarf the suite.
  * Turn the whole thing off with EPTTS_VERIFY_EFFECTS=0 for a throughput run.
  *
- * RETURNS what it read, rather than discarding it. It used to call VerifyProduct purely so the
- * call appeared in the exchange log, which meant the assertion layer then asked the platform
- * the same question again: TC_DISP_001 read one SGTIN back three times — this observation, the
- * post-condition in expectDispensed, and the case's own closing check — and the first answer
- * was already the right one. Handing the state back makes one read serve all three.
+ * It goes through packOf, which WARMS the read cache (see PACK_READS) — that is what makes this
+ * one read serve the assertions that follow, instead of each of them asking again. It used to
+ * call verifyProduct directly and discard the answer, so every case read the same EPC at least
+ * twice. It must stay the first read after the poll settles, because the epoch boundary is set
+ * there.
  */
 const MAX_POST_STATE_EPCS = 2
 
-async function recordPostState(
-  role: Role, document: EpcisDocument, msg: MsgStatus,
-): Promise<Record<string, PackState | null>> {
-  const seen: Record<string, PackState | null> = {}
-  if (process.env.EPTTS_VERIFY_EFFECTS === '0') return seen
-  if (!msg.terminal) return seen // nothing settled yet, so nothing to describe
+async function recordPostState(role: Role, document: EpcisDocument, msg: MsgStatus): Promise<void> {
+  if (process.env.EPTTS_VERIFY_EFFECTS === '0') return
+  if (!msg.terminal) return // nothing settled yet, so nothing to describe
 
   const event = document.epcisBody?.eventList?.[0] as Record<string, unknown> | undefined
-  if (!event) return seen
+  if (!event) return
   // VerifyProduct takes a serialized identifier — an SGTIN or an SSCC — so the parent and the
   // children are both askable, and a bare GTIN is not (it answers 500).
   const epcs = [
@@ -692,14 +724,12 @@ async function recordPostState(
 
   for (const epc of epcs) {
     try {
-      seen[epc] = (await packOf(role, epc)).pack
+      await packOf(role, epc)
     } catch {
       // A read-back that fails must never fail the case: it is describing what happened, not
-      // deciding it. The submission's own verdict already stands. The EPC is left out of the
-      // map rather than recorded as null, so a consumer reads it back itself.
+      // deciding it. The submission's own verdict already stands.
     }
   }
-  return seen
 }
 
 // ─── identifiers ─────────────────────────────────────────────────────────────
@@ -1233,14 +1263,9 @@ export interface PackExpectation {
  */
 export async function assertPackState(
   role: Role, sgtin: string, expected: PackExpectation, what: string,
-  /**
-   * A state already read for this EPC — pass submitAndPoll's `postState[sgtin]` to assert on
-   * the read that already happened instead of making a second identical call. Omit it (or pass
-   * undefined) to read now; `null` means "read, and there was no pack", which still fails.
-   */
-  known?: PackState | null,
 ): Promise<PackState> {
-  const pack = known !== undefined ? known : (await packOf(role, sgtin)).pack
+  // packOf serves the read taken when the message settled, so this does not re-ask.
+  const pack = (await packOf(role, sgtin)).pack
   if (!pack) {
     throw new Error(
       `${what}: VerifyProduct returned no pack for ${sgtin}. ` +
