@@ -246,7 +246,38 @@ const INCIDENTAL_REJECTION = [
   /active billing hold/i,
   /no registered unit price/i,
   /blocked by unpaid invoices/i,
+  // And a caller-scope refusal, which answers every dispense from this pharmacy the same way
+  // whatever the document says. Measured effect once the tripwire was added: ONE case,
+  // TC_DISP_002, had been passing on it. Fewer than the "most of the negatives" first guessed —
+  // the other negative dispensing cases do refuse for their own stated reasons. One silent false
+  // pass is still one too many, and the guard costs nothing.
+  /must be scoped to the caller's permitted GLNs/i,
 ]
+
+/**
+ * Throw when a refusal was INCIDENTAL — the platform said no for a reason unrelated to the
+ * rule the case is about.
+ *
+ * Exported because the tripwire has to be reachable from every refusal helper, not just this
+ * one. Dispensing posts to /Dispensation rather than SendEPCIS, so it has its own
+ * expectRefused, and that one asserted only `state === FAILED` — any refusal satisfied it.
+ * With the platform rejecting every dispense as out of the caller's permitted GLNs, TC_DISP_002
+ * passed on a message that had nothing to do with what it was testing. A tripwire only guards
+ * the helpers that call it.
+ *
+ * @param said  everything the platform said — status body, raw status and log messages.
+ * @param reason when the case names a specific rule, a refusal matching it is legitimate
+ *               even if it also matches the incidental list.
+ */
+export function assertNotIncidental(said: string, what: string, reason?: RegExp): void {
+  const incidental = INCIDENTAL_REJECTION.find((re) => re.test(said))
+  if (incidental && !(reason && reason.test(said))) {
+    throw new Error(
+      `${what}: refused, but for an INCIDENTAL reason — not the rule under test. ` +
+      `Matched ${incidental}. The platform said: ${said.slice(0, 400)}`,
+    )
+  }
+}
 
 /**
  * Assert the platform refused a document — and, when `reason` is given, that it refused it
@@ -268,14 +299,7 @@ export async function expectRejected(
     ? JSON.stringify(submitBody)
     : `${msg.raw ?? ''} ${(msg.logs ?? []).map((l) => l.message).join(' | ')}`
 
-  const incidental = INCIDENTAL_REJECTION.find((re) => re.test(said))
-  if (incidental && !(reason && reason.test(said))) {
-    throw new Error(
-      `${what}: refused, but for an INCIDENTAL reason — the document was malformed by the ` +
-      `test, not by the rule under test. Matched ${incidental}. The platform said: ` +
-      `${said.slice(0, 400)}`,
-    )
-  }
+  assertNotIncidental(said, what, reason)
 
   if (submitStatus >= 400) {
     console.log(`[neg] ${what}: rejected synchronously ${submitStatus} ${said.slice(0, 170)}`)

@@ -942,6 +942,41 @@ export async function errorOf(res: APIResponse): Promise<NormalisedError> {
   return normaliseError(await bodyOf(res))
 }
 
+// ─── registry reads ──────────────────────────────────────────────────────────
+
+/** The registry fields a test needs to reason about a product's eligibility. */
+export interface ProductRecord {
+  gtin: string
+  name: string
+  dispenseType: string | null
+  isDawanaIntegration: boolean
+  /** Cents. Null when no price is registered — packing refuses those outright. */
+  unitPriceCents: number | null
+  /** `approved` | `pending` | … — the PO's rule turns on this. */
+  pricingReviewStatus: string | null
+  isActive: boolean
+}
+
+/**
+ * One product from GET /products.
+ *
+ * Deliberately not via `/VerifyProduct`, which is the natural place to ask about a product and
+ * is currently answering 500 E901 for every GTIN. `/products` is the working read.
+ */
+export async function productByGtin(role: Role, gtin: string): Promise<ProductRecord | null> {
+  const res = await getMasar(role, '/products?limit=200')
+  if (!res.ok()) return null
+  const body = await res.json().catch(() => null) as { items?: ProductRecord[] } | null
+  const hit = (body?.items ?? []).find((p) => p.gtin === gtin)
+  if (!hit) return null
+  return {
+    ...hit,
+    // The write path returns this as a string and the read path as a number; normalise so a
+    // caller comparing to 0 or null is not caught out by the type.
+    unitPriceCents: hit.unitPriceCents == null ? null : Number(hit.unitPriceCents),
+  }
+}
+
 // ─── did it actually happen? ─────────────────────────────────────────────────
 
 /** One message's processing record from GET /epcis. */

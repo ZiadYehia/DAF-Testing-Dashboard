@@ -20,7 +20,7 @@ import { expect } from '@playwright/test'
 import {
   submitAndPoll, sendEpcis, packOf, describeMsgStatus,
   epcisDocument, commissionEvent,
-  freshSgtin, sglnOf, glnFor, uniqueSerial, runId,
+  freshSgtin, sglnOf, glnFor, uniqueSerial, runId, productByGtin, MFG_GTINS,
   type EpcisDocument, type Role,
 } from '../eptts-api'
 import { expectRejected as expectRejectedStrict } from './field-mutations'
@@ -346,4 +346,66 @@ const securityCases: ApiCase[] = INJECTIONS.map(({ id, label, payload }) => ({
   },
 }))
 
-export const COMMISSION_CASES: ApiCase[] = [...specialCases, ...mutationCases, ...securityCases]
+// ─── pricing gate (PO rule, confirmed 2026-09-07) ────────────────────────────
+
+/**
+ * A product whose price has not been approved must not enter the supply chain.
+ *
+ * The PO's rule: `pricingReviewStatus = pending` BLOCKS commissioning and packing. Only an
+ * approved price may proceed. The reason is billing — every packed unit is priced from that
+ * figure, so commissioning stock against an unapproved price means invoicing at a number
+ * nobody signed off.
+ *
+ * The platform enforces the weaker rule of price PRESENCE: it refuses a GTIN with no price at
+ * all ("Cannot seal this container: no registered unit price") but accepts one whose price is
+ * pending review. Marked expectFail rather than skipped so the assertion keeps running and
+ * reports an unexpected pass the moment the gate is added.
+ */
+/**
+ * Is billing ENFORCE mode active on this tenant?
+ *
+ * The PO's pricing-approval rule only bites when it is: with enforce off, commissioning and
+ * packing a product whose price is pending review is legitimate, so asserting a refusal would
+ * manufacture a failure. Declared by the tester rather than read from the platform, because no
+ * endpoint exposes the flag — /settings, /billing/mode and a dozen siblings are all absent. If
+ * one appears, read it here instead and delete the variable.
+ *
+ * Unset means "do not assume": the cases skip and say why, rather than defaulting to a
+ * verdict on a rule that may not be in force.
+ */
+const BILLING_ENFORCE_ACTIVE = process.env.EPTTS_BILLING_ENFORCE === '1'
+const PRICING_GATE_SKIP = BILLING_ENFORCE_ACTIVE
+  ? undefined
+  : 'the pricing-approval gate applies only when billing enforce mode is active — set '
+    + 'EPTTS_BILLING_ENFORCE=1 once that is confirmed for the tenant'
+
+const pricingGateCases: ApiCase[] = [
+  {
+    id: 'TC_COMM_045', feature: FEATURE, slow: true,
+    title: 'commissioning a product whose pricing review is pending is refused',
+    skip: PRICING_GATE_SKIP,
+    expectFail: 'the platform gates on a price EXISTING, not on it being approved — '
+      + 'pricingReviewStatus=pending is accepted',
+    run: async () => {
+      const gtin = MFG_GTINS[0]
+      const product = await productByGtin('manufacturer', gtin)
+      expect(product, `${gtin} must be readable from /products`).not.toBeNull()
+      // Stating the precondition in the assertion, so a run against a tenant whose pricing IS
+      // approved fails loudly here rather than quietly testing nothing.
+      expect(product!.pricingReviewStatus,
+        `this case needs ${gtin} to be pending review; it is "${product!.pricingReviewStatus}"`)
+        .toBe('pending')
+
+      const doc = validDoc([freshSgtin(gtin)])
+      const { submitStatus, msg } = await submitAndPoll('manufacturer', doc)
+      console.log(`[comm] pending-review commission -> ${submitStatus} ${describeMsgStatus(msg)}`)
+      expect(msg.state,
+        'commissioning a product with pricingReviewStatus=pending must be refused — '
+        + describeMsgStatus(msg)).toBe('FAILED')
+    },
+  },
+]
+
+export const COMMISSION_CASES: ApiCase[] = [
+  ...specialCases, ...mutationCases, ...securityCases, ...pricingGateCases,
+]

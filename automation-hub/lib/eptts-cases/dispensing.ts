@@ -35,7 +35,7 @@ import {
 } from '../eptts-api'
 import type { ApiCase } from './index'
 import { atPharmacy, commissioned, inTransitToBranch } from './fixtures'
-import { fieldCases, type MutationName } from './field-mutations'
+import { fieldCases, assertNotIncidental, type MutationName } from './field-mutations'
 
 const FEATURE = 'api-dispensing'
 const PHARMACY = () => glnFor('pharmacy')
@@ -70,16 +70,22 @@ async function expectDispensed(role: Role, doc: EpcisDocument, what: string) {
   expect(r.msg?.state, `${what}: ${r.msg ? describeMsgStatus(r.msg) : 'no poll'}`).toBe('SUCCESS')
 }
 
-async function expectRefused(role: Role, doc: EpcisDocument, what: string) {
+async function expectRefused(role: Role, doc: EpcisDocument, what: string, reason?: RegExp) {
   const r = await dispense(role, doc)
   if (r.status >= 400) {
     console.log(`[disp] ${what}: refused synchronously ${r.status} ${JSON.stringify(r.body).slice(0, 160)}`)
+    assertNotIncidental(JSON.stringify(r.body), what, reason)
     return
   }
   console.log(`[disp] ${what}: accepted (${r.status}) -> ${r.msg ? describeMsgStatus(r.msg) : 'no poll'}`)
   expect(r.msg?.timedOut, `${what}: MsgStatusQuery never resolved`).toBe(false)
   expect(r.msg?.state, `${what}: the platform ACCEPTED a dispense it should refuse — ${r.msg ? describeMsgStatus(r.msg) : ''}`)
     .toBe('FAILED')
+  // A refusal is not enough — it has to be THIS rule's refusal. Without this the caller-scope
+  // rejection satisfied every negative dispensing case while the positive ones failed.
+  assertNotIncidental(
+    `${r.msg?.raw ?? ''} ${(r.msg?.logs ?? []).map((l) => l.message).join(' | ')}`, what, reason,
+  )
 }
 
 // ─── business cases ──────────────────────────────────────────────────────────
