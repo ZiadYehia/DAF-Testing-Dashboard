@@ -53,4 +53,56 @@ function isInfrastructureFailure(error) {
   )
 }
 
-module.exports = { isInfrastructureFailure }
+/**
+ * Did the test fail because this tenant does not meet a PRECONDITION the case needs, rather
+ * than because the behaviour under test is wrong?
+ *
+ * Unlike an outage this will not fix itself on a re-run, so it is recorded as blocked with the
+ * reason instead of being held back silently. Shared for the same reason as the predicate
+ * above: a Hub replay was writing `fail` where a CLI run wrote `blocked` for the identical
+ * refusal, so the dashboard's verdict depended on which button produced it.
+ *
+ * @param {string | null | undefined} error First error message from the run.
+ * @returns {boolean} True when the tenant, not the endpoint, is why the case could not run.
+ */
+function isUnmetPrecondition(error) {
+  if (!error) return false
+  return /no (?:commissionable|dispensable|partial-dispense) GTIN is configured for this environment/i.test(error)
+    // NOT the Dawana refusal. It was listed here while every product on the relay tenant really
+    // was isDawanaIntegration:true, which made the refusal correct and the case merely
+    // un-runnable. That is no longer so: all seven products now read
+    // isDawanaIntegration:false from both the masar and registry services, and the dispensing
+    // event still refuses them as Dawana-integrated — the rule is reading a stale source, which
+    // is a defect and must be recorded as a failure rather than hidden as missing test data.
+    // If a product is genuinely Dawana-integrated again, its refusal IS correct; that is a
+    // judgement about the product, which this script cannot make from the error text alone.
+    // A second-entity ("ef_") key REJECTED with 401 means this tenant has no such trade partner
+    // provisioned — permanent, so holding it back for a re-run that can never succeed just hides
+    // it. Pinned to 401: the same roles answered 404 once the relay tunnel stopped routing, and
+    // that is an outage, which isInfrastructureFailure must keep claiming first.
+    || /auth failed for role "ef_[a-z_]+": 401/i.test(error)
+    // A FIXTURE step refused because the Pricing Team has not approved the product's registered
+    // price, while billing is enforcing. The case never got to exercise its own rule, so calling
+    // it a failure blames the endpoint for a missing precondition on the tenant's data.
+    //
+    // Recorded on 2026-09-07: all seven products read pricingReviewStatus=pending, and during an
+    // enforcing window 24 packing events were refused with "Cannot seal this container: the
+    // Pricing Team has not approved the registered price". That took out most of the packing,
+    // dispensing and destruction fixtures at once. Matched only when the refusal names the
+    // pricing approval — a case whose OWN subject is the pricing gate (TS_PACK_018, TC_COMM_045)
+    // asserts the refusal itself and passes, so it never reaches this predicate.
+    || /the Pricing Team has not approved the registered price|billing is enforcing and cannot invoice an unapproved price/i
+      .test(error)
+    // A FIXTURE step refused because the tenant owes money. Once pricing approval cleared, this
+    // became the next link in the same chain: 24 cases whose fixture ships stock were refused
+    // with "Shipping blocked by unpaid invoices. Outstanding cents: 68200", where the outstanding
+    // balance is invoices OUR OWN test volume generated. It is correct behaviour now that
+    // billing enforces, and it says nothing about shipping, so the case is blocked rather than
+    // failed. NOTE: this being legitimate depends on billing actually enforcing — the earlier
+    // finding was that the same hold applied while GET /billing/posture reported
+    // {mode: advisory, enforce: false}, which was a defect. Re-check the posture before
+    // treating a hold as expected.
+    || /blocked by unpaid invoices/i.test(error)
+}
+
+module.exports = { isInfrastructureFailure, isUnmetPrecondition }

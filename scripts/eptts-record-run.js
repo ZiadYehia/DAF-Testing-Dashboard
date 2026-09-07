@@ -112,49 +112,9 @@ function flatten(report) {
 // The unreachable-platform predicate is shared with the Hub replay route
 // (src/app/api/[app]/automation/[project]/run/route.ts) so the two recording paths cannot
 // disagree about what counts as an outage. See that file for why the gap mattered.
-const { isInfrastructureFailure } = require('../src/lib/infrastructure-failure.cjs')
+const { isInfrastructureFailure, isUnmetPrecondition } = require('../src/lib/infrastructure-failure.cjs')
 
 
-/**
- * A failure caused by the TENANT not having suitable test data, rather than by the platform
- * misbehaving. `blocked`, not `fail` — the case was never really exercised.
- *
- * Two shapes, both seen on the ngrok relay:
- *   - our own guard saying the environment has no GTIN of the required kind;
- *   - the platform correctly refusing to dispense a Dawana-integrated product through this
- *     channel. That refusal is right; it just means the tenant has no product that can
- *     exercise dispensing here. Every one of its seven products is Dawana-integrated, so
- *     recording 50-odd cases as defects would invent failures the platform did not have.
- */
-function isUnsupportedOnThisTenant(error) {
-  if (!error) return false
-  return /no (?:commissionable|dispensable|partial-dispense) GTIN is configured for this environment/i.test(error)
-    // NOT the Dawana refusal. It was listed here while every product on the relay tenant really
-    // was isDawanaIntegration:true, which made the refusal correct and the case merely
-    // un-runnable. That is no longer so: all seven products now read
-    // isDawanaIntegration:false from both the masar and registry services, and the dispensing
-    // event still refuses them as Dawana-integrated — the rule is reading a stale source, which
-    // is a defect and must be recorded as a failure rather than hidden as missing test data.
-    // If a product is genuinely Dawana-integrated again, its refusal IS correct; that is a
-    // judgement about the product, which this script cannot make from the error text alone.
-    // A second-entity ("ef_") key REJECTED with 401 means this tenant has no such trade partner
-    // provisioned — permanent, so holding it back for a re-run that can never succeed just hides
-    // it. Pinned to 401: the same roles answered 404 once the relay tunnel stopped routing, and
-    // that is an outage, which isInfrastructureFailure must keep claiming first.
-    || /auth failed for role "ef_[a-z_]+": 401/i.test(error)
-    // A FIXTURE step refused because the Pricing Team has not approved the product's registered
-    // price, while billing is enforcing. The case never got to exercise its own rule, so calling
-    // it a failure blames the endpoint for a missing precondition on the tenant's data.
-    //
-    // Recorded on 2026-09-07: all seven products read pricingReviewStatus=pending, and during an
-    // enforcing window 24 packing events were refused with "Cannot seal this container: the
-    // Pricing Team has not approved the registered price". That took out most of the packing,
-    // dispensing and destruction fixtures at once. Matched only when the refusal names the
-    // pricing approval — a case whose OWN subject is the pricing gate (TS_PACK_018, TC_COMM_045)
-    // asserts the refusal itself and passes, so it never reaches this predicate.
-    || /the Pricing Team has not approved the registered price|billing is enforcing and cannot invoice an unapproved price/i
-      .test(error)
-}
 
 /** Reduce a Playwright error blob to the sentence that says what is wrong. */
 function issueOf(error) {
@@ -241,7 +201,7 @@ for (const r of results) {
 
   // Missing test data is not a defect either, but unlike an outage it will not fix itself on
   // a re-run, so it is recorded as blocked with the reason rather than held back silently.
-  if (r.ran === 'failed' && isUnsupportedOnThisTenant(r.error)) {
+  if (r.ran === 'failed' && isUnmetPrecondition(r.error)) {
     f.status[id] = 'blocked'
     f.notes[id] = issueOf(r.error)
     tally.blocked++

@@ -13,6 +13,16 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-07T22-15-12-861Z",
+      "status": "fail",
+      "durationMs": 15756,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: fixture: ship urn:epc:id:sscc:5413868.8819326167 to the branch did not succeed — http=200 raw=\"E - Application Error\" state=FAILED polls=1 logs=[E: Shipping event failed: Shipping blocked by unpaid invoices. Outstanding cents: 3500 | E: Message processing failed — 1 of 1 event(s) encountered errors]",
+      "environment": "ngrok relay"
+    },
+    {
       "ts": "2026-09-07T21-22-24-397Z",
       "status": "fail",
       "durationMs": 13623,
@@ -100,16 +110,6 @@
       "hasTrace": false,
       "hasApiLog": true,
       "error": "Error: dispense one pack: http=200 raw=\"E - Application Error\" state=FAILED polls=1 logs=[E: Dispensing event failed: Dispense events must be scoped to the caller's permitted GLNs. | E: Message processing failed — 1 of 1 event(s) encountered errors]",
-      "environment": "ngrok relay"
-    },
-    {
-      "ts": "2026-09-07T10-49-04-977Z",
-      "status": "fail",
-      "durationMs": 6007.055,
-      "hasVideo": false,
-      "hasTrace": false,
-      "hasApiLog": true,
-      "error": "Error: auth failed for role \"manufacturer\": 500 {\"statusCode\":500,\"timestamp\":\"2026-09-07T10:49:11.082Z\",\"path\":\"/masar-service/api/v1/auth\",\"method\":\"POST\",\"correlationId\":\"no-context\",\"message\":\"Internal server error\"} — check EPTTS_MFG_APIKEY in automation-hub/.env (keys cannot be re-read from the platform; if lost they must be rotated again)",
       "environment": "ngrok relay"
     },
     {

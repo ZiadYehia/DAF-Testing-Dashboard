@@ -5,7 +5,7 @@ import { getProject } from '@automation-hub/store'
 import { runProject as runPlaywright, isRunning as isRunningPlaywright } from '@automation-hub/engine/runner'
 import { runProject as runAppium, isRunning as isRunningAppium } from '@automation-hub/engine/appium-runner'
 import { setExecutionStatus, appendExecutionNoteLine } from '@/lib/execution'
-import { isInfrastructureFailure } from '@/lib/infrastructure-failure.cjs'
+import { isInfrastructureFailure, isUnmetPrecondition } from '@/lib/infrastructure-failure.cjs'
 import { activeEnvironmentVars, activeEnvironmentName } from '@/lib/environments'
 import { buildAutomationFailureNote, AUTOMATION_NOTE_PREFIX } from '@/lib/automation-run-note'
 
@@ -75,14 +75,25 @@ export async function POST(
      * happen is a test case being marked failing because the server could not be reached.
      */
     const unreachable = result.status === 'fail' && isInfrastructureFailure(result.error)
+    /**
+     * A refusal the tenant's own data caused is 'blocked', not 'fail'.
+     *
+     * The CLI recorder has always drawn this distinction and this path did not, so the same
+     * refusal got a different verdict depending on which button produced it. Replaying
+     * TC_COMM_001 wrote `fail` for "Cannot commission: the Pricing Team has not approved the
+     * registered price ... Billing is enforcing" — a correct platform refusal of an
+     * unapproved price, which says nothing about whether commissioning works.
+     */
+    const blockedByTenant = result.status === 'fail' && isUnmetPrecondition(result.error)
+    const recordedStatus = blockedByTenant ? 'blocked' : result.status
     if (link && result.executed && !unreachable
         && (result.status === 'pass' || result.status === 'fail')) {
       // Same environment the run targeted: execution status is scoped per environment, so
       // recording an ngrok result must not land on (and overwrite) the production one.
       const res = await setExecutionStatus(
-        link.app, link.feature, link.testcaseId, result.status, undefined, envName ?? undefined,
+        link.app, link.feature, link.testcaseId, recordedStatus, undefined, envName ?? undefined,
       )
-      if (res.ok) synced = { testcaseId: link.testcaseId, status: result.status }
+      if (res.ok) synced = { testcaseId: link.testcaseId, status: recordedStatus }
       // A human observation must survive a green run — only failures write a
       // note — and even then it is merged in, never allowed to overwrite the
       // tester's own text.
@@ -96,7 +107,9 @@ export async function POST(
 
     // Surfaced so the UI can say "not recorded — the platform was unreachable" instead of
     // showing a failed run whose verdict silently went nowhere.
-    return NextResponse.json({ ...result, synced, ...(unreachable ? { unreachable: true } : {}) })
+    return NextResponse.json({ ...result, synced,
+      ...(unreachable ? { unreachable: true } : {}),
+      ...(blockedByTenant ? { blockedByTenant: true } : {}) })
   } catch (err: any) {
     return NextResponse.json({ error: err.message ?? 'Run failed' }, { status: 500 })
   }

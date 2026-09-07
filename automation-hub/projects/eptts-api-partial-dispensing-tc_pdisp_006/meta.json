@@ -13,6 +13,16 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-07T22-17-09-411Z",
+      "status": "fail",
+      "durationMs": 2038,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: fixture: ship urn:epc:id:sscc:5413868.8819430171 to the branch did not succeed — http=200 raw=\"E - Application Error\" state=FAILED polls=1 logs=[E: Shipping event failed: Shipping blocked by unpaid invoices. Outstanding cents: 12500 | E: Message processing failed — 1 of 1 event(s) encountered errors]",
+      "environment": "ngrok relay"
+    },
+    {
       "ts": "2026-09-07T21-24-08-846Z",
       "status": "fail",
       "durationMs": 15899,

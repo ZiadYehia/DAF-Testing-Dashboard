@@ -13,6 +13,25 @@
   "lastStatus": "pass",
   "runs": [
     {
+      "ts": "2026-09-07T22-13-47-346Z",
+      "status": "pass",
+      "durationMs": 1977,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "ngrok relay"
+    },
+    {
+      "ts": "2026-09-07T21-47-57-959Z",
+      "status": "fail",
+      "durationMs": 20015.266,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: single commission: http=200 raw=\"E - Application Error\" state=FAILED polls=6 logs=[E: Import failed: Cannot commission: the Pricing Team has not approved the registered price for GTIN(s) 05413868110425 (pending). Billing is enforcing, so packs cannot be commissioned until pricing review is approved in the registry.]",
+      "environment": "ngrok relay"
+    },
+    {
       "ts": "2026-09-07T21-20-43-479Z",
       "status": "pass",
       "durationMs": 13611,
@@ -87,15 +106,6 @@
       "hasTrace": false,
       "hasApiLog": true,
       "error": "Error: auth failed for role \"manufacturer\": 502 {} — check EPTTS_MFG_APIKEY in automation-hub/.env (keys cannot be re-read from the platform; if lost they must be rotated again)",
-      "environment": "ngrok relay"
-    },
-    {
-      "ts": "2026-09-06T12-05-24-973Z",
-      "status": "pass",
-      "durationMs": 1196,
-      "hasVideo": false,
-      "hasTrace": false,
-      "hasApiLog": true,
       "environment": "ngrok relay"
     },
     {
