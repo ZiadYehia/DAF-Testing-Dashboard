@@ -53,6 +53,8 @@ export interface IBug {
   jiraStatus?: string | null
   jiraStatusSyncedAt?: Date | null
   jiraReporter?: string | null
+  /** Environment this bug was found on; null = not attributed to one. */
+  environment?: string | null
   deletedAt?: Date | null
   attachments?: IAttachment[]
 }
@@ -210,6 +212,7 @@ export const BugEntity = new EntitySchema<IBug>({
     jiraStatus: { type: 'varchar', length: 100, nullable: true },
     jiraStatusSyncedAt: { type: 'datetime2', nullable: true },
     jiraReporter: { type: 'varchar', length: 255, nullable: true },
+    environment: { type: 'varchar', length: 100, nullable: true },
     deletedAt: { type: 'datetime2', nullable: true },
   },
   relations: {

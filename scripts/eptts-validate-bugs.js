@@ -234,6 +234,17 @@ for (const app of APPS) {
       if (fields.feature && fields.feature !== feature) {
         add(file, `frontmatter feature "${fields.feature}" does not match its folder "${feature}"`)
       }
+      // `environment` is optional — every bug filed before environments existed omits it, and
+      // that is not a defect in the report. But when it IS set, the filename has to carry it:
+      // the same defect found on two servers is two files, and identical slugs would mean one
+      // silently overwriting the other. Naming them apart is the whole point of the field.
+      if (fields.environment) {
+        const envSlug = String(fields.environment)
+          .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+        if (envSlug && !entry.replace(/\.md$/, '').endsWith(`-${envSlug}`)) {
+          add(file, `environment is "${fields.environment}" so the filename must end "-${envSlug}.md"`)
+        }
+      }
       if (fields.status && !STATUS.includes(fields.status)) {
         add(file, `status "${fields.status}" is not one of ${STATUS.join(' / ')}`)
       }

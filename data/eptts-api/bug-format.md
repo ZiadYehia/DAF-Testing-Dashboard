@@ -12,6 +12,23 @@ Frontmatter fields: `title`, `status` (`draft` | `reported`), `jira_key` (`DW-##
 `severity`, `layer`, `jira_status`, `jira_reporter`. This app additionally records `found_by` and
 `found_at` so a bug found by an automated run is traceable to that run.
 
+### `environment` — which server the bug was found on
+
+Optional, and omitted means the bug is not attributed to a named environment (every bug filed
+before environments were tracked). When present it must match an environment's name in the app
+exactly, e.g. `environment: ngrok relay`.
+
+**When it is set, the filename must end with the slugified environment** —
+`<slug>-ngrok-relay.md`. This is enforced by `scripts/eptts-validate-bugs.js`, because the same
+defect found on two servers is two reports, and identical slugs would mean one silently
+overwriting the other. The field is also a real column on `bugs`, so the dashboard can list and
+filter by it rather than the reader parsing prose.
+
+It does not replace the **Environment:** body section, which still carries the exact URL,
+tenant, acting role and GLN. The field says *which target*; the section says *what that target
+was*. A relay tunnel's URL changes between sessions, so the name is the stable identifier and
+the URL is the evidence.
+
 Body sections in order, each separated by a `---` rule with a blank line on either side,
 exactly as `bugs/_template.md` shows:
 

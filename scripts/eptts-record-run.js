@@ -150,7 +150,14 @@ function isInfrastructureFailure(error) {
 function isUnsupportedOnThisTenant(error) {
   if (!error) return false
   return /no (?:commissionable|dispensable|partial-dispense) GTIN is configured for this environment/i.test(error)
-    || /Dispensing is not allowed for Dawana-integrated products|must be dispensed through the Dawana integration/i.test(error)
+    // NOT the Dawana refusal. It was listed here while every product on the relay tenant really
+    // was isDawanaIntegration:true, which made the refusal correct and the case merely
+    // un-runnable. That is no longer so: all seven products now read
+    // isDawanaIntegration:false from both the masar and registry services, and the dispensing
+    // event still refuses them as Dawana-integrated — the rule is reading a stale source, which
+    // is a defect and must be recorded as a failure rather than hidden as missing test data.
+    // If a product is genuinely Dawana-integrated again, its refusal IS correct; that is a
+    // judgement about the product, which this script cannot make from the error text alone.
     // A second-entity ("ef_") key REJECTED with 401 means this tenant has no such trade partner
     // provisioned — permanent, so holding it back for a re-run that can never succeed just hides
     // it. Pinned to 401: the same roles answered 404 once the relay tunnel stopped routing, and

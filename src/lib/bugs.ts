@@ -26,6 +26,12 @@ export interface BugFrontmatter {
   layer: string
   jira_status: string | null
   jira_reporter: string | null
+  /**
+   * Environment the bug was found on, e.g. "ngrok relay". Absent/null = not attributed to one.
+   * The same defect on two environments is two files whose slugs differ by environment, so this
+   * field says which is which without the reader parsing the Environment section.
+   */
+  environment?: string | null
 }
 
 export interface BugSummary {
@@ -42,6 +48,7 @@ export interface BugSummary {
   layer: string
   jira_status: string | null
   jira_reporter: string | null
+  environment: string | null
 }
 
 export interface BugDetail extends BugSummary {
@@ -65,6 +72,7 @@ function toSummary(bug: IBug): BugSummary {
     layer: bug.layer ?? 'unknown',
     jira_status: bug.jiraStatus ?? null,
     jira_reporter: bug.jiraReporter ?? null,
+    environment: bug.environment ?? null,
   }
 }
 
@@ -140,12 +148,13 @@ export async function saveBug(
       reportedAt: meta.reported_at !== undefined ? (meta.reported_at ? new Date(meta.reported_at) : null) : existing.reportedAt,
       priority: meta.priority ?? existing.priority, bugType: meta.bug_type ?? existing.bugType,
       parentKey: meta.parent_key !== undefined ? meta.parent_key : existing.parentKey,
+      environment: meta.environment !== undefined ? meta.environment : existing.environment,
       severity: meta.severity ?? existing.severity, layer: meta.layer ?? existing.layer,
       jiraStatus: meta.jira_status !== undefined ? meta.jira_status : existing.jiraStatus,
     }
     await repo.update(existing.id, updated)
   } else {
-    await repo.save({ appSlug, feature, slug, body, title: meta.title ?? slug, status: meta.status ?? 'draft', jiraKey: meta.jira_key ?? null, reportedAt: meta.reported_at ? new Date(meta.reported_at) : null, priority: meta.priority ?? '', bugType: meta.bug_type ?? '', parentKey: meta.parent_key ?? null, severity: meta.severity ?? '', layer: meta.layer ?? 'unknown', jiraStatus: meta.jira_status ?? null })
+    await repo.save({ appSlug, feature, slug, body, title: meta.title ?? slug, status: meta.status ?? 'draft', jiraKey: meta.jira_key ?? null, reportedAt: meta.reported_at ? new Date(meta.reported_at) : null, priority: meta.priority ?? '', bugType: meta.bug_type ?? '', parentKey: meta.parent_key ?? null, severity: meta.severity ?? '', layer: meta.layer ?? 'unknown', jiraStatus: meta.jira_status ?? null, environment: meta.environment ?? null })
   }
 }
 

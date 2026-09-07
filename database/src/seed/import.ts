@@ -690,6 +690,7 @@ async function backfillBugs(appSlug: string): Promise<void> {
           module: moduleVal,
           jiraStatus: data.jira_status ?? null,
           jiraReporter: data.jira_reporter ?? null,
+          environment: data.environment ?? null,
         })
         bugId = saved.id
       })

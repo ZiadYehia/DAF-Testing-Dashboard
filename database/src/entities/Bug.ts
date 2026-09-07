@@ -65,6 +65,14 @@ export class Bug {
   @Column({ type: 'varchar', length: 255, nullable: true })
   jiraReporter!: string | null
 
+  /**
+   * Environment this bug was found on, e.g. "ngrok relay"; NULL = not attributed to one
+   * (every bug filed before environments were tracked). The same defect on two environments is
+   * two rows with distinct slugs, so this is descriptive, not part of any key.
+   */
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  environment!: string | null
+
   @Column({ type: 'datetime2', nullable: true })
   deletedAt!: Date | null
 

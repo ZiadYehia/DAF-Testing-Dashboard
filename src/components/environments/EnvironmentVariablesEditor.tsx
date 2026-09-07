@@ -72,7 +72,7 @@ export function EnvironmentVariablesEditor({ mgr }: { mgr: EnvironmentManager })
         />
         <div className="flex items-center justify-between gap-2">
           <p className="text-[11px] text-muted-foreground">
-            {Object.keys(parseLines(bulk)).length} variable(s) — replaces every field below.
+            {Object.keys(parseLines(bulk)).length} variable(s) — replaces every field.
           </p>
           <Button size="sm" className="h-7 text-xs" onClick={applyBulk}>Use these</Button>
         </div>
@@ -106,7 +106,8 @@ export function EnvironmentVariablesEditor({ mgr }: { mgr: EnvironmentManager })
                   value={row.key}
                   spellCheck={false}
                   aria-label="Variable name"
-                  aria-invalid={duplicate || undefined}
+                  // Amber, not `aria-invalid`: a repeat is a mistake worth flagging, but it does
+                  // not block saving — the last row wins, exactly as it would in a .env file.
                   onChange={(e) => setVar(row.id, { key: e.target.value })}
                   // A whole .env pasted into a name field should become rows, not a name with
                   // newlines in it — that is how people move a config over, every time.
