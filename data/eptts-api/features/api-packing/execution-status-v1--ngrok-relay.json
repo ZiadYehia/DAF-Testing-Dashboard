@@ -12,8 +12,8 @@
   "TS_PACK_011": "fail",
   "TS_PACK_012": "pass",
   "TS_PACK_013": "blocked",
-  "TS_PACK_014": "fail",
-  "TS_PACK_015": "fail",
+  "TS_PACK_014": "pass",
+  "TS_PACK_015": "pass",
   "TS_PACK_016": "fail",
   "TS_PACK_017": "pass"
 }

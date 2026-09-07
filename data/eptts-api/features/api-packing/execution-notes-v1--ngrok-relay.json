@@ -3,7 +3,5 @@
   "TS_PACK_009": "duplicate children: the platform ACCEPTED input it should refuse — http=200 raw=\"S - Successful\" state=SUCCESS polls=1 logs=[I: Packing event processed successfully | I: Message processed successfully — all 1 event(s) completed]",
   "TS_PACK_011": "same child under two parents in one document: the platform ACCEPTED input it should refuse — http=200 raw=\"S - Successful\" state=SUCCESS polls=1 logs=[I: Packing event processed successfully | I: Message processed successfully — all 2 event(s) completed]",
   "TS_PACK_013": "the contract exposes no distinct \"sealed\" state — confirm with the PO whether it differs from in-transit (TS_PACK_014)",
-  "TS_PACK_014": "fixture: ship urn:epc:id:sscc:5413868.8696509397 to the branch did not succeed — http=200 raw=\"E - Application Error\" state=FAILED polls=1 logs=[E: Shipping event failed: Shipping blocked by unpaid invoices. Outstanding cents: 0 | E: Message processing failed — 1 of 1 event(s) encountered errors]",
-  "TS_PACK_015": "fixture: ship urn:epc:id:sscc:5413868.8696523591 to the branch did not succeed — http=200 raw=\"E - Application Error\" state=FAILED polls=1 logs=[E: Shipping event failed: Shipping blocked by unpaid invoices. Outstanding cents: 0 | E: Message processing failed — 1 of 1 event(s) encountered errors]",
   "TS_PACK_016": "identical second pack: the platform ACCEPTED input it should refuse — http=200 raw=\"S - Successful\" state=SUCCESS polls=1 logs=[I: Message processed successfully — all 1 event(s) completed]"
 }

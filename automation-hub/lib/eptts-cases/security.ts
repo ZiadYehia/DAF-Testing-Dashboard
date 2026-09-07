@@ -693,16 +693,22 @@ const TRANSPORT: ApiCase[] = [
     id: 'TC_SEC_041', feature: FEATURE, title: 'responses carry HSTS and a content security policy',
     run: async () => {
       const res = await getMasar('manufacturer', '/epcis?limit=1')
-      expect(hdr(res, 'strict-transport-security'), 'HSTS is present with a max-age').toMatch(/max-age=\d+/)
-      expect(hdr(res, 'content-security-policy'), 'a CSP restricts default-src').toMatch(/default-src/)
+      // `?? '(absent)'` because toMatch on undefined throws a TypeError — "received value must
+      // be a string" — which says nothing about the header. The absence IS the finding, so it
+      // has to read as a failed expectation rather than a broken test.
+      expect(hdr(res, 'strict-transport-security') ?? '(absent)',
+        'HSTS is present with a max-age').toMatch(/max-age=\d+/)
+      expect(hdr(res, 'content-security-policy') ?? '(absent)',
+        'a CSP restricts default-src').toMatch(/default-src/)
     },
   },
   {
     id: 'TC_SEC_042', feature: FEATURE, title: 'responses carry anti-sniffing and anti-framing headers',
     run: async () => {
       const res = await getMasar('manufacturer', '/epcis?limit=1')
-      expect(hdr(res, 'x-content-type-options'), 'nosniff is set').toMatch(/nosniff/)
-      expect(hdr(res, 'x-frame-options'), 'framing is restricted').toMatch(/SAMEORIGIN|DENY/i)
+      expect(hdr(res, 'x-content-type-options') ?? '(absent)', 'nosniff is set').toMatch(/nosniff/)
+      expect(hdr(res, 'x-frame-options') ?? '(absent)',
+        'framing is restricted').toMatch(/SAMEORIGIN|DENY/i)
     },
   },
   {

@@ -17,9 +17,9 @@ found_by: Claude (automated API suite)
 found_at: '2026-09-07T07:10:00.000Z'
 environment: ngrok relay
 ---
-`POST /scp/SendEPCIS` processes a shipping event without checking that the sender owns the EPCs, that they are not already in transit, or that they exist at all. Each of the three returns `S - Successful` and writes a custody transfer into the traceability record, so the record can show goods moving from a party that never held them, moving twice at once, or moving without ever having been commissioned.
+`POST /scp/SendEPCIS` processes a shipping event without checking that the sender owns the EPCs, that they are not already in transit, that they belong to another open shipment, or that they exist at all. Each returns `S - Successful` and writes a custody transfer into the traceability record, so the record can show goods moving from a party that never held them, moving twice at once, or moving without ever having been commissioned.
 
-**Covers test cases:** `TC_SHIP_014`, `TC_SHIP_015`, `TC_SHIP_018`
+**Covers test cases:** `TC_SHIP_014`, `TC_SHIP_015`, `TC_SHIP_018`, `TC_SHIP_019`
 
 ---
 
@@ -30,16 +30,17 @@ environment: ngrok relay
 3. Authenticate as the branch and POST that manufacturer-owned SSCC to /scp/SendEPCIS as a shipping event with the branch as sender. Poll MsgStatusQuery.
 4. As the manufacturer, ship a fresh SSCC to the branch, then submit the identical shipping event for that same SSCC a second time. Poll MsgStatusQuery.
 5. As the manufacturer, ship an SGTIN that was never commissioned. Poll MsgStatusQuery.
+6. As the manufacturer, ship an SGTIN that is already a child of another open shipment. Poll MsgStatusQuery.
 
 ---
 
 **Expected Result:**
-Each event is refused, because the sender does not own the SSCC, the SSCC is already in transit, and the SGTIN does not exist respectively.
+Each event is refused, because the sender does not own the SSCC, the SSCC is already in transit, the SGTIN does not exist, and the SGTIN is already committed to another shipment respectively.
 
 ---
 
 **Actual Result:**
-All three are accepted with `"messagestatus": "S - Successful"` and `Shipping event processed successfully`.
+All four are accepted with `"messagestatus": "S - Successful"` and `Shipping event processed successfully`.
 
 ---
 

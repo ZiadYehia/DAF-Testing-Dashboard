@@ -13,6 +13,16 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-07T07-34-50-454Z",
+      "status": "fail",
+      "durationMs": 39395.513,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: fixture: pack 1 SGTIN(s) into urn:epc:id:sscc:5413868.8766506381 did not succeed — http=200 raw=\"E - Application Error\" state=FAILED polls=6 logs=[E: Packing event failed: Cannot seal this container: no registered unit price for GTIN(s) 05413868110432. Register a unit price for the product in the registry, then retry — billing prices every packed unit from that price and cannot invoice without it. | E: Message processing failed — 1 of 1 event(s) encountered errors]",
+      "environment": "ngrok relay"
+    },
+    {
       "ts": "2026-09-06T13-06-46-913Z",
       "status": "fail",
       "durationMs": 68595,

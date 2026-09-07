@@ -1,8 +1,8 @@
 {
-  "TC_SEC_001": "fail",
-  "TC_SEC_002": "fail",
-  "TC_SEC_003": "fail",
-  "TC_SEC_004": "fail",
+  "TC_SEC_001": "pass",
+  "TC_SEC_002": "pass",
+  "TC_SEC_003": "pass",
+  "TC_SEC_004": "pass",
   "TC_SEC_005": "pass",
   "TC_SEC_006": "pass",
   "TC_SEC_007": "pass",

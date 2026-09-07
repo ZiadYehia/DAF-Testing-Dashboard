@@ -16,6 +16,5 @@
   "TC_DISP_015": "no dispensable GTIN is configured for this environment (EPTTS_MFG_DISPENSABLE_GTINS is empty), so this case cannot be built here. Set it to a GTIN this tenant holds, or run the case on an environment that has one.",
   "TC_DISP_016": "no dispensable GTIN is configured for this environment (EPTTS_MFG_DISPENSABLE_GTINS is empty), so this case cannot be built here. Set it to a GTIN this tenant holds, or run the case on an environment that has one.",
   "TC_DISP_017": "no dispensable GTIN is configured for this environment (EPTTS_MFG_DISPENSABLE_GTINS is empty), so this case cannot be built here. Set it to a GTIN this tenant holds, or run the case on an environment that has one.",
-  "TC_DISP_030": "no dispensable GTIN is configured for this environment (EPTTS_MFG_DISPENSABLE_GTINS is empty), so this case cannot be built here. Set it to a GTIN this tenant holds, or run the case on an environment that has one.",
-  "TC_DISP_034": "fixture: ship urn:epc:id:sscc:5413868.8696464620 to the branch did not succeed — http=200 raw=\"E - Application Error\" state=FAILED polls=1 logs=[E: Shipping event failed: Shipping blocked by unpaid invoices. Outstanding cents: 0 | E: Message processing failed — 1 of 1 event(s) encountered errors]"
+  "TC_DISP_030": "no dispensable GTIN is configured for this environment (EPTTS_MFG_DISPENSABLE_GTINS is empty), so this case cannot be built here. Set it to a GTIN this tenant holds, or run the case on an environment that has one."
 }

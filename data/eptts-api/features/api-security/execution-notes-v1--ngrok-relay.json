@@ -1,8 +1,4 @@
 {
-  "TC_SEC_001": "alg-none is rejected",
-  "TC_SEC_002": "tampered-claims is rejected",
-  "TC_SEC_003": "empty-signature is rejected",
-  "TC_SEC_004": "garbage-signature is rejected",
   "TC_SEC_017": "auth failed for role \"ef_distributor\": 401 {\"statusCode\":401,\"timestamp\":\"2026-09-07T07:03:45.345Z\",\"path\":\"/masar-service/api/v1/auth\",\"method\":\"POST\",\"correlationId\":\"no-context\",\"message\":\"Http Exception\"} — check EPTTS_EF_DISTRIBUTOR_APIKEY in automation-hub/.env (keys cannot be re-read from the platform; if lost they must be rotated again)",
   "TC_SEC_019": "auth failed for role \"ef_pharmacy\": 401 {\"statusCode\":401,\"timestamp\":\"2026-09-07T07:03:58.490Z\",\"path\":\"/masar-service/api/v1/auth\",\"method\":\"POST\",\"correlationId\":\"no-context\",\"message\":\"Http Exception\"} — check EPTTS_EF_PHARMACY_APIKEY in automation-hub/.env (keys cannot be re-read from the platform; if lost they must be rotated again)",
   "TC_SEC_023": "dispensing a pack not in custody is refused",

@@ -234,6 +234,18 @@ const INCIDENTAL_REJECTION = [
   /must not exceed/i,
   /too long/i,
   /unpersistable row/i,
+  // A channel-level refusal answers every dispensing document the same way, so a negative case
+  // expecting "this is refused" passes without the rule under test ever being reached. On the
+  // ngrok relay the platform refuses all dispensing as Dawana-integrated even though the
+  // product reads isDawanaIntegration:false — with that live, 18 partial-dispensing cases went
+  // green while proving nothing. Same failure mode as TC_COMM_011, which "passed" on a batch
+  // length limit rather than on the re-commissioning rule it was written for.
+  /not allowed for Dawana-integrated products/i,
+  /must be dispensed through the Dawana integration/i,
+  // Likewise: billing gates refuse the whole document before any business rule is evaluated.
+  /active billing hold/i,
+  /no registered unit price/i,
+  /blocked by unpaid invoices/i,
 ]
 
 /**
