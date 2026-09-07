@@ -942,6 +942,111 @@ export async function errorOf(res: APIResponse): Promise<NormalisedError> {
   return normaliseError(await bodyOf(res))
 }
 
+// ─── did it actually happen? ─────────────────────────────────────────────────
+
+/** One message's processing record from GET /epcis. */
+export interface MessageRecord {
+  messageId: string
+  status: string
+  eventTypes: string[]
+  totalItems: number
+  processedItems: number
+  failedItems: number
+  errorSummary: string | null
+  failureReasons: unknown[]
+}
+
+/** The instanceIdentifier a document was submitted under. */
+export function instanceIdOf(doc: EpcisDocument): string {
+  const id = doc?.sbdh?.documentIdentification?.instanceIdentifier
+  if (!id) throw new Error('document has no sbdh.documentIdentification.instanceIdentifier')
+  return id
+}
+
+/**
+ * This message's record in the EPCIS processing history, or null if it is not there.
+ *
+ * Newest first and unfiltered — the query parameters are accepted with 200 but do not appear to
+ * narrow anything, so paging is the only reliable way to find a specific message.
+ */
+export async function findMessageRecord(
+  role: Role, instanceIdentifier: string, pages = 3,
+): Promise<MessageRecord | null> {
+  for (let page = 0; page < pages; page++) {
+    const res = await getMasar(role, `/epcis?limit=100&offset=${page * 100}`)
+    if (!res.ok()) return null
+    const body = await res.json().catch(() => null) as { items?: MessageRecord[] } | null
+    const items = body?.items ?? []
+    const hit = items.find((m) => m.messageId === instanceIdentifier)
+    if (hit) return hit
+    if (items.length < 100) return null // ran off the end of the history
+  }
+  return null
+}
+
+/**
+ * Assert a SUCCESS verdict is BACKED BY THE HISTORY — that the work was done, not just accepted.
+ *
+ * MsgStatusQuery answering "S - Successful" says the platform finished processing without
+ * raising an error. It does not say anything was persisted, and it is a single source: if the
+ * write path silently drops an item, the status endpoint has no way to tell us. GET /epcis is a
+ * second, independent read that reports totalItems / processedItems / failedItems for the same
+ * message, so agreement between the two is evidence and disagreement is a defect we would
+ * otherwise have recorded as a pass.
+ *
+ * Four ways a green verdict can still be a lie, all checked here:
+ *   - the message is absent from the history entirely (accepted, never recorded);
+ *   - failedItems > 0 while the verdict says success;
+ *   - processedItems < totalItems, so some EPCs were quietly skipped;
+ *   - totalItems is 0 — a no-op dressed as a success.
+ *
+ * The history can lag the status endpoint by a moment, so a miss is retried before it is
+ * believed. A genuine absence still fails, just a second later.
+ */
+export async function assertEffectRecorded(
+  role: Role, doc: EpcisDocument, what: string,
+): Promise<MessageRecord | null> {
+  // One extra read per successful write. That is real load on a rate-limited relay tunnel, so
+  // there is a way to turn it off for a throughput run — but it is ON by default, because a
+  // suite that cannot tell "done" from "acknowledged" reports work that never happened.
+  if (process.env.EPTTS_VERIFY_EFFECTS === '0') return null
+
+  const id = instanceIdOf(doc)
+
+  let record = await findMessageRecord(role, id)
+  if (!record) {
+    await new Promise((r) => setTimeout(r, 3000))
+    record = await findMessageRecord(role, id)
+  }
+
+  if (!record) {
+    throw new Error(
+      `${what}: the platform reported SUCCESS but message "${id}" is ABSENT from the EPCIS ` +
+      'processing history. Accepted and acknowledged, with nothing recorded.',
+    )
+  }
+
+  const detail =
+    `status=${record.status} totalItems=${record.totalItems} ` +
+    `processedItems=${record.processedItems} failedItems=${record.failedItems}` +
+    (record.errorSummary ? ` errorSummary=${record.errorSummary}` : '') +
+    (record.failureReasons?.length ? ` failureReasons=${JSON.stringify(record.failureReasons)}` : '')
+
+  if (record.totalItems === 0) {
+    throw new Error(`${what}: reported SUCCESS having processed NOTHING — ${detail}`)
+  }
+  if (record.failedItems > 0) {
+    throw new Error(`${what}: reported SUCCESS but the history records failed items — ${detail}`)
+  }
+  if (record.processedItems !== record.totalItems) {
+    throw new Error(
+      `${what}: reported SUCCESS but only ${record.processedItems} of ${record.totalItems} ` +
+      `items were processed — the rest were silently skipped. ${detail}`,
+    )
+  }
+  return record
+}
+
 // ─── test data ───────────────────────────────────────────────────────────────
 //
 // Every value below describes ONE TENANT's catalogue, so each is overridable by an environment

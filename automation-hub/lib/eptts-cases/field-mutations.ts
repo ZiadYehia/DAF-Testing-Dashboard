@@ -21,7 +21,7 @@
  */
 import { expect } from '@playwright/test'
 import {
-  submitAndPoll, describeMsgStatus, sglnOf,
+  submitAndPoll, describeMsgStatus, sglnOf, assertEffectRecorded,
   type EpcisDocument, type Role,
 } from '../eptts-api'
 import type { ApiCase } from './index'
@@ -298,6 +298,8 @@ export async function expectAccepted(role: Role, doc: EpcisDocument, what: strin
   const { submitStatus, msg } = await submitAndPoll(role, doc)
   expect(submitStatus, `${what}: accepted for processing`).toBe(202)
   expect(msg.state, `${what}: ${describeMsgStatus(msg)}`).toBe('SUCCESS')
+  // "Accepted" and "done" are different claims from a single source. Cross-check the second.
+  await assertEffectRecorded(role, doc, what)
 }
 
 export interface FieldCaseOpts {

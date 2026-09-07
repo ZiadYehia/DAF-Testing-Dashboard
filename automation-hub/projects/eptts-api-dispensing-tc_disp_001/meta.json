@@ -13,6 +13,16 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-07T10-49-04-977Z",
+      "status": "fail",
+      "durationMs": 6007.055,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: auth failed for role \"manufacturer\": 500 {\"statusCode\":500,\"timestamp\":\"2026-09-07T10:49:11.082Z\",\"path\":\"/masar-service/api/v1/auth\",\"method\":\"POST\",\"correlationId\":\"no-context\",\"message\":\"Internal server error\"} — check EPTTS_MFG_APIKEY in automation-hub/.env (keys cannot be re-read from the platform; if lost they must be rotated again)",
+      "environment": "ngrok relay"
+    },
+    {
       "ts": "2026-09-07T07-34-50-454Z",
       "status": "fail",
       "durationMs": 39395.513,
