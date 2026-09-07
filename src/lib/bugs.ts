@@ -84,7 +84,10 @@ export async function listBugs(appSlug: string, module?: string | null): Promise
   let qb = ds
     .getRepository(BugEntity)
     .createQueryBuilder('b')
-    .select(['b.id', 'b.slug', 'b.feature', 'b.title', 'b.status', 'b.jiraKey', 'b.reportedAt', 'b.priority', 'b.bugType', 'b.parentKey', 'b.severity', 'b.layer', 'b.jiraStatus', 'b.jiraReporter'])
+    // b.environment is in the list because the select is explicit: omitting it would leave
+    // toSummary reading undefined for every row, and the bug list would show no environment
+    // however well the column was populated.
+    .select(['b.id', 'b.slug', 'b.feature', 'b.title', 'b.status', 'b.jiraKey', 'b.reportedAt', 'b.priority', 'b.bugType', 'b.parentKey', 'b.severity', 'b.layer', 'b.jiraStatus', 'b.jiraReporter', 'b.environment'])
     .where('b.appSlug = :appSlug', { appSlug })
     // Explicit IS NULL SQL rather than IsNull() — see the comment on the
     // equivalent features.ts query: under Turbopack the FindOperator can be

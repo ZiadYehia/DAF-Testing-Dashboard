@@ -18,6 +18,9 @@ import type { BugSummary } from '@/lib/bugs'
 
 interface BugStats { total: number; draft: number; reported: number }
 
+/** Label for bugs not attributed to an environment — every bug filed before this existed. */
+const NO_ENVIRONMENT = '(no environment)'
+
 type SortColumn = 'title' | 'feature' | 'priority' | 'status' | 'reported' | 'jira' | 'jiraStatus'
 
 function priorityRank(priority: string): number {
@@ -45,6 +48,12 @@ export default function BugsPage() {
   const [filterSeverity, setFilterSeverity] = useState<string>('all')
   const [filterType, setFilterType] = useState<string>('all')
   const [filterLayer, setFilterLayer] = useState<string>('all')
+  /**
+   * Which environment's bugs to show. Defaults to 'all' rather than an environment, because a
+   * bug list that silently hid reports would be worse than one that mixes them — the column
+   * says which is which, and the count in the corner follows the filter.
+   */
+  const [filterEnvironment, setFilterEnvironment] = useState<string>('all')
   const [search, setSearch] = useState('')
   const [sortColumn, setSortColumn] = useState<SortColumn | null>(null)
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
@@ -123,6 +132,9 @@ export default function BugsPage() {
   const severities = [...new Set(bugs.map((b) => b.severity).filter(Boolean))].sort()
   const types = [...new Set(bugs.map((b) => b.bug_type).filter(Boolean))].sort()
   const layers = [...new Set(bugs.map((b) => b.layer).filter(Boolean))].sort()
+  // Bugs filed before environments were tracked have none; they are a real group worth
+  // filtering to, so they get a name instead of being unselectable.
+  const environments = [...new Set(bugs.map((b) => b.environment || NO_ENVIRONMENT))].sort()
   const stats: BugStats = {
     total: bugs.length,
     draft: bugs.filter((b) => b.status === 'draft').length,
@@ -137,6 +149,7 @@ export default function BugsPage() {
     if (filterSeverity !== 'all' && b.severity !== filterSeverity) return false
     if (filterType !== 'all' && b.bug_type !== filterType) return false
     if (filterLayer !== 'all' && b.layer !== filterLayer) return false
+    if (filterEnvironment !== 'all' && (b.environment || NO_ENVIRONMENT) !== filterEnvironment) return false
     if (searchQuery) {
       const haystack = [b.title, b.slug, b.feature, b.jira_key].filter(Boolean).join(' ').toLowerCase()
       if (!haystack.includes(searchQuery)) return false
@@ -175,7 +188,8 @@ export default function BugsPage() {
   }) : filtered
 
   const hasActiveFilters = filterStatus !== 'all' || filterFeature !== 'all' || filterPriority !== 'all' ||
-    filterSeverity !== 'all' || filterType !== 'all' || filterLayer !== 'all' || search !== ''
+    filterSeverity !== 'all' || filterType !== 'all' || filterLayer !== 'all' ||
+    filterEnvironment !== 'all' || search !== ''
 
   const toggleSort = (col: SortColumn) => {
     if (sortColumn !== col) { setSortColumn(col); setSortDir('asc') }
@@ -309,12 +323,21 @@ export default function BugsPage() {
           onChange={setFilterLayer}
           className="w-[130px]"
         />
+        <AppSelect
+          options={[
+            { value: 'all', label: 'All Environments' },
+            ...environments.map((e) => ({ value: e, label: e })),
+          ]}
+          value={filterEnvironment}
+          onChange={setFilterEnvironment}
+          className="w-[170px]"
+        />
         {hasActiveFilters && (
           <button className="text-xs text-muted-foreground hover:text-foreground underline transition-colors"
             onClick={() => {
               setFilterStatus('all'); setFilterFeature('all'); setFilterPriority('all')
               setFilterSeverity('all'); setFilterType('all'); setFilterLayer('all')
-              setSearch('')
+              setFilterEnvironment('all'); setSearch('')
             }}>
             Clear filters
           </button>
@@ -347,6 +370,7 @@ export default function BugsPage() {
                       Priority{sortIcon('priority')}
                     </th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide hidden md:table-cell">Type</th>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide hidden lg:table-cell">Environment</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wide cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('status')}>
                       Status{sortIcon('status')}
                     </th>
@@ -388,6 +412,13 @@ export default function BugsPage() {
                       <td className="px-4 py-3"><PriorityBadge priority={b.priority} /></td>
                       <td className="px-4 py-3 hidden md:table-cell">
                         <span className="text-muted-foreground text-xs">{b.bug_type || '—'}</span>
+                      </td>
+                      {/* Named, not blank, when absent: "no environment" is a fact about the
+                          report, whereas an empty cell reads as missing data. */}
+                      <td className="px-4 py-3 hidden lg:table-cell">
+                        <span className={b.environment ? 'text-xs' : 'text-muted-foreground text-xs italic'}>
+                          {b.environment || NO_ENVIRONMENT}
+                        </span>
                       </td>
                       <td className="px-4 py-3"><StatusBadge status={b.status} /></td>
                       <td className="px-4 py-3 hidden md:table-cell">

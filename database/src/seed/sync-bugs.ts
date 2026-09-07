@@ -142,6 +142,10 @@ function diskOwned(filePath: string): Partial<Bug> & { body: string } {
     parentKey: data.parent_key ?? null,
     severity: data.severity ?? '',
     layer: data.layer ?? 'unknown',
+    // Disk-owned like the rest of the authored metadata: which environment a bug was found on is
+    // a fact about the investigation, decided when the report is written, and nothing in the app
+    // edits it. Absent from the frontmatter means not attributed to one.
+    environment: data.environment ?? null,
     body: content.trim(),
   }
 }
