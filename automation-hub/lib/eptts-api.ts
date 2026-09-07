@@ -978,49 +978,20 @@ export async function productByGtin(role: Role, gtin: string): Promise<ProductRe
 }
 
 // ─── did it actually happen? ─────────────────────────────────────────────────
-
-/** One message's processing record from GET /epcis. */
-export interface MessageRecord {
-  messageId: string
-  status: string
-  eventTypes: string[]
-  totalItems: number
-  processedItems: number
-  failedItems: number
-  errorSummary: string | null
-  failureReasons: unknown[]
-}
-
-/** The instanceIdentifier a document was submitted under. */
-export function instanceIdOf(doc: EpcisDocument): string {
-  const id = doc?.sbdh?.documentIdentification?.instanceIdentifier
-  if (!id) throw new Error('document has no sbdh.documentIdentification.instanceIdentifier')
-  return id
-}
-
-/**
- * This message's record in the EPCIS processing history, or null if it is not visible.
- *
- * THE HISTORY CANNOT BE QUERIED FOR ONE MESSAGE. Measured 2026-09-07: `?messageId=`,
- * `?instanceIdentifier=` and `?eventTypes=` are all accepted with 200 and all ignored — a
- * deliberately nonsensical `?messageId=zzz-does-not-exist` returns the same rows as no filter at
- * all. `limit` and `offset` are ignored too: `?limit=50` returns 10, and there is no
- * `/epcis/{messageId}` route. So the visible window is the newest ~10 messages, full stop.
- *
- * An earlier version of this paged with `limit=100&offset=N` and treated a miss as proof the
- * message was never recorded. With limit ignored that only ever inspected one page of 10, so any
- * message pushed out by a multi-step fixture would have been reported as "accepted but never
- * recorded" — a false accusation of a serious platform bug. Hence `null` now means UNKNOWN, and
- * callers must not treat it as absence.
- */
-export async function findMessageRecord(
-  role: Role, instanceIdentifier: string,
-): Promise<MessageRecord | null> {
-  const res = await getMasar(role, '/epcis?limit=100')
-  if (!res.ok()) return null
-  const body = await res.json().catch(() => null) as { items?: MessageRecord[] } | null
-  return (body?.items ?? []).find((m) => m.messageId === instanceIdentifier) ?? null
-}
+//
+// There is deliberately NO message-level effect check here.
+//
+// One existed: it read GET /epcis hunting for the submitted message's processedItems and
+// failedItems. That read cannot be aimed. Measured 2026-09-07: ?messageId=,
+// ?instanceIdentifier= and ?eventTypes= are accepted with 200 and ignored — a deliberately
+// nonsensical id returns the same rows as no filter — limit and offset are ignored so
+// ?limit=100 returns ten rows, and there is no /epcis/{messageId} route. Asking for a hundred
+// records to find one was really asking for ten, and any message pushed out of that window
+// looked like a message the platform had lost.
+//
+// assertPackState is the check that answers the question, because VerifyProduct takes ONE
+// SGTIN and returns that pack's own state: the right granularity, aimed at the item the
+// operation claimed to act on.
 
 /** What a pack should look like after an operation. Only the given fields are asserted. */
 export interface PackExpectation {
@@ -1077,70 +1048,6 @@ export async function assertPackState(
     )
   }
   return pack
-}
-
-/**
- * Assert a SUCCESS verdict is BACKED BY THE HISTORY — that the work was done, not just accepted.
- *
- * MsgStatusQuery answering "S - Successful" says the platform finished processing without
- * raising an error. It does not say anything was persisted, and it is a single source: if the
- * write path silently drops an item, the status endpoint has no way to tell us. GET /epcis is a
- * second, independent read that reports totalItems / processedItems / failedItems for the same
- * message, so agreement between the two is evidence and disagreement is a defect we would
- * otherwise have recorded as a pass.
- *
- * Three ways a green verdict can still be a lie, all checked here:
- *   - failedItems > 0 while the verdict says success;
- *   - processedItems < totalItems, so some EPCs were quietly skipped;
- *   - totalItems is 0 — a no-op dressed as a success.
- *
- * It CANNOT prove absence, because the history is unfilterable and only ~10 deep — see
- * findMessageRecord. A message out of view returns null and is treated as unknown.
- *
- * This is the weaker of the two effect checks. assertPackState is the one that answers
- * whether the operation actually did anything, because it reads the item's own state.
- */
-export async function assertEffectRecorded(
-  role: Role, doc: EpcisDocument, what: string,
-): Promise<MessageRecord | null> {
-  // One extra read per successful write. That is real load on a rate-limited relay tunnel, so
-  // there is a way to turn it off for a throughput run — but it is ON by default, because a
-  // suite that cannot tell "done" from "acknowledged" reports work that never happened.
-  if (process.env.EPTTS_VERIFY_EFFECTS === '0') return null
-
-  const id = instanceIdOf(doc)
-
-  let record = await findMessageRecord(role, id)
-  if (!record) {
-    await new Promise((r) => setTimeout(r, 3000))
-    record = await findMessageRecord(role, id)
-  }
-
-  // NOT an assertion of absence. The history shows only the newest ~10 messages and cannot be
-  // filtered (see findMessageRecord), so a fixture that submits three documents can push its own
-  // first one out of view. Failing here would accuse the platform of losing a message it
-  // recorded perfectly well. Use assertPackState for a real per-item effect check.
-  if (!record) return null
-
-  const detail =
-    `status=${record.status} totalItems=${record.totalItems} ` +
-    `processedItems=${record.processedItems} failedItems=${record.failedItems}` +
-    (record.errorSummary ? ` errorSummary=${record.errorSummary}` : '') +
-    (record.failureReasons?.length ? ` failureReasons=${JSON.stringify(record.failureReasons)}` : '')
-
-  if (record.totalItems === 0) {
-    throw new Error(`${what}: reported SUCCESS having processed NOTHING — ${detail}`)
-  }
-  if (record.failedItems > 0) {
-    throw new Error(`${what}: reported SUCCESS but the history records failed items — ${detail}`)
-  }
-  if (record.processedItems !== record.totalItems) {
-    throw new Error(
-      `${what}: reported SUCCESS but only ${record.processedItems} of ${record.totalItems} ` +
-      `items were processed — the rest were silently skipped. ${detail}`,
-    )
-  }
-  return record
 }
 
 // ─── test data ───────────────────────────────────────────────────────────────

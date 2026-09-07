@@ -21,7 +21,7 @@
  */
 import { expect } from '@playwright/test'
 import {
-  submitAndPoll, describeMsgStatus, sglnOf, assertEffectRecorded,
+  submitAndPoll, describeMsgStatus, sglnOf,
   type EpcisDocument, type Role,
 } from '../eptts-api'
 import type { ApiCase } from './index'
@@ -322,8 +322,9 @@ export async function expectAccepted(role: Role, doc: EpcisDocument, what: strin
   const { submitStatus, msg } = await submitAndPoll(role, doc)
   expect(submitStatus, `${what}: accepted for processing`).toBe(202)
   expect(msg.state, `${what}: ${describeMsgStatus(msg)}`).toBe('SUCCESS')
-  // "Accepted" and "done" are different claims from a single source. Cross-check the second.
-  await assertEffectRecorded(role, doc, what)
+  // No effect cross-check here: a field-mutation case knows only that the document was
+  // accepted, not which pack should end up in which state, so there is nothing specific to read
+  // back. Cases that DO know — shipping, packing, dispensing — use assertPackState on the EPC.
 }
 
 export interface FieldCaseOpts {

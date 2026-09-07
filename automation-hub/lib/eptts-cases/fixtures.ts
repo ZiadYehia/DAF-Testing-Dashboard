@@ -26,7 +26,6 @@ import {
   MFG_GTINS,
   type EpcisDocument, type Role,
   uniqueBizTransaction,
-  assertEffectRecorded,
 } from '../eptts-api'
 
 const MFG = () => glnFor('manufacturer')
@@ -38,10 +37,6 @@ async function step(role: Role, doc: EpcisDocument, what: string): Promise<void>
   const { submitStatus, msg } = await submitAndPoll(role, doc)
   expect(submitStatus, `fixture: ${what} was not accepted (HTTP ${submitStatus})`).toBe(202)
   expect(msg.state, `fixture: ${what} did not succeed — ${describeMsgStatus(msg)}`).toBe('SUCCESS')
-  // A green verdict is not proof the stock exists. Every case downstream of this fixture
-  // assumes the step really happened, so the claim is checked against the EPCIS history
-  // before anything is built on top of it.
-  await assertEffectRecorded(role, doc, `fixture: ${what}`)
 }
 
 // ─── commissioning ───────────────────────────────────────────────────────────

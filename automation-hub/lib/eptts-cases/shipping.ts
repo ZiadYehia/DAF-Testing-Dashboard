@@ -165,26 +165,43 @@ const shippingBusiness: ApiCase[] = [
     title: 'shipping an SSCC not owned by the sender is refused',
     run: async () => {
       const p = await packed(1)
-      // The branch does not own this SSCC; it is still with the manufacturer.
-      await expectRejected('branch', shipDoc([p.sscc], 'branch', 'pharmacy'), 'branch shipping a manufacturer SSCC')
 
       /**
-       * And whatever the verdict, the pack must be untouched.
+       * Two separate questions, and the second is the one that was never being asked.
        *
-       * The refusal assertion above passes or fails on the message status alone, which misses
-       * the shape this defect actually has. Measured on the relay: the platform answered
-       * "S - Successful", left currentGln as the manufacturer, and still flipped status to
-       * in_transit — a half-applied event. So an unauthorised sender cannot move the goods but
-       * CAN change their state, which the message-level check reported as a clean success.
+       * Was the event refused? And whatever the answer, WHAT DID IT DO to the pack? An earlier
+       * version awaited expectRejected first, which throws the moment the platform accepts — so
+       * the read-back below never ran and the only thing ever reported was "accepted, should
+       * have been refused". That misses the actual shape of the defect. Measured on the relay:
+       * the platform answers "S - Successful", leaves currentGln as the manufacturer, and still
+       * flips status to in_transit. Half-applied — an unauthorised sender cannot move the goods
+       * but can change their state.
+       *
+       * So the refusal is captured rather than thrown, the pack is always read, and all three
+       * facts are asserted softly so one run reports the whole picture instead of the first
+       * thing to go wrong.
        */
-      const pack = await assertPackState('manufacturer', p.sgtins[0], {
-        custodyGln: glnFor('manufacturer'),
-        status: 'active',
-      }, 'a refused shipment must leave the pack exactly as it was')
-      // sameSscc, not a string slice: parentSscc comes back as the 18-digit element string
-      // with its check digit, which is not a substring of the URN form.
-      expect(sameSscc(p.sscc, pack.parentSscc),
-        `the pack must still be in ${p.sscc}; parentSscc is ${pack.parentSscc}`).toBe(true)
+      let refusalFailure: string | null = null
+      try {
+        await expectRejected('branch', shipDoc([p.sscc], 'branch', 'pharmacy'),
+          'branch shipping a manufacturer SSCC')
+      } catch (err) {
+        refusalFailure = err instanceof Error ? err.message : String(err)
+      }
+
+      const after = await packOf('manufacturer', p.sgtins[0])
+      const seen = `currentGln=${after.pack?.currentGln} status=${after.pack?.status} `
+        + `parentSscc=${after.pack?.parentSscc}`
+
+      expect.soft(refusalFailure, `the shipment must be refused — ${refusalFailure ?? ''}`).toBeNull()
+      expect.soft(after.pack?.currentGln,
+        `custody must NOT move on a refused shipment. ${seen}`).toBe(glnFor('manufacturer'))
+      expect.soft(after.pack?.status,
+        `status must NOT change on a refused shipment. ${seen}`).toBe('active')
+      // sameSscc, not a string slice: parentSscc is the 18-digit element string with its check
+      // digit, which is not a substring of the URN form.
+      expect.soft(sameSscc(p.sscc, after.pack?.parentSscc),
+        `the pack must still be in ${p.sscc}. ${seen}`).toBe(true)
     },
   },
   {
