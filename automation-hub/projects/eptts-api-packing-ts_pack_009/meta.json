@@ -13,6 +13,16 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-07T20-01-39-548Z",
+      "status": "fail",
+      "durationMs": 28256.11,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: duplicate children: the platform ACCEPTED input it should refuse — http=200 raw=\"S - Successful\" state=SUCCESS polls=6 logs=[I: Packing event processed successfully | I: Message processed successfully — all 1 event(s) completed]",
+      "environment": "ngrok relay"
+    },
+    {
       "ts": "2026-09-06T13-09-15-617Z",
       "status": "fail",
       "durationMs": 1066,
@@ -46,5 +56,9 @@
     "write"
   ],
   "folder": "EPTTS APIs / api-packing",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "ngrok relay": "fail",
+    "(no environment)": "fail"
+  }
 }

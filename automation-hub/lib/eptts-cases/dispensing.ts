@@ -59,9 +59,9 @@ function dispDoc(epcList: string[], readPointRole: Role = 'pharmacy'): EpcisDocu
  * endpoint-level role gate that SendEPCIS lacks. See dispensation() in ../eptts-api.ts.)
  */
 async function dispense(role: Role, doc: EpcisDocument) {
-  const { submitStatus, submitBody, msg } = await submitAndPoll(role, doc)
-  if (submitStatus >= 400) return { status: submitStatus, body: submitBody, msg: null }
-  return { status: submitStatus, body: submitBody, msg }
+  const { submitStatus, submitBody, msg, postState } = await submitAndPoll(role, doc)
+  if (submitStatus >= 400) return { status: submitStatus, body: submitBody, msg: null, postState }
+  return { status: submitStatus, body: submitBody, msg, postState }
 }
 
 /**
@@ -86,13 +86,17 @@ async function expectDispensed(
   expect([200, 202], `${what}: acknowledged — got ${r.status}`).toContain(r.status)
   expect(r.msg?.state, `${what}: ${r.msg ? describeMsgStatus(r.msg) : 'no poll'}`).toBe('SUCCESS')
 
+  // Assert on the read submitAndPoll already made, and only ask again for an EPC it did not
+  // cover (it caps at MAX_POST_STATE_EPCS, and skips entirely under EPTTS_VERIFY_EFFECTS=0).
+  // Reading the same SGTIN twice a few milliseconds apart told us nothing the first read had
+  // not: TC_DISP_001 verified one pack three times and the first answer was already correct.
   for (const epc of epcs) {
-    const v = await packOf(role, epc)
-    const seen = `status=${v.pack?.status} currentGln=${v.pack?.currentGln}`
+    const pack = epc in r.postState ? r.postState[epc] : (await packOf(role, epc)).pack
+    const seen = `status=${pack?.status} currentGln=${pack?.currentGln}`
     console.log(`[disp] ${what}: ${epc} ${seen}`)
-    expect.soft(v.pack?.status,
+    expect.soft(pack?.status,
       `${what}: ${epc} must be dispensed afterwards. ${seen}`).toBe('dispensed')
-    expect.soft(v.pack?.currentGln,
+    expect.soft(pack?.currentGln,
       `${what}: dispensing must not move custody. ${seen}`).toBe(glnFor(role))
   }
 }
@@ -123,9 +127,10 @@ const business: ApiCase[] = [
     title: 'a pharmacy dispenses a valid SGTIN',
     run: async () => {
       const a = await atPharmacy(1)
+      // No closing packOf: expectDispensed already asserts status === 'dispensed' AND that
+      // custody stayed at the pharmacy, from the read submitAndPoll made when the message
+      // settled. A third identical read is cost with no coverage.
       await expectDispensed('pharmacy', dispDoc([a.sgtins[0]]), 'dispense one pack', [a.sgtins[0]])
-      const v = await packOf('pharmacy', a.sgtins[0])
-      expect(v.pack?.status, 'the pack becomes dispensed').toBe('dispensed')
     },
   },
   {

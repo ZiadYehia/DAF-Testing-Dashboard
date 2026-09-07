@@ -13,6 +13,25 @@
   "lastStatus": "pass",
   "runs": [
     {
+      "ts": "2026-09-07T20-14-06-674Z",
+      "status": "pass",
+      "durationMs": 3915.0830000000005,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "ngrok relay"
+    },
+    {
+      "ts": "2026-09-07T20-06-10-009Z",
+      "status": "fail",
+      "durationMs": 5052.126,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: an empty token is unauthorized",
+      "environment": "ngrok relay"
+    },
+    {
       "ts": "2026-09-06T12-05-40-020Z",
       "status": "pass",
       "durationMs": 788,
@@ -60,5 +79,9 @@
     "write"
   ],
   "folder": "EPTTS APIs / api-commission",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "ngrok relay": "pass",
+    "(no environment)": "pass"
+  }
 }

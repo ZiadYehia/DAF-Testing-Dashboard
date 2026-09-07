@@ -13,6 +13,25 @@
   "lastStatus": "pass",
   "runs": [
     {
+      "ts": "2026-09-07T20-14-12-720Z",
+      "status": "pass",
+      "durationMs": 3553.1449999999995,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "ngrok relay"
+    },
+    {
+      "ts": "2026-09-07T20-06-16-982Z",
+      "status": "fail",
+      "durationMs": 5372.961,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: the request still succeeds on the bearer token alone",
+      "environment": "ngrok relay"
+    },
+    {
       "ts": "2026-09-06T12-05-40-828Z",
       "status": "pass",
       "durationMs": 553,
@@ -60,5 +79,9 @@
     "write"
   ],
   "folder": "EPTTS APIs / api-commission",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "ngrok relay": "pass",
+    "(no environment)": "pass"
+  }
 }

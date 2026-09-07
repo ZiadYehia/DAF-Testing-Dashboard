@@ -13,6 +13,33 @@
   "lastStatus": "pass",
   "runs": [
     {
+      "ts": "2026-09-07T20-12-23-887Z",
+      "status": "pass",
+      "durationMs": 9359.418,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "ngrok relay"
+    },
+    {
+      "ts": "2026-09-07T20-07-22-416Z",
+      "status": "pass",
+      "durationMs": 8892.447,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "ngrok relay"
+    },
+    {
+      "ts": "2026-09-07T20-05-13-492Z",
+      "status": "pass",
+      "durationMs": 3535.9089999999997,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "ngrok relay"
+    },
+    {
       "ts": "2026-09-06T12-05-31-323Z",
       "status": "pass",
       "durationMs": 733,
@@ -60,5 +87,9 @@
     "write"
   ],
   "folder": "EPTTS APIs / api-commission",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "ngrok relay": "pass",
+    "(no environment)": "pass"
+  }
 }

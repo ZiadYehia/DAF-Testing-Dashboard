@@ -10,8 +10,27 @@
     "testcaseId": "TC_COMM_004"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "pass",
+  "lastStatus": "fail",
   "runs": [
+    {
+      "ts": "2026-09-07T20-11-57-415Z",
+      "status": "fail",
+      "durationMs": 5925.567,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "ngrok relay"
+    },
+    {
+      "ts": "2026-09-07T20-05-00-235Z",
+      "status": "fail",
+      "durationMs": 3456.1580000000004,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: auth failed for role \"manufacturer\": 502 {} — check EPTTS_MFG_APIKEY in automation-hub/.env (keys cannot be re-read from the platform; if lost they must be rotated again)",
+      "environment": "ngrok relay"
+    },
     {
       "ts": "2026-09-06T12-05-28-861Z",
       "status": "pass",
@@ -82,5 +101,9 @@
     "known-gap"
   ],
   "folder": "EPTTS APIs / api-commission",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "ngrok relay": "fail",
+    "(no environment)": "fail"
+  }
 }

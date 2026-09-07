@@ -13,6 +13,16 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-07T20-14-27-336Z",
+      "status": "fail",
+      "durationMs": 117941.22600000001,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: dispense one pack: urn:epc:id:sgtin:5413868.011045.ZTGMTROIS385OT0001 must be dispensed afterwards. status=undefined currentGln=undefined",
+      "environment": "ngrok relay"
+    },
+    {
       "ts": "2026-09-07T19-15-28-287Z",
       "status": "fail",
       "durationMs": 64999,

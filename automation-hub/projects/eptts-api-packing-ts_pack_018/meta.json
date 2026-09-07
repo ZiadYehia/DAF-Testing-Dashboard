@@ -10,8 +10,18 @@
     "testcaseId": "TS_PACK_018"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "never_run",
-  "runs": [],
+  "lastStatus": "pass",
+  "runs": [
+    {
+      "ts": "2026-09-07T20-04-27-653Z",
+      "status": "pass",
+      "durationMs": 2842.638,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": false,
+      "environment": "ngrok relay"
+    }
+  ],
   "tags": [
     "api",
     "write",
@@ -19,5 +29,8 @@
     "blocked"
   ],
   "folder": "EPTTS APIs / api-packing",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "ngrok relay": "pass"
+  }
 }

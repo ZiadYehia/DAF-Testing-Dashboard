@@ -617,7 +617,19 @@ export async function submitAndPoll(
   role: Role,
   document: EpcisDocument,
   opts: { endpoint?: '/scp/SendEPCIS' | '/epcis/json'; timeoutMs?: number } = {},
-): Promise<{ submitStatus: number; submitBody: unknown; instanceIdentifier: string; msg: MsgStatus }> {
+): Promise<{
+  submitStatus: number
+  submitBody: unknown
+  instanceIdentifier: string
+  msg: MsgStatus
+  /**
+   * What the post-state read saw, keyed by EPC — so a case can assert on it instead of
+   * asking again. Empty when the read was skipped (EPTTS_VERIFY_EFFECTS=0, nothing settled,
+   * no serialized EPC in the document) and short of the document's EPCs beyond
+   * MAX_POST_STATE_EPCS, so a consumer must treat a missing key as "not read" and fall back.
+   */
+  postState: Record<string, PackState | null>
+}> {
   const iid = document.sbdh.documentIdentification.instanceIdentifier
   const res = await sendEpcis(role, document, { endpoint: opts.endpoint })
   let submitBody: unknown = null
@@ -629,8 +641,8 @@ export async function submitAndPoll(
       }
     : await pollMsgStatus(role, iid, { timeoutMs: opts.timeoutMs })
 
-  await recordPostState(role, document, msg)
-  return { submitStatus: res.status(), submitBody, instanceIdentifier: iid, msg }
+  const postState = await recordPostState(role, document, msg)
+  return { submitStatus: res.status(), submitBody, instanceIdentifier: iid, msg, postState }
 }
 
 /**
@@ -652,15 +664,24 @@ export async function submitAndPoll(
  * Costs one read per message. Capped at MAX_POST_STATE_EPCS because a document may carry
  * thousands — one security case submits 5000 EPCs, and reading them all would dwarf the suite.
  * Turn the whole thing off with EPTTS_VERIFY_EFFECTS=0 for a throughput run.
+ *
+ * RETURNS what it read, rather than discarding it. It used to call VerifyProduct purely so the
+ * call appeared in the exchange log, which meant the assertion layer then asked the platform
+ * the same question again: TC_DISP_001 read one SGTIN back three times — this observation, the
+ * post-condition in expectDispensed, and the case's own closing check — and the first answer
+ * was already the right one. Handing the state back makes one read serve all three.
  */
 const MAX_POST_STATE_EPCS = 2
 
-async function recordPostState(role: Role, document: EpcisDocument, msg: MsgStatus): Promise<void> {
-  if (process.env.EPTTS_VERIFY_EFFECTS === '0') return
-  if (!msg.terminal) return // nothing settled yet, so nothing to describe
+async function recordPostState(
+  role: Role, document: EpcisDocument, msg: MsgStatus,
+): Promise<Record<string, PackState | null>> {
+  const seen: Record<string, PackState | null> = {}
+  if (process.env.EPTTS_VERIFY_EFFECTS === '0') return seen
+  if (!msg.terminal) return seen // nothing settled yet, so nothing to describe
 
   const event = document.epcisBody?.eventList?.[0] as Record<string, unknown> | undefined
-  if (!event) return
+  if (!event) return seen
   // VerifyProduct takes a serialized identifier — an SGTIN or an SSCC — so the parent and the
   // children are both askable, and a bare GTIN is not (it answers 500).
   const epcs = [
@@ -671,12 +692,14 @@ async function recordPostState(role: Role, document: EpcisDocument, msg: MsgStat
 
   for (const epc of epcs) {
     try {
-      await verifyProduct(role, epc)
+      seen[epc] = (await packOf(role, epc)).pack
     } catch {
       // A read-back that fails must never fail the case: it is describing what happened, not
-      // deciding it. The submission's own verdict already stands.
+      // deciding it. The submission's own verdict already stands. The EPC is left out of the
+      // map rather than recorded as null, so a consumer reads it back itself.
     }
   }
+  return seen
 }
 
 // ─── identifiers ─────────────────────────────────────────────────────────────
@@ -1210,12 +1233,17 @@ export interface PackExpectation {
  */
 export async function assertPackState(
   role: Role, sgtin: string, expected: PackExpectation, what: string,
+  /**
+   * A state already read for this EPC — pass submitAndPoll's `postState[sgtin]` to assert on
+   * the read that already happened instead of making a second identical call. Omit it (or pass
+   * undefined) to read now; `null` means "read, and there was no pack", which still fails.
+   */
+  known?: PackState | null,
 ): Promise<PackState> {
-  const result = await packOf(role, sgtin)
-  const pack = result.pack
+  const pack = known !== undefined ? known : (await packOf(role, sgtin)).pack
   if (!pack) {
     throw new Error(
-      `${what}: VerifyProduct returned no pack for ${sgtin} — verified=${result.verified}. ` +
+      `${what}: VerifyProduct returned no pack for ${sgtin}. ` +
       'The pack the operation claimed to act on cannot be read back.',
     )
   }

@@ -10,8 +10,18 @@
     "testcaseId": "TC_COMM_045"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "never_run",
-  "runs": [],
+  "lastStatus": "pass",
+  "runs": [
+    {
+      "ts": "2026-09-07T20-18-07-993Z",
+      "status": "pass",
+      "durationMs": 2742.506,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": false,
+      "environment": "ngrok relay"
+    }
+  ],
   "tags": [
     "api",
     "write",
@@ -19,5 +29,8 @@
     "blocked"
   ],
   "folder": "EPTTS APIs / api-commission",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "ngrok relay": "pass"
+  }
 }

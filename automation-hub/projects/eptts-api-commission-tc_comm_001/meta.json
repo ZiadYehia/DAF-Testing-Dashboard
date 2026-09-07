@@ -13,6 +13,44 @@
   "lastStatus": "pass",
   "runs": [
     {
+      "ts": "2026-09-07T20-11-21-570Z",
+      "status": "pass",
+      "durationMs": 5398.4710000000005,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "ngrok relay"
+    },
+    {
+      "ts": "2026-09-07T20-10-30-657Z",
+      "status": "pass",
+      "durationMs": 16299.039999999999,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "ngrok relay"
+    },
+    {
+      "ts": "2026-09-07T20-05-50-903Z",
+      "status": "fail",
+      "durationMs": 5923.3330000000005,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: single commission: accepted for processing",
+      "environment": "ngrok relay"
+    },
+    {
+      "ts": "2026-09-07T20-04-39-427Z",
+      "status": "fail",
+      "durationMs": 5418.516,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: auth failed for role \"manufacturer\": 502 {} — check EPTTS_MFG_APIKEY in automation-hub/.env (keys cannot be re-read from the platform; if lost they must be rotated again)",
+      "environment": "ngrok relay"
+    },
+    {
       "ts": "2026-09-06T12-05-24-973Z",
       "status": "pass",
       "durationMs": 1196,
@@ -117,5 +155,9 @@
     "write"
   ],
   "folder": "EPTTS APIs / api-commission",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "ngrok relay": "pass",
+    "(no environment)": "fail"
+  }
 }

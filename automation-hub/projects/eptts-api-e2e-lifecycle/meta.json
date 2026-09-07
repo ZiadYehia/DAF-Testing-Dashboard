@@ -9,6 +9,16 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-07T20-20-02-411Z",
+      "status": "fail",
+      "durationMs": 20480.904,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: platform verdict on the event: expected MsgStatusQuery → SUCCESS, actual FAILED — Shipping event failed: Shipping blocked by unpaid invoices. Outstanding cents: 17500 | Message processing failed — 1 of 1 event(s) encountered errors",
+      "environment": "ngrok relay"
+    },
+    {
       "ts": "2026-09-07T15-59-39-816Z",
       "status": "fail",
       "durationMs": 135948.902,
