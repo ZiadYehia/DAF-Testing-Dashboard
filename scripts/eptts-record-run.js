@@ -68,10 +68,18 @@ const WRITE = process.argv.includes('--write')
 const positional = process.argv.slice(2).filter(
   (a, i, all) => !a.startsWith('--') && all[i - 1] !== '--app' && all[i - 1] !== '--environment',
 )
-const reportPath = positional[0]
+/**
+ * Every report given, in order. LATER REPORTS WIN per case.
+ *
+ * The usage line always advertised `[more.json ...]` but only positional[0] was ever read, so
+ * passing a re-run alongside the original silently recorded the original and dropped the
+ * re-run — the exact opposite of the intent, and invisible because the tally still looked
+ * plausible. Order matters: pass the oldest report first so a later re-run supersedes it.
+ */
+const reportPaths = positional
 
-if (!reportPath || !fs.existsSync(reportPath)) {
-  console.error('usage: node scripts/eptts-record-run.js <report.json> --app <slug> [--write]')
+if (!reportPaths.length || reportPaths.some((r) => !fs.existsSync(r))) {
+  console.error('usage: node scripts/eptts-record-run.js <report.json> [more.json ...] --app <slug> [--environment <name>] [--write]')
   process.exit(1)
 }
 
@@ -182,7 +190,30 @@ function issueOf(error) {
   return head.replace(/^Error:\s*/, '').slice(0, 900) || clean[0].slice(0, 900)
 }
 
-const results = flatten(JSON.parse(fs.readFileSync(reportPath, 'utf8')))
+/**
+ * Merge on the case title, later reports winning — EXCEPT that an unreachable platform never
+ * displaces a real verdict.
+ *
+ * Plain last-wins made coverage worse the moment a re-run hit a flaky tunnel: the later report's
+ * gateway 502 overwrote the earlier report's genuine pass, and 29 verified results turned into
+ * "not recorded". A 502 is the absence of an answer, so it must not evict an answer we already
+ * have. Between two real verdicts the later one still wins, which is the point of re-running.
+ */
+const byTitle = new Map()
+for (const rp of reportPaths) {
+  for (const r of flatten(JSON.parse(fs.readFileSync(rp, 'utf8')))) {
+    const prev = byTitle.get(r.title)
+    const incomingIsNoAnswer = r.ran === 'failed' && isInfrastructureFailure(r.error)
+    const prevHasAnswer = prev && !(prev.ran === 'failed' && isInfrastructureFailure(prev.error))
+    if (incomingIsNoAnswer && prevHasAnswer) continue
+    byTitle.set(r.title, r)
+  }
+}
+const results = [...byTitle.values()]
+if (reportPaths.length > 1) {
+  console.log(`merged ${reportPaths.length} report(s) -> ${results.length} case result(s), later reports winning
+`)
+}
 
 // ─── map case id -> feature, from the authored tables ────────────────────────
 

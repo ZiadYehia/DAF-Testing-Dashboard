@@ -39,7 +39,25 @@ const APPS = ['eptts-api']
 /** Most exchanges to attach per bug. One bug covers 15 cases; 15 images would bury the point. */
 const MAX_PER_BUG = 3
 const WRITE = process.argv.includes('--write')
-const REPORTS = process.argv.slice(2).filter((a) => !a.startsWith('--'))
+
+/**
+ * Only rebuild bugs whose slug contains this substring.
+ *
+ * Without it a single run rewrites EVERY bug's attachments from whichever report was passed,
+ * which silently replaces one environment's evidence with another's: regenerating after a relay
+ * run would overwrite the production exchanges on production bugs with relay ones, leaving the
+ * report describing a host it was never found on. Evidence has to stay with the environment that
+ * produced it, so a targeted rebuild needs a way to say which bug it means.
+ */
+const ONLY = (() => {
+  const i = process.argv.indexOf('--only')
+  return i !== -1 && process.argv[i + 1] && !process.argv[i + 1].startsWith('--')
+    ? process.argv[i + 1]
+    : null
+})()
+const REPORTS = process.argv.slice(2).filter(
+  (a, i, all) => !a.startsWith('--') && all[i - 1] !== '--only',
+)
 
 if (!REPORTS.length || REPORTS.some((r) => !fs.existsSync(r))) {
   console.error('usage: node scripts/eptts-api-bug-evidence.js <report.json> [more.json ...] [--write]')
@@ -125,8 +143,13 @@ function exchangeHtml(caseId, list) {
   const { submission, verdict, fixtures } = keyExchanges(list)
   if (!submission) return null
 
+  // redact() the HEADERS too, not just the bodies. It was applied to requestBody/responseBody
+  // only, so every rendered attachment carried a full `Authorization: Bearer eyJ…` while the
+  // footer claimed "Credentials masked" — a live token baked into a .jpg under data/, which is
+  // committed and goes out with the Jira report. Short-lived is not the same as safe to publish,
+  // and a footer that promises masking has to be true.
   const headers = Object.entries(submission.requestHeaders ?? {})
-    .map(([k, v]) => `${esc(k)}: ${esc(v)}`).join('\n')
+    .map(([k, v]) => `${esc(k)}: ${esc(redact(v))}`).join('\n')
   const ok = submission.status < 400
 
   return `<div class="wrap">
@@ -188,6 +211,7 @@ for (const app of APPS) {
       if (!entry.endsWith('.md') || entry === '_template.md') continue
       const file = path.join(dir, entry)
       const slug = entry.replace(/\.md$/, '')
+      if (ONLY && !slug.includes(ONLY)) continue
       let text = fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n')
 
       const covers = [...(text.match(/\*\*Covers test cases?:\*\*[^\n]*/g) ?? []).join(' ')
@@ -232,15 +256,32 @@ for (const app of APPS) {
           ? ` The same shape repeats for ${omitted.map((id) => `\`${id}\``).join(', ')}.`
           : '')
 
-      // Replace an existing pointer rather than stacking duplicates.
-      text = text.replace(new RegExp(`${NOTES_MARK.replace(/[*]/g, '\\$&')}[^\\n]*\\n?`), '')
-      const notesAt = text.indexOf('**Notes:**')
-      text = notesAt === -1
-        ? `${text.replace(/\s*$/, '')}\n---\n**Notes:**\n${pointer}\n`
-        : `${text.slice(0, notesAt + '**Notes:**'.length)}\n${pointer}\n${text.slice(notesAt + '**Notes:**'.length)}`
+      /**
+       * The pointer goes in the attachments folder, NOT into the body.
+       *
+       * bug-format.md is explicit that the template ends at Bug Type and there is no Notes
+       * section — a reader should reach the defect without scrolling past housekeeping. This
+       * script used to append one anyway, which made every bug it touched fail
+       * scripts/eptts-validate-bugs.js on two counts ("has a Notes section" and a --- rule with
+       * no blank line around it). `<slug>-attachments/analysis.md` is where the existing bugs
+       * already keep this, so it goes there and the body is left alone.
+       */
+      const analysisPath = path.join(adir, 'analysis.md')
+      const analysis =
+        `# Evidence for ${slug}\n\n`
+        + 'Kept beside the bug rather than in its body: bug-format.md ends the template at Bug\n'
+        + 'Type. Not an attachment the platform indexes (only images and video are).\n\n'
+        + `${pointer}\n`
 
-      text = text.replace(/\n{3,}/g, '\n\n')
-      bodyEdits.push({ file, next: text, label: `${feature}/${slug.slice(0, 46)}`, names })
+      // Strip any Notes section a previous version of this script appended, so re-running
+      // repairs those bugs instead of leaving the violation in place.
+      const staleNotes = text.indexOf('---\n**Notes:**')
+      if (staleNotes !== -1) text = text.slice(0, staleNotes)
+
+      text = text.replace(/\n{3,}/g, '\n\n').replace(/\s*$/, '') + '\n'
+      bodyEdits.push({
+        file, next: text, label: `${feature}/${slug.slice(0, 46)}`, names, analysisPath, analysis,
+      })
     }
   }
 }
@@ -296,5 +337,10 @@ if (missing.length) {
   process.exit(1)
 }
 
-for (const e of bodyEdits) fs.writeFileSync(e.file, e.next)
+for (const e of bodyEdits) {
+  fs.writeFileSync(e.file, e.next)
+  // The evidence pointer lives beside the attachments, never in the body — see bug-format.md.
+  fs.mkdirSync(path.dirname(e.analysisPath), { recursive: true })
+  fs.writeFileSync(e.analysisPath, e.analysis)
+}
 console.log(`\n${jobs.length} image(s) rendered, ${bodyEdits.length} bug body(ies) simplified`)
