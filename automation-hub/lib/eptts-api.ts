@@ -999,24 +999,84 @@ export function instanceIdOf(doc: EpcisDocument): string {
 }
 
 /**
- * This message's record in the EPCIS processing history, or null if it is not there.
+ * This message's record in the EPCIS processing history, or null if it is not visible.
  *
- * Newest first and unfiltered — the query parameters are accepted with 200 but do not appear to
- * narrow anything, so paging is the only reliable way to find a specific message.
+ * THE HISTORY CANNOT BE QUERIED FOR ONE MESSAGE. Measured 2026-09-07: `?messageId=`,
+ * `?instanceIdentifier=` and `?eventTypes=` are all accepted with 200 and all ignored — a
+ * deliberately nonsensical `?messageId=zzz-does-not-exist` returns the same rows as no filter at
+ * all. `limit` and `offset` are ignored too: `?limit=50` returns 10, and there is no
+ * `/epcis/{messageId}` route. So the visible window is the newest ~10 messages, full stop.
+ *
+ * An earlier version of this paged with `limit=100&offset=N` and treated a miss as proof the
+ * message was never recorded. With limit ignored that only ever inspected one page of 10, so any
+ * message pushed out by a multi-step fixture would have been reported as "accepted but never
+ * recorded" — a false accusation of a serious platform bug. Hence `null` now means UNKNOWN, and
+ * callers must not treat it as absence.
  */
 export async function findMessageRecord(
-  role: Role, instanceIdentifier: string, pages = 3,
+  role: Role, instanceIdentifier: string,
 ): Promise<MessageRecord | null> {
-  for (let page = 0; page < pages; page++) {
-    const res = await getMasar(role, `/epcis?limit=100&offset=${page * 100}`)
-    if (!res.ok()) return null
-    const body = await res.json().catch(() => null) as { items?: MessageRecord[] } | null
-    const items = body?.items ?? []
-    const hit = items.find((m) => m.messageId === instanceIdentifier)
-    if (hit) return hit
-    if (items.length < 100) return null // ran off the end of the history
+  const res = await getMasar(role, '/epcis?limit=100')
+  if (!res.ok()) return null
+  const body = await res.json().catch(() => null) as { items?: MessageRecord[] } | null
+  return (body?.items ?? []).find((m) => m.messageId === instanceIdentifier) ?? null
+}
+
+/** What a pack should look like after an operation. Only the given fields are asserted. */
+export interface PackExpectation {
+  /** GLN that must now hold the pack — the custody-transfer check. */
+  custodyGln?: string
+  /** Lifecycle state, lowercase: active | in_transit | dispensed | … */
+  status?: string
+  /** Parent SSCC, or null to assert the pack is loose. */
+  parentSscc?: string | null
+}
+
+/**
+ * Assert what actually happened TO THE PACK, which is the only check that answers "did the
+ * platform do it, or just say so".
+ *
+ * This is the per-item read the message-level check could not be: VerifyProduct takes one SGTIN
+ * and returns that pack's real state, so there is no paging, no window and no guessing about
+ * which record belongs to our submission.
+ *
+ * Worth the trouble because a green verdict can hide a HALF-APPLIED event. Measured on the relay:
+ * a branch shipped an SSCC belonging to the manufacturer, the platform answered "S - Successful",
+ * and afterwards the child's `status` had changed to `in_transit` while `currentGln` was still the
+ * manufacturer. The message-count check saw processedItems=1 and was satisfied; only the pack
+ * state showed that custody never moved.
+ *
+ * NOTE: pass an SGTIN, not a GTIN. VerifyProduct answers 500 E901 for a bare GTIN.
+ */
+export async function assertPackState(
+  role: Role, sgtin: string, expected: PackExpectation, what: string,
+): Promise<PackState> {
+  const result = await packOf(role, sgtin)
+  const pack = result.pack
+  if (!pack) {
+    throw new Error(
+      `${what}: VerifyProduct returned no pack for ${sgtin} — verified=${result.verified}. ` +
+      'The pack the operation claimed to act on cannot be read back.',
+    )
   }
-  return null
+
+  const seen = `currentGln=${pack.currentGln} status=${pack.status} parentSscc=${pack.parentSscc}`
+  if (expected.custodyGln !== undefined && pack.currentGln !== expected.custodyGln) {
+    throw new Error(
+      `${what}: custody did NOT move — expected ${sgtin} to be held by ` +
+      `${expected.custodyGln}, it is held by ${pack.currentGln}. ${seen}`,
+    )
+  }
+  if (expected.status !== undefined && pack.status !== expected.status) {
+    throw new Error(`${what}: expected status "${expected.status}", got "${pack.status}". ${seen}`)
+  }
+  if (expected.parentSscc !== undefined && (pack.parentSscc ?? null) !== expected.parentSscc) {
+    throw new Error(
+      `${what}: expected parentSscc ${JSON.stringify(expected.parentSscc)}, ` +
+      `got ${JSON.stringify(pack.parentSscc)}. ${seen}`,
+    )
+  }
+  return pack
 }
 
 /**
@@ -1029,14 +1089,16 @@ export async function findMessageRecord(
  * message, so agreement between the two is evidence and disagreement is a defect we would
  * otherwise have recorded as a pass.
  *
- * Four ways a green verdict can still be a lie, all checked here:
- *   - the message is absent from the history entirely (accepted, never recorded);
+ * Three ways a green verdict can still be a lie, all checked here:
  *   - failedItems > 0 while the verdict says success;
  *   - processedItems < totalItems, so some EPCs were quietly skipped;
  *   - totalItems is 0 — a no-op dressed as a success.
  *
- * The history can lag the status endpoint by a moment, so a miss is retried before it is
- * believed. A genuine absence still fails, just a second later.
+ * It CANNOT prove absence, because the history is unfilterable and only ~10 deep — see
+ * findMessageRecord. A message out of view returns null and is treated as unknown.
+ *
+ * This is the weaker of the two effect checks. assertPackState is the one that answers
+ * whether the operation actually did anything, because it reads the item's own state.
  */
 export async function assertEffectRecorded(
   role: Role, doc: EpcisDocument, what: string,
@@ -1054,12 +1116,11 @@ export async function assertEffectRecorded(
     record = await findMessageRecord(role, id)
   }
 
-  if (!record) {
-    throw new Error(
-      `${what}: the platform reported SUCCESS but message "${id}" is ABSENT from the EPCIS ` +
-      'processing history. Accepted and acknowledged, with nothing recorded.',
-    )
-  }
+  // NOT an assertion of absence. The history shows only the newest ~10 messages and cannot be
+  // filtered (see findMessageRecord), so a fixture that submits three documents can push its own
+  // first one out of view. Failing here would accuse the platform of losing a message it
+  // recorded perfectly well. Use assertPackState for a real per-item effect check.
+  if (!record) return null
 
   const detail =
     `status=${record.status} totalItems=${record.totalItems} ` +

@@ -24,7 +24,7 @@ import { expect } from '@playwright/test'
 import {
   submitAndPoll, sendEpcis, packOf, describeMsgStatus, bodyOf,
   epcisDocument, shippingEvent, receivingEvent,
-  freshSgtin, freshSscc, sglnOf, glnFor, uniqueInstanceId,
+  freshSgtin, freshSscc, sglnOf, glnFor, uniqueInstanceId, assertPackState, sameSscc,
   type EpcisDocument, type Role,
   uniqueBizTransaction,
 } from '../eptts-api'
@@ -167,6 +167,24 @@ const shippingBusiness: ApiCase[] = [
       const p = await packed(1)
       // The branch does not own this SSCC; it is still with the manufacturer.
       await expectRejected('branch', shipDoc([p.sscc], 'branch', 'pharmacy'), 'branch shipping a manufacturer SSCC')
+
+      /**
+       * And whatever the verdict, the pack must be untouched.
+       *
+       * The refusal assertion above passes or fails on the message status alone, which misses
+       * the shape this defect actually has. Measured on the relay: the platform answered
+       * "S - Successful", left currentGln as the manufacturer, and still flipped status to
+       * in_transit — a half-applied event. So an unauthorised sender cannot move the goods but
+       * CAN change their state, which the message-level check reported as a clean success.
+       */
+      const pack = await assertPackState('manufacturer', p.sgtins[0], {
+        custodyGln: glnFor('manufacturer'),
+        status: 'active',
+      }, 'a refused shipment must leave the pack exactly as it was')
+      // sameSscc, not a string slice: parentSscc comes back as the 18-digit element string
+      // with its check digit, which is not a substring of the URN form.
+      expect(sameSscc(p.sscc, pack.parentSscc),
+        `the pack must still be in ${p.sscc}; parentSscc is ${pack.parentSscc}`).toBe(true)
     },
   },
   {
