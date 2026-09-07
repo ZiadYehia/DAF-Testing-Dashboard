@@ -13,6 +13,24 @@
   "lastStatus": "pass",
   "runs": [
     {
+      "ts": "2026-09-07T16-58-54-570Z",
+      "status": "pass",
+      "durationMs": 3257.7679999999996,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "ngrok relay"
+    },
+    {
+      "ts": "2026-09-07T16-58-07-502Z",
+      "status": "pass",
+      "durationMs": 3356.8160000000007,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "ngrok relay"
+    },
+    {
       "ts": "2026-09-06T12-05-20-561Z",
       "status": "pass",
       "durationMs": 545,
@@ -122,5 +140,10 @@
     "readonly"
   ],
   "folder": "EPTTS APIs / api-authentication",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "ngrok relay": "pass",
+    "Production (devsim)": "pass",
+    "(no environment)": "fail"
+  }
 }

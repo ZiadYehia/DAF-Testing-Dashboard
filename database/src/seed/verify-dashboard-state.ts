@@ -30,7 +30,10 @@ async function main(): Promise<void> {
   const execRepo = AppDataSource.getRepository(TestExecution)
 
   console.log(`\n── BUGS (${APP}) ──`)
-  const bugs = await bugRepo.find({ where: { appSlug: APP }, order: { feature: 'ASC', slug: 'ASC' } })
+  // Soft-deleted rows are excluded, because the dashboard excludes them: a retracted report
+  // must not still read as an open defect here.
+  const bugs = (await bugRepo.find({ where: { appSlug: APP }, order: { feature: 'ASC', slug: 'ASC' } }))
+    .filter((b) => !b.deletedAt)
   for (const b of bugs) {
     const atts = await attRepo.count({ where: { bug: { id: b.id } } })
     const file = path.join(REPO, 'data', APP, 'bugs', b.feature, `${b.slug}.md`)
@@ -43,7 +46,10 @@ async function main(): Promise<void> {
   }
 
   console.log(`\n── EXECUTIONS for the cases touched this session ──`)
-  const ids = ['TC_DISP_001', 'TC_DISP_003', 'TC_DISP_010', 'TC_DISP_030', 'TS_RTRV_003', 'TC_DEST_001']
+  const ids = process.argv.includes('--cases')
+    ? String(process.argv[process.argv.indexOf('--cases') + 1]).split(',')
+    : ['TC_DISP_001', 'TC_DISP_030', 'TC_DISP_035', 'TC_DISP_036', 'TC_DISP_037',
+       'TC_PDISP_037', 'TS_RTRV_003', 'TC_DEST_001']
   for (const id of ids) {
     const rows = await execRepo.find({ where: { testcaseId: id, feature: { appSlug: APP } }, relations: { feature: true } })
     if (!rows.length) { console.log(`  ${id.padEnd(13)} (no row)`); continue }
@@ -51,6 +57,36 @@ async function main(): Promise<void> {
       const note = (r.notes ?? '').replace(/\s+/g, ' ').slice(0, 84)
       console.log(`  ${id.padEnd(13)} env=${(r.environment ?? '-').padEnd(12)} ${String(r.status).padEnd(8)} ${note}`)
     }
+  }
+
+  // Parity between the devsim status files and the rows the dashboard serves. Worth checking
+  // explicitly: the case extractor used to OVERWRITE execution-status-v1.json from the source
+  // spreadsheet, so regenerating cases could quietly replace measured results with staging-era
+  // values, and comparing was the only way to notice.
+  console.log(`\n── DEVSIM STATUS PARITY (file vs database) ──`)
+  const featuresDir = path.join(REPO, 'data', APP, 'features')
+  let checked = 0
+  const mismatches: string[] = []
+  for (const feature of fs.readdirSync(featuresDir)) {
+    const statusFile = path.join(featuresDir, feature, 'execution-status-v1.json')
+    if (!fs.existsSync(statusFile)) continue
+    const wanted = JSON.parse(fs.readFileSync(statusFile, 'utf-8')) as Record<string, string>
+    const rows = await execRepo.find({
+      where: { feature: { appSlug: APP, name: feature } }, relations: { feature: true },
+    })
+    for (const [id, want] of Object.entries(wanted)) {
+      checked++
+      const row = rows.find((r) => r.testcaseId === id && (r.environment ?? null) === null)
+      if (!row) { mismatches.push(`${feature}/${id}: file=${want} db=(no row)`); continue }
+      if (row.status !== want) mismatches.push(`${feature}/${id}: file=${want} db=${row.status}`)
+    }
+  }
+  console.log(`  rows checked: ${checked}`)
+  if (mismatches.length === 0) {
+    console.log('  PARITY OK — every devsim status matches its file')
+  } else {
+    console.log(`  MISMATCHES (${mismatches.length}):`)
+    for (const m of mismatches.slice(0, 20)) console.log(`    ${m}`)
   }
 
   console.log(`\n── AUTOMATION (filesystem, not database) ──`)

@@ -1,11 +1,11 @@
 {
   "TC_COMM_003": "DW-958",
-  "TC_COMM_004": "an-empty-epclist-is-accepted-and-an-empty-string-epc-is-misclassified-as-an-sscc",
+  "TC_COMM_004": "draft:an-empty-epclist-is-accepted-and-an-empty-string-epc-is-misclassified-as-an-sscc",
   "TC_COMM_011": "DW-958",
   "TC_COMM_012": "DW-958",
-  "TC_COMM_025": "event-timestamps-are-not-validated-empty-and-malformed-eventtime-and-eventtimezo",
-  "TC_COMM_026": "event-timestamps-are-not-validated-empty-and-malformed-eventtime-and-eventtimezo",
-  "TC_COMM_027": "event-timestamps-are-not-validated-empty-and-malformed-eventtime-and-eventtimezo",
-  "TC_COMM_028": "event-timestamps-are-not-validated-empty-and-malformed-eventtime-and-eventtimezo",
-  "TC_COMM_034": "disposition-is-checked-for-presence-but-not-validated-against-the-cbv-vocabulary"
+  "TC_COMM_025": "draft:event-timestamps-are-not-validated-empty-and-malformed-eventtime-and-eventtimezo",
+  "TC_COMM_026": "draft:event-timestamps-are-not-validated-empty-and-malformed-eventtime-and-eventtimezo",
+  "TC_COMM_027": "draft:event-timestamps-are-not-validated-empty-and-malformed-eventtime-and-eventtimezo",
+  "TC_COMM_028": "draft:event-timestamps-are-not-validated-empty-and-malformed-eventtime-and-eventtimezo",
+  "TC_COMM_034": "draft:disposition-is-checked-for-presence-but-not-validated-against-the-cbv-vocabulary"
 }

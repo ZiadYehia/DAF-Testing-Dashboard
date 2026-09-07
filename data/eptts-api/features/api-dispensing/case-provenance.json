@@ -1,5 +1,10 @@
 [
   {
+    "id": "TC_DISP_034",
+    "text": "_Authored, not from the source sheet:_ Already implemented in the automated suite but never documented: the sheet stops at TC_DISP_033, so adding TC_DISP_035-037 left a numbering gap the case validator caught. It covers the single most likely reason a real dispensing integration fails - 27 of the manufacturer's 30 products are Dawana-integrated and must be dispensed through that channel instead.",
+    "bug": ""
+  },
+  {
     "id": "TC_DISP_035",
     "text": "_Authored, not from the source sheet:_ No sheet row covers reversing a dispense, though the feature workflow lists Dispense Cancel as required coverage. Shape confirmed live 2026-09-07: action DELETE with bizStep dispensing is answered by the platform's own Dispensing Cancellation handler, and per the product owner this is how a patient return is recorded.",
     "bug": ""

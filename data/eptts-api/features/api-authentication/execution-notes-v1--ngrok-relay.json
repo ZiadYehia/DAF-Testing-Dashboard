@@ -1,7 +1,7 @@
 {
-  "TC_AUTH_007": "platform validation gap: a partially-supplied credential is ignored rather than rejected (the spreadsheet expected 400, the platform returns 200)",
-  "TC_AUTH_008": "platform validation gap: a partially-supplied credential is ignored rather than rejected (the spreadsheet expected 400, the platform returns 200)",
-  "TC_AUTH_009": "platform validation gap: a partially-supplied credential is ignored rather than rejected (the spreadsheet expected 400, the platform returns 200)",
-  "TC_AUTH_010": "platform validation gap: a partially-supplied credential is ignored rather than rejected (the spreadsheet expected 400, the platform returns 200)",
+  "TC_AUTH_007": "platform validation gap: a partially-supplied credential is ignored rather than rejected (the spreadsheet expected 400, the platform returns 200)\n[automation 2026-09-07T16-59-32-410Z] Error: an empty username: a half-supplied credential should be rejected, not ignored",
+  "TC_AUTH_008": "platform validation gap: a partially-supplied credential is ignored rather than rejected (the spreadsheet expected 400, the platform returns 200)\n[automation 2026-09-07T16-59-37-889Z] Error: an empty password: a half-supplied credential should be rejected, not ignored",
+  "TC_AUTH_009": "platform validation gap: a partially-supplied credential is ignored rather than rejected (the spreadsheet expected 400, the platform returns 200)\n[automation 2026-09-07T16-59-44-900Z] Error: no username field: a half-supplied credential should be rejected, not ignored",
+  "TC_AUTH_010": "platform validation gap: a partially-supplied credential is ignored rather than rejected (the spreadsheet expected 400, the platform returns 200)\n[automation 2026-09-07T16-59-54-225Z] Error: no password field: a half-supplied credential should be rejected, not ignored",
   "TC_AUTH_011": "needs a disposable entity: rotating a real key to prove it dies is destructive"
 }

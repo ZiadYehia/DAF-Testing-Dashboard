@@ -562,6 +562,32 @@
   "_additions": {
     "Dispensing": [
       {
+        "id": "TC_DISP_034",
+        "_authored": "Already implemented in the automated suite but never documented: the sheet stops at TC_DISP_033, so adding TC_DISP_035-037 left a numbering gap the case validator caught. It covers the single most likely reason a real dispensing integration fails - 27 of the manufacturer's 30 products are Dawana-integrated and must be dispensed through that channel instead.",
+        "validity": "Negative",
+        "title": "Verify dispensing a Dawana-integrated product through this API is refused.",
+        "pre": [
+          "Citrix VPN connected (or the ngrok relay reachable)",
+          "Authenticated as Pharmacy",
+          "A pack of a Dawana-integrated product has been received by this pharmacy"
+        ],
+        "data": [
+          "GTIN: any product whose registry record has isDawanaIntegration true",
+          "epcList: [the SGTIN held by this pharmacy]",
+          "Endpoint: POST /masar-service/api/v1/Dispensation"
+        ],
+        "steps": [
+          "Walk a pack of a Dawana-integrated product through to the pharmacy and confirm it is received",
+          "Post a full Dispensing (Object) event for that SGTIN",
+          "Poll MsgStatusQuery until the message reaches a terminal state"
+        ],
+        "expected": [
+          "The dispense is refused",
+          "The refusal names the Dawana channel: \"Dispensing is not allowed for Dawana-integrated products via this channel. These products must be dispensed through the Dawana integration.\"",
+          "The pack is not dispensed and remains active in the pharmacy's stock"
+        ]
+      },
+      {
         "id": "TC_DISP_035",
         "_authored": "No sheet row covers reversing a dispense, though the feature workflow lists Dispense Cancel as required coverage. Shape confirmed live 2026-09-07: action DELETE with bizStep dispensing is answered by the platform's own Dispensing Cancellation handler, and per the product owner this is how a patient return is recorded.",
         "validity": "Positive",

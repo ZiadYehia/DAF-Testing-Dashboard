@@ -241,9 +241,22 @@ for (const { app, feature } of featureDirs) {
       add(file, tc, 'Status is Fail but Attachment carries no DW-### key and no draft:<bug-slug> reference')
     }
     if (isDraftRef) {
-      const slug = attachment.slice('draft:'.length)
-      if (!DRAFT_BUGS.has(slug)) {
-        add(file, tc, `Attachment references draft bug "${slug}" but no such bug is filed`)
+      // Split, because the regex above deliberately accepts SEVERAL space-separated refs and
+      // this check has to agree with it. `attachment.slice('draft:'.length)` took everything
+      // after the FIRST prefix, so `draft:a draft:b` was looked up as the single slug
+      // "a draft:b" — which no bug can ever match. Every multi-ref row therefore failed
+      // validation while both of its bugs were filed and correct, and the message named a
+      // slug that does not appear anywhere in the file.
+      //
+      // Cross-feature refs are fine and always were: DRAFT_BUGS is collected from every
+      // feature folder of both apps, because one defect can span features (the packing bugs
+      // legitimately cover unpacking cases) and a bug's own "Covers test cases" line already
+      // lists cases from more than one feature.
+      for (const ref of attachment.split(/\s+/).filter(Boolean)) {
+        const slug = ref.slice('draft:'.length)
+        if (!DRAFT_BUGS.has(slug)) {
+          add(file, tc, `Attachment references draft bug "${slug}" but no such bug is filed`)
+        }
       }
     }
     if (status !== 'Fail' && attachment) {

@@ -1,4 +1,4 @@
 {
-  "TS_UNPK_005": "duplicate-and-cross-container-epc-references-are-accepted-across-packing-unpacking",
-  "TS_UNPK_011": "identical-packing-and-unpacking-requests-are-accepted-twice-with-no-idempotency"
+  "TS_UNPK_005": "draft:duplicate-and-cross-container-epc-references-are-accepted-across-packing-unpacking",
+  "TS_UNPK_011": "draft:identical-packing-and-unpacking-requests-are-accepted-twice-with-no-idempotency"
 }

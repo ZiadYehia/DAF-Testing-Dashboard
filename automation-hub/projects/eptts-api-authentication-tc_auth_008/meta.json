@@ -13,6 +13,16 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-07T16-59-37-889Z",
+      "status": "fail",
+      "durationMs": 4714.006,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: an empty password: a half-supplied credential should be rejected, not ignored",
+      "environment": "ngrok relay"
+    },
+    {
       "ts": "2026-09-06T13-02-41-428Z",
       "status": "fail",
       "durationMs": 179,
@@ -65,5 +75,9 @@
     "known-gap"
   ],
   "folder": "EPTTS APIs / api-authentication",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "ngrok relay": "fail",
+    "(no environment)": "fail"
+  }
 }
