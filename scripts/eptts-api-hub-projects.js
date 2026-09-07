@@ -19,9 +19,16 @@
  * maps the `api` engine to `test.spec.ts` — same as browser Playwright. An API project is
  * distinguished by the config project it runs under (`--project=api`), not by its filename.
  *
- * Deliberately NOT converted: `eptts-api-smoke` and `eptts-api-supply-chain`. Those verify
- * that steps compose (a property no single case describes) and the journey's steps share
- * state in order, so they keep their multi-test specs and stay unlinked.
+ * Deliberately NOT converted: `eptts-api-smoke`, `eptts-api-e2e-returns` and
+ * `eptts-api-e2e-lifecycle`. Those verify that steps compose (a property no single case
+ * describes) and the journeys' steps share state in order, so they keep their multi-test
+ * specs and stay unlinked.
+ *
+ * KEEP_MULTI IS LOAD-BEARING, NOT DOCUMENTATION. A journey project absent from it is
+ * "stale" to the prune pass below and gets deleted by `--write --prune`. It listed
+ * `eptts-api-supply-chain`, which no longer exists, and not `eptts-api-e2e-returns`, which
+ * does — so a prune would have removed a journey while protecting a directory that was not
+ * there. Add every journey project here when it is created.
  */
 const fs = require('fs')
 const path = require('path')
@@ -33,7 +40,11 @@ const WRITE = process.argv.includes('--write')
 const PRUNE = process.argv.includes('--prune')
 
 /** Projects that are journeys, not single cases — never generated, never pruned. */
-const KEEP_MULTI = new Set(['eptts-api-smoke', 'eptts-api-supply-chain'])
+const KEEP_MULTI = new Set([
+  'eptts-api-smoke',
+  'eptts-api-e2e-returns',
+  'eptts-api-e2e-lifecycle',
+])
 
 // ─── read the registry without importing TypeScript ──────────────────────────
 //

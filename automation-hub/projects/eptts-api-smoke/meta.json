@@ -6,8 +6,18 @@
   "linkedTestcaseId": null,
   "linkedTestcase": null,
   "createdAt": "2026-08-31T09:00:00.000Z",
-  "lastStatus": "pass",
+  "lastStatus": "fail",
   "runs": [
+    {
+      "ts": "2026-09-07T14-53-23-441Z",
+      "status": "fail",
+      "durationMs": 25429.300000000003,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": false,
+      "error": "Error: GET /epcis with Bearer only",
+      "environment": "ngrok relay"
+    },
     {
       "ts": "2026-08-31T12-27-29-885Z",
       "status": "pass",
@@ -22,5 +32,9 @@
     "write"
   ],
   "folder": "EPTTS APIs",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "ngrok relay": "fail",
+    "(no environment)": "pass"
+  }
 }

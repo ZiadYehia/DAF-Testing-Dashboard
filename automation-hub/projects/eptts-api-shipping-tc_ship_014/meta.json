@@ -13,6 +13,16 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-07T14-44-20-180Z",
+      "status": "fail",
+      "durationMs": 69063.56499999999,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: the shipment must be refused — branch shipping a manufacturer SSCC: the platform ACCEPTED input it should refuse — http=200 raw=\"S - Successful\" state=SUCCESS polls=6 logs=[I: Shipping event processed successfully | I: Message processed successfully — all 1 event(s) completed]",
+      "environment": "ngrok relay"
+    },
+    {
       "ts": "2026-09-07T14-20-32-459Z",
       "status": "fail",
       "durationMs": 4445.446,

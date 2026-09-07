@@ -100,7 +100,21 @@ function keyExchanges(list) {
 
   let idx = -1
   for (let i = 0; i < list.length; i++) if (isBusiness(list[i])) idx = i
-  // The authentication bugs have no business call — /auth IS the subject.
+  /**
+   * No POST under test — so the subject is the last READ, not the login.
+   *
+   * isBusiness only counts POSTs, so a GET-based case fell straight through to /auth. That made
+   * the attachment actively misleading for the response-header findings: TC_SEC_043 is about
+   * `X-Gateway-Target` on the masar host's GET /epcis, and the rendered evidence showed the
+   * registry host's /auth response instead — whose header set is clean. The picture disproved
+   * the bug it was filed against.
+   */
+  if (idx === -1) {
+    for (let i = 0; i < list.length; i++) {
+      if (!isPoll(list[i]) && !/\/auth\b/i.test(list[i].url)) idx = i
+    }
+  }
+  // Only now is /auth the subject — that is the authentication cases, where it genuinely is.
   if (idx === -1) for (let i = 0; i < list.length; i++) if (/auth/i.test(list[i].url)) idx = i
   if (idx === -1) return { submission: null, verdict: null, fixtures: 0 }
 

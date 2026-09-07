@@ -1,0 +1,35 @@
+{
+  "name": "eptts-api-e2e-lifecycle",
+  "title": "EPTTS API — E2E Lifecycle: Commission → Dispense → Return → Destroy",
+  "app": "eptts-api",
+  "createdVia": "manual",
+  "linkedTestcaseId": null,
+  "linkedTestcase": null,
+  "createdAt": "2026-09-07T00:00:00.000Z",
+  "lastStatus": "fail",
+  "runs": [
+    {
+      "ts": "2026-09-07T15-03-27-115Z",
+      "status": "fail",
+      "durationMs": 156325.471,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: unpack both children at the pharmacy: http=200 raw=\"E - Application Error\" state=FAILED polls=1 logs=[E: Unpacking event failed: SSCC 854138687934262370 has an active billing hold and cannot be unpacked, split, moved, or reaggregated until the hold is released (the invoice is paid). | E: Message processing failed — 1 of 1 event(s) encountered errors]",
+      "environment": "ngrok relay"
+    }
+  ],
+  "tags": [
+    "api",
+    "write",
+    "destructive",
+    "e2e",
+    "demo",
+    "lifecycle"
+  ],
+  "folder": "EPTTS APIs",
+  "engine": "api",
+  "lastStatusByEnv": {
+    "ngrok relay": "fail"
+  }
+}

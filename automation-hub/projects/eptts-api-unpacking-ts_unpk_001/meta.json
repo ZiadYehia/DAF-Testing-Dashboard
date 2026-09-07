@@ -13,6 +13,26 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-07T15-07-48-606Z",
+      "status": "fail",
+      "durationMs": 53925.737,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: unpack one child: http=200 raw=\"E - Application Error\" state=FAILED polls=1 logs=[E: Unpacking event failed: SSCC 854138687936854610 has an active billing hold and cannot be unpacked, split, moved, or reaggregated until the hold is released (the invoice is paid). | E: Message processing failed — 1 of 1 event(s) encountered errors]",
+      "environment": "ngrok relay"
+    },
+    {
+      "ts": "2026-09-07T14-52-33-793Z",
+      "status": "fail",
+      "durationMs": 15593.952000000001,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: auth failed for role \"manufacturer\": 502 {} — check EPTTS_MFG_APIKEY in automation-hub/.env (keys cannot be re-read from the platform; if lost they must be rotated again)",
+      "environment": "ngrok relay"
+    },
+    {
       "ts": "2026-09-06T13-12-17-243Z",
       "status": "fail",
       "durationMs": 976,
