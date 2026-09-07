@@ -11,6 +11,5 @@
   "TC_SHIP_025": "platform validation gap: an empty eventTime is accepted and processed successfully",
   "TC_SHIP_026": "platform validation gap: an empty eventTimeZoneOffset is accepted and processed successfully",
   "TC_SHIP_036": "unregistered destination: the platform ACCEPTED input it should refuse — http=200 raw=\"S - Successful\" state=SUCCESS polls=6 logs=[I: Shipping event processed successfully | I: Message processed successfully — all 1 event(s) completed]",
-  "TC_SHIP_039": "platform validation gap: a non-ISO-8601 eventTime is accepted and processed successfully",
-  "TC_SHIP_013": "[automation 2026-09-07T14-19-59-872Z] Error: auth failed for role \"manufacturer\": 404 {} — check EPTTS_MFG_APIKEY in automation-hub/.env (keys cannot be re-read from the platform; if lost they must be rotated again)"
+  "TC_SHIP_039": "platform validation gap: a non-ISO-8601 eventTime is accepted and processed successfully"
 }

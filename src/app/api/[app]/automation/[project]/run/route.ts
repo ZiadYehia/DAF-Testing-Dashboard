@@ -5,6 +5,7 @@ import { getProject } from '@automation-hub/store'
 import { runProject as runPlaywright, isRunning as isRunningPlaywright } from '@automation-hub/engine/runner'
 import { runProject as runAppium, isRunning as isRunningAppium } from '@automation-hub/engine/appium-runner'
 import { setExecutionStatus, appendExecutionNoteLine } from '@/lib/execution'
+import { isInfrastructureFailure } from '@/lib/infrastructure-failure.cjs'
 import { activeEnvironmentVars, activeEnvironmentName } from '@/lib/environments'
 import { buildAutomationFailureNote, AUTOMATION_NOTE_PREFIX } from '@/lib/automation-run-note'
 
@@ -62,7 +63,20 @@ export async function POST(
     // a verified behaviour, so it must not touch status or notes at all.
     let synced: { testcaseId: string; status: string } | null = null
     const link = detail.linkedTestcase
-    if (link && result.executed && (result.status === 'pass' || result.status === 'fail')) {
+    /**
+     * An unreachable platform is not a verdict on the test case.
+     *
+     * The CLI recorder has always held these back; this path did not, and the gap was not
+     * theoretical. TC_COMM_006 was replayed twice while the ngrok relay answered 403
+     * ERR_NGROK_727 to every request — nothing behind the tunnel ran at all — and its recorded
+     * status went from pass to fail, with an automation note blaming the API key.
+     *
+     * The run still appears in history as a failed run, which is true and useful. What must not
+     * happen is a test case being marked failing because the server could not be reached.
+     */
+    const unreachable = result.status === 'fail' && isInfrastructureFailure(result.error)
+    if (link && result.executed && !unreachable
+        && (result.status === 'pass' || result.status === 'fail')) {
       // Same environment the run targeted: execution status is scoped per environment, so
       // recording an ngrok result must not land on (and overwrite) the production one.
       const res = await setExecutionStatus(
@@ -80,7 +94,9 @@ export async function POST(
       }
     }
 
-    return NextResponse.json({ ...result, synced })
+    // Surfaced so the UI can say "not recorded — the platform was unreachable" instead of
+    // showing a failed run whose verdict silently went nowhere.
+    return NextResponse.json({ ...result, synced, ...(unreachable ? { unreachable: true } : {}) })
   } catch (err: any) {
     return NextResponse.json({ error: err.message ?? 'Run failed' }, { status: 500 })
   }
