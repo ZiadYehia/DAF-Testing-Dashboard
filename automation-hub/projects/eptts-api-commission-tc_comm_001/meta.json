@@ -10,8 +10,37 @@
     "testcaseId": "TC_COMM_001"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "fail",
+  "lastStatus": "pass",
   "runs": [
+    {
+      "ts": "2026-09-07T21-20-43-479Z",
+      "status": "pass",
+      "durationMs": 13611,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "ngrok relay"
+    },
+    {
+      "ts": "2026-09-07T21-05-04-720Z",
+      "status": "fail",
+      "durationMs": 5197.611,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: auth failed for role \"manufacturer\": 403 {} — check EPTTS_MFG_APIKEY in automation-hub/.env (keys cannot be re-read from the platform; if lost they must be rotated again)",
+      "environment": "ngrok relay"
+    },
+    {
+      "ts": "2026-09-07T20-57-30-580Z",
+      "status": "fail",
+      "durationMs": 19162.656,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: auth failed for role \"manufacturer\": 403 {} — check EPTTS_MFG_APIKEY in automation-hub/.env (keys cannot be re-read from the platform; if lost they must be rotated again)",
+      "environment": "ngrok relay"
+    },
     {
       "ts": "2026-09-07T20-48-34-536Z",
       "status": "fail",
@@ -167,7 +196,7 @@
   "folder": "EPTTS APIs / api-commission",
   "engine": "api",
   "lastStatusByEnv": {
-    "ngrok relay": "fail",
+    "ngrok relay": "pass",
     "(no environment)": "fail"
   }
 }

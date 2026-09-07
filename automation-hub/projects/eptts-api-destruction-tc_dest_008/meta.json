@@ -13,6 +13,16 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-07T21-21-23-102Z",
+      "status": "fail",
+      "durationMs": 13563,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: duplicate EPCs: the platform ACCEPTED input it should refuse — http=200 raw=\"S - Successful\" state=SUCCESS polls=1 logs=[I: Destruction event processed successfully | I: Message processed successfully — all 1 event(s) completed]",
+      "environment": "ngrok relay"
+    },
+    {
       "ts": "2026-09-07T19-14-04-609Z",
       "status": "fail",
       "durationMs": 13868,

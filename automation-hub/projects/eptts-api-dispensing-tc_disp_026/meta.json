@@ -13,6 +13,15 @@
   "lastStatus": "pass",
   "runs": [
     {
+      "ts": "2026-09-07T21-23-28-356Z",
+      "status": "pass",
+      "durationMs": 1514,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "ngrok relay"
+    },
+    {
       "ts": "2026-09-07T19-19-27-306Z",
       "status": "pass",
       "durationMs": 663,

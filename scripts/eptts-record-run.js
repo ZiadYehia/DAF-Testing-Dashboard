@@ -142,6 +142,18 @@ function isUnsupportedOnThisTenant(error) {
     // it. Pinned to 401: the same roles answered 404 once the relay tunnel stopped routing, and
     // that is an outage, which isInfrastructureFailure must keep claiming first.
     || /auth failed for role "ef_[a-z_]+": 401/i.test(error)
+    // A FIXTURE step refused because the Pricing Team has not approved the product's registered
+    // price, while billing is enforcing. The case never got to exercise its own rule, so calling
+    // it a failure blames the endpoint for a missing precondition on the tenant's data.
+    //
+    // Recorded on 2026-09-07: all seven products read pricingReviewStatus=pending, and during an
+    // enforcing window 24 packing events were refused with "Cannot seal this container: the
+    // Pricing Team has not approved the registered price". That took out most of the packing,
+    // dispensing and destruction fixtures at once. Matched only when the refusal names the
+    // pricing approval — a case whose OWN subject is the pricing gate (TS_PACK_018, TC_COMM_045)
+    // asserts the refusal itself and passes, so it never reaches this predicate.
+    || /the Pricing Team has not approved the registered price|billing is enforcing and cannot invoice an unapproved price/i
+      .test(error)
 }
 
 /** Reduce a Playwright error blob to the sentence that says what is wrong. */
@@ -318,8 +330,10 @@ if (infra.length) {
 }
 if (unsupported.length) {
   console.log(
-    `\nBLOCKED, not failed — ${unsupported.length} case(s) need test data this tenant does not ` +
-    'have (no product of the required kind, or dispensing refused as Dawana-integrated):')
+    `
+BLOCKED, not failed — ${unsupported.length} case(s) hit a precondition this tenant does ` +
+    'not meet: no product of the required kind, an unprovisioned second-entity partner, or a ' +
+    'fixture step refused because the Pricing Team has not approved the product price:')
   console.log(`   ${unsupported.join(' ')}`)
 }
 if (fixed.length) console.log(`\nknown gaps that now PASS (remove the markers): ${fixed.join(', ')}`)

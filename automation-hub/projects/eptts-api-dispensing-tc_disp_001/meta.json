@@ -13,6 +13,16 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-07T21-22-24-397Z",
+      "status": "fail",
+      "durationMs": 13623,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: fixture: pack 1 SGTIN(s) into urn:epc:id:sscc:5413868.8816157344 did not succeed — http=200 raw=\"E - Application Error\" state=FAILED polls=1 logs=[E: Packing event failed: Pack closed but billing record failed for SSCC 854138688161573444: Cannot seal this container: the Pricing Team has not approved the registered price for GTIN(s) 05413868110456. The Pricing Team must approve the registered price in the registry before these packs can be sealed — billing is enforcing and cannot invoice an unapproved price.. Aggregation reverted to OPEN; retry close. | E: Message processing failed — 1 of 1 event(s) encountered errors]",
+      "environment": "ngrok relay"
+    },
+    {
       "ts": "2026-09-07T20-34-11-611Z",
       "status": "fail",
       "durationMs": 4412.013,
@@ -100,16 +110,6 @@
       "hasTrace": false,
       "hasApiLog": true,
       "error": "Error: auth failed for role \"manufacturer\": 500 {\"statusCode\":500,\"timestamp\":\"2026-09-07T10:49:11.082Z\",\"path\":\"/masar-service/api/v1/auth\",\"method\":\"POST\",\"correlationId\":\"no-context\",\"message\":\"Internal server error\"} — check EPTTS_MFG_APIKEY in automation-hub/.env (keys cannot be re-read from the platform; if lost they must be rotated again)",
-      "environment": "ngrok relay"
-    },
-    {
-      "ts": "2026-09-07T07-34-50-454Z",
-      "status": "fail",
-      "durationMs": 39395.513,
-      "hasVideo": false,
-      "hasTrace": false,
-      "hasApiLog": true,
-      "error": "Error: fixture: pack 1 SGTIN(s) into urn:epc:id:sscc:5413868.8766506381 did not succeed — http=200 raw=\"E - Application Error\" state=FAILED polls=6 logs=[E: Packing event failed: Cannot seal this container: no registered unit price for GTIN(s) 05413868110432. Register a unit price for the product in the registry, then retry — billing prices every packed unit from that price and cannot invoice without it. | E: Message processing failed — 1 of 1 event(s) encountered errors]",
       "environment": "ngrok relay"
     },
     {

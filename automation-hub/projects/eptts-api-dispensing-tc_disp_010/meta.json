@@ -13,6 +13,16 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-07T21-22-54-531Z",
+      "status": "fail",
+      "durationMs": 1773,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: fixture: pack 1 SGTIN(s) into urn:epc:id:sscc:5413868.8816175276 did not succeed — http=200 raw=\"E - Application Error\" state=FAILED polls=1 logs=[E: Packing event failed: Pack closed but billing record failed for SSCC 854138688161752764: Cannot seal this container: the Pricing Team has not approved the registered price for GTIN(s) 05413868110456. The Pricing Team must approve the registered price in the registry before these packs can be sealed — billing is enforcing and cannot invoice an unapproved price.. Aggregation reverted to OPEN; retry close. | E: Message processing failed — 1 of 1 event(s) encountered errors]",
+      "environment": "ngrok relay"
+    },
+    {
       "ts": "2026-09-07T19-17-28-910Z",
       "status": "fail",
       "durationMs": 41271,

@@ -13,6 +13,16 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-07T21-22-01-519Z",
+      "status": "fail",
+      "durationMs": 14157,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: TC_DEST_019 a non-ISO-8601 eventTime: the platform ACCEPTED input it should refuse — http=200 raw=\"S - Successful\" state=SUCCESS polls=6 logs=[I: Destruction event processed successfully | I: Message processed successfully — all 1 event(s) completed]",
+      "environment": "ngrok relay"
+    },
+    {
       "ts": "2026-09-07T19-14-50-750Z",
       "status": "fail",
       "durationMs": 13743,
