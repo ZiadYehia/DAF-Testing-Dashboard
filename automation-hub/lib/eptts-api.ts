@@ -886,6 +886,38 @@ export function sglnFor(gln: string, gcpLength: number): string {
   return `urn:epc:id:sgln:${companyPrefix}.${locationRef}.0`
 }
 
+/**
+ * Which configured role holds this GLN. Needed because an SGLN cannot be built from a GLN
+ * alone — the company-prefix length decides where the prefix stops, and it differs per
+ * partner (manufacturer 7, distributor 7, pharmacy 6 on devsim).
+ */
+export function roleOfGln(gln: string): Role | undefined {
+  const g = gln.replace(/\D/g, '')
+  return (Object.keys(ROLES) as Role[]).find((r) => {
+    try { return glnFor(r).replace(/\D/g, '') === g } catch { return false }
+  })
+}
+
+/**
+ * The SGLN of whoever the PLATFORM says holds a pack, from VerifyProduct's currentGln.
+ *
+ * Use this when an event has to be fired from where the stock actually is rather than from
+ * where the test assumes it is — a return travels upstream from the current custodian, so
+ * the custodian is a fact to be read, not a constant to be hard-coded. Throws when the GLN
+ * belongs to no configured role, because guessing a prefix length would mint a plausible
+ * SGLN for the wrong location.
+ */
+export function sglnOfGln(gln: string): string {
+  const role = roleOfGln(gln)
+  if (!role) {
+    throw new Error(
+      `GLN ${gln} belongs to no configured role, so its SGLN cannot be built — ` +
+      'the company-prefix length is per-partner. Configure the role or pass an SGLN directly.',
+    )
+  }
+  return sglnFor(glnFor(role), GCP_LENGTH[role])
+}
+
 // ─── EPCIS document builders ─────────────────────────────────────────────────
 
 export interface EpcisDocument {

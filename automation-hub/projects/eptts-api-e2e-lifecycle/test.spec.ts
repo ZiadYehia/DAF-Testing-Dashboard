@@ -69,11 +69,11 @@
  */
 import { test, expect } from '@playwright/test'
 import {
-  submitAndPoll, dispensation, pollMsgStatus, describeMsgStatus, bodyOf, getMasar,
+  submitAndPoll, dispensation, pollMsgStatus, describeMsgStatus, bodyOf, getMasar, packOf,
   authenticate, decodeClaims, platformRoleFor, productByGtin,
   epcisDocument, commissionEvent, aggregationEvent, shippingEvent, receivingEvent,
   dispensingEvent, destructionEvent, dispenseCancelEvent,
-  freshDispensableSgtin, freshSscc, sglnOf, glnFor, runId, ssccUrnToDigits,
+  freshDispensableSgtin, freshSscc, sglnOf, sglnOfGln, glnFor, runId, ssccUrnToDigits,
   uniqueBizTransaction, disposeApi,
   MFG_DISPENSABLE_GTINS,
   type EpcisDocument, type Role, type MsgStatus,
@@ -691,16 +691,40 @@ test.describe.serial('EPTTS end-to-end lifecycle: manufacturer → branch → ph
       epcs: sgtinsReturning,
     })
 
+    /**
+     * THE SOURCE IS READ, NOT ASSUMED. A return travels upstream from whoever actually holds
+     * the stock, so the custodian is a fact to look up rather than a constant to hard-code.
+     * This step used to pass sglnOf('branch') on the assumption that STEP 11 had moved
+     * custody; now it asks the platform and builds the source from the answer, so a document
+     * can never claim to come from somewhere the pack is not.
+     *
+     * It also makes the failure legible. The platform refuses this step with "Source GLN
+     * <pharmacy> is a pharmacy, but must be a branch or distributor or manufacturer", while
+     * VerifyProduct reports the very same packs as held by the BRANCH — printed side by side
+     * below, so the contradiction is in the run log rather than inferred from two places.
+     */
+    const holders = new Set<string>()
+    for (const sgtin of sgtinsReturning) {
+      const pack = await packOf('branch', sgtin)
+      holders.add(String(pack.pack?.currentGln))
+    }
+    console.log(`[e2e] custody per VerifyProduct before the return: ${[...holders].join(', ')} ` +
+      `(branch is ${BRANCH()})`)
+    expect(holders.size, `all returning packs share one custodian — got ${[...holders].join(', ')}`).toBe(1)
+    const holderGln = [...holders][0]
+    expect(holderGln, 'STEP 11 left custody with the branch').toBe(BRANCH())
+
     await submitStep('branch', epcisDocument(
       [shippingEvent({
         epcList: sgtinsReturning,
-        sourceSgln: sglnOf('branch'),
+        // Derived from the custodian the platform itself reports.
+        sourceSgln: sglnOfGln(holderGln),
         destinationSgln: sglnOf('manufacturer'),
         bizTransaction: returnRefToMfg,
         disposition: 'returned',
-        readPointSgln: sglnOf('branch'),
+        readPointSgln: sglnOfGln(holderGln),
       })],
-      { senderGln: BRANCH(), receiverGln: MFG() },
+      { senderGln: holderGln, receiverGln: MFG() },
     ), 'return both packs to the manufacturer')
 
     for (const [i, sgtin] of sgtinsReturning.entries()) {
