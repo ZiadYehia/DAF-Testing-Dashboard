@@ -13,6 +13,16 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-08T07-14-15-452Z",
+      "status": "fail",
+      "durationMs": 11747,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: TC_COMM_026 a non-ISO-8601 eventTime: the platform ACCEPTED input it should refuse — http=200 raw=\"S - Successful\" state=SUCCESS polls=6 logs=[I: Commission (Items) event processed successfully | I: Message processed successfully — all 1 event(s) completed]",
+      "environment": "Production (devsim)"
+    },
+    {
       "ts": "2026-09-07T20-15-00-596Z",
       "status": "fail",
       "durationMs": 16937.689,
@@ -86,6 +96,7 @@
   "folder": "EPTTS APIs / api-commission",
   "engine": "api",
   "lastStatusByEnv": {
+    "Production (devsim)": "fail",
     "ngrok relay": "fail",
     "(no environment)": "fail"
   }

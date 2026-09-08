@@ -10,8 +10,18 @@
     "testcaseId": "TS_PACK_012"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "pass",
+  "lastStatus": "fail",
   "runs": [
+    {
+      "ts": "2026-09-08T07-31-04-007Z",
+      "status": "fail",
+      "durationMs": 23857,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: mixed-GTIN pack: http=200 raw=\"E - Application Error\" state=FAILED polls=6 logs=[E: Packing event failed: Cannot mix Dawana-integrated and non-Dawana-integrated products in the same SSCC (854138688526760847). All packs in an aggregation must share the same integration type. | E: Message processing failed — 1 of 1 event(s) encountered errors]",
+      "environment": "Production (devsim)"
+    },
     {
       "ts": "2026-09-07T20-03-08-974Z",
       "status": "pass",
@@ -54,6 +64,7 @@
   "folder": "EPTTS APIs / api-packing",
   "engine": "api",
   "lastStatusByEnv": {
+    "Production (devsim)": "fail",
     "ngrok relay": "pass",
     "(no environment)": "pass"
   }

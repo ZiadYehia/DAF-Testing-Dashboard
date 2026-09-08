@@ -13,6 +13,16 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-08T08-06-06-091Z",
+      "status": "fail",
+      "durationMs": 176,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: an empty eventList should be rejected, not accepted",
+      "environment": "Production (devsim)"
+    },
+    {
       "ts": "2026-09-06T13-11-42-588Z",
       "status": "fail",
       "durationMs": 1355,
@@ -39,5 +49,10 @@
     "security"
   ],
   "folder": "EPTTS APIs / api-security",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "Production (devsim)": "fail",
+    "ngrok relay": "fail",
+    "(no environment)": "fail"
+  }
 }

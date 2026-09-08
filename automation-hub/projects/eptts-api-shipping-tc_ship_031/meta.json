@@ -13,6 +13,15 @@
   "lastStatus": "pass",
   "runs": [
     {
+      "ts": "2026-09-08T08-13-09-606Z",
+      "status": "pass",
+      "durationMs": 37280,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "Production (devsim)"
+    },
+    {
       "ts": "2026-09-06T12-51-14-080Z",
       "status": "pass",
       "durationMs": 22811,
@@ -35,5 +44,10 @@
     "write"
   ],
   "folder": "EPTTS APIs / api-shipping",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "Production (devsim)": "pass",
+    "ngrok relay": "pass",
+    "(no environment)": "pass"
+  }
 }

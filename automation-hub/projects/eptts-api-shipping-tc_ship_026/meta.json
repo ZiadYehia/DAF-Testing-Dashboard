@@ -13,6 +13,16 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-08T08-12-19-817Z",
+      "status": "fail",
+      "durationMs": 36548,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: TC_SHIP_026 an empty eventTimeZoneOffset: the platform ACCEPTED input it should refuse — http=200 raw=\"S - Successful\" state=SUCCESS polls=6 logs=[I: Shipping event processed successfully | I: Message processed successfully — all 1 event(s) completed]",
+      "environment": "Production (devsim)"
+    },
+    {
       "ts": "2026-09-06T13-12-13-158Z",
       "status": "fail",
       "durationMs": 1142,
@@ -38,5 +48,10 @@
     "known-gap"
   ],
   "folder": "EPTTS APIs / api-shipping",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "Production (devsim)": "fail",
+    "ngrok relay": "fail",
+    "(no environment)": "fail"
+  }
 }

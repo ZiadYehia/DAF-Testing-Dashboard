@@ -13,6 +13,15 @@
   "lastStatus": "pass",
   "runs": [
     {
+      "ts": "2026-09-08T07-13-02-195Z",
+      "status": "pass",
+      "durationMs": 229,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "Production (devsim)"
+    },
+    {
       "ts": "2026-09-07T16-58-54-570Z",
       "status": "pass",
       "durationMs": 3257.7679999999996,
@@ -142,8 +151,8 @@
   "folder": "EPTTS APIs / api-authentication",
   "engine": "api",
   "lastStatusByEnv": {
-    "ngrok relay": "pass",
     "Production (devsim)": "pass",
+    "ngrok relay": "pass",
     "(no environment)": "fail"
   }
 }

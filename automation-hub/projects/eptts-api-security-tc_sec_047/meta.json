@@ -13,6 +13,16 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-08T08-07-12-250Z",
+      "status": "fail",
+      "durationMs": 72527,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: auth failed for role \"ef_pharmacy\": 401 {\"statusCode\":401,\"timestamp\":\"2026-09-08T08:08:26.595Z\",\"path\":\"/registry-service/api/v1/auth\",\"method\":\"POST\",\"correlationId\":\"no-context\",\"message\":\"Http Exception\"} — check EPTTS_EF_PHARMACY_APIKEY in automation-hub/.env (keys cannot be re-read from the platform; if lost they must be rotated again)",
+      "environment": "Production (devsim)"
+    },
+    {
       "ts": "2026-09-06T13-11-52-189Z",
       "status": "fail",
       "durationMs": 922,
@@ -29,5 +39,9 @@
     "security"
   ],
   "folder": "EPTTS APIs / api-security",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "Production (devsim)": "fail",
+    "ngrok relay": "fail"
+  }
 }

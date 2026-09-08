@@ -13,6 +13,16 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-08T07-25-41-498Z",
+      "status": "fail",
+      "durationMs": 83607,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: the refusal names the Dawana channel",
+      "environment": "Production (devsim)"
+    },
+    {
       "ts": "2026-09-08T06-54-22-873Z",
       "status": "fail",
       "durationMs": 82065,

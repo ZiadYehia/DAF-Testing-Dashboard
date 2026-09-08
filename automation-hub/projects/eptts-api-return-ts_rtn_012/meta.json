@@ -13,6 +13,16 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-08T07-56-38-412Z",
+      "status": "fail",
+      "durationMs": 52521,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: return to a party that never supplied the pack: the platform ACCEPTED input it should refuse — http=200 raw=\"S - Successful\" state=SUCCESS polls=6 logs=[I: Return event processed successfully | I: Message processed successfully — all 1 event(s) completed]",
+      "environment": "Production (devsim)"
+    },
+    {
       "ts": "2026-09-06T13-10-26-239Z",
       "status": "fail",
       "durationMs": 1301,
@@ -37,5 +47,10 @@
     "write"
   ],
   "folder": "EPTTS APIs / api-return",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "Production (devsim)": "fail",
+    "ngrok relay": "fail",
+    "(no environment)": "fail"
+  }
 }

@@ -415,5 +415,9 @@ const RTRV_FIELDS: Partial<Record<string, MutationName>> = {
 export const RETURN_RECEIVING_CASES: ApiCase[] = [
   ...rtrvBusiness,
   ...rtrvUnclear,
-  ...fieldCases({ feature: RTRV, role: 'manufacturer', verb: 'return receiving', baseDoc: rtrvBase, map: RTRV_FIELDS }),
+    // TS_RTRV_010 and TC_COMM_004: the shared emptyEpcList gap no longer holds everywhere.
+    // Measured on devsim 2026-09-08 — return receiving and commissioning both refuse a
+    // zero-EPC event now. Opted out per feature rather than deleted from KNOWN_GAPS,
+    // because a deployment where the gap survives must still fail rather than be excused.
+  ...fieldCases({ validates: ['TS_RTRV_010'], feature: RTRV, role: 'manufacturer', verb: 'return receiving', baseDoc: rtrvBase, map: RTRV_FIELDS }),
 ]

@@ -84,7 +84,10 @@ const MUTATIONS: Mut[] = [
   // EPC list, GTIN, serial
   {
     id: 'TC_COMM_004', what: 'an empty epcList', mutate: (d) => { ev(d).epcList = [] },
-    gap: 'an event with zero EPCs is accepted; the log even omits the "Commission (Items)" line',
+    // The gap marker is gone: measured on devsim 2026-09-08, commissioning now refuses a
+    // zero-EPC event. It used to be accepted with the "Commission (Items)" line missing
+    // from the log entirely. A deployment that still accepts it now fails here, which is
+    // the point — the marker was excusing a defect that has since been fixed.
   },
   {
     id: 'TC_COMM_005', what: 'a GTIN not registered on the platform',

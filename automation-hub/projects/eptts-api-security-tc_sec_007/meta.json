@@ -10,8 +10,17 @@
     "testcaseId": "TC_SEC_007"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "fail",
+  "lastStatus": "pass",
   "runs": [
+    {
+      "ts": "2026-09-08T08-05-05-577Z",
+      "status": "pass",
+      "durationMs": 36,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "Production (devsim)"
+    },
     {
       "ts": "2026-09-06T13-11-24-117Z",
       "status": "fail",
@@ -37,5 +46,10 @@
     "security"
   ],
   "folder": "EPTTS APIs / api-security",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "Production (devsim)": "pass",
+    "ngrok relay": "fail",
+    "(no environment)": "pass"
+  }
 }

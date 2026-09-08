@@ -10,8 +10,27 @@
     "testcaseId": "TS_UNPK_001"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "fail",
+  "lastStatus": "pass",
   "runs": [
+    {
+      "ts": "2026-09-08T08-18-04-132Z",
+      "status": "pass",
+      "durationMs": 36713,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "Production (devsim)"
+    },
+    {
+      "ts": "2026-09-08T08-15-59-709Z",
+      "status": "fail",
+      "durationMs": 317,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: auth failed for role \"manufacturer\": 502 {} — check EPTTS_MFG_APIKEY in automation-hub/.env (keys cannot be re-read from the platform; if lost they must be rotated again)",
+      "environment": "Production (devsim)"
+    },
     {
       "ts": "2026-09-07T15-07-48-606Z",
       "status": "fail",
@@ -64,5 +83,10 @@
     "write"
   ],
   "folder": "EPTTS APIs / api-unpacking",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "Production (devsim)": "pass",
+    "ngrok relay": "fail",
+    "(no environment)": "pass"
+  }
 }

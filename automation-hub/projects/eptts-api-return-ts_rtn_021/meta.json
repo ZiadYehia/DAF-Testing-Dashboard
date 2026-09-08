@@ -13,6 +13,16 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-08T07-58-45-213Z",
+      "status": "fail",
+      "durationMs": 59914,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: duplicate EPCs: the platform ACCEPTED input it should refuse — http=200 raw=\"S - Successful\" state=SUCCESS polls=6 logs=[I: Return event processed successfully | I: Message processed successfully — all 1 event(s) completed]",
+      "environment": "Production (devsim)"
+    },
+    {
       "ts": "2026-09-06T13-10-38-257Z",
       "status": "fail",
       "durationMs": 747,
@@ -37,5 +47,10 @@
     "write"
   ],
   "folder": "EPTTS APIs / api-return",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "Production (devsim)": "fail",
+    "ngrok relay": "fail",
+    "(no environment)": "fail"
+  }
 }

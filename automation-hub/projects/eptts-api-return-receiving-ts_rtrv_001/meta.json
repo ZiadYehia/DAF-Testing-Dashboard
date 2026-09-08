@@ -10,8 +10,17 @@
     "testcaseId": "TS_RTRV_001"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "fail",
+  "lastStatus": "pass",
   "runs": [
+    {
+      "ts": "2026-09-08T07-41-23-470Z",
+      "status": "pass",
+      "durationMs": 71059,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "Production (devsim)"
+    },
     {
       "ts": "2026-09-06T13-09-54-167Z",
       "status": "fail",
@@ -36,5 +45,10 @@
     "write"
   ],
   "folder": "EPTTS APIs / api-return-receiving",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "Production (devsim)": "pass",
+    "ngrok relay": "fail",
+    "(no environment)": "pass"
+  }
 }

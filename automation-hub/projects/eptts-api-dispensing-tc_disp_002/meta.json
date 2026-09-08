@@ -13,6 +13,26 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-08T07-19-18-915Z",
+      "status": "fail",
+      "durationMs": 83975,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: three packs in one dispense: the platform ACCEPTED a dispense it should refuse — http=200 raw=\"S - Successful\" state=SUCCESS polls=6 logs=[I: Dispensing event processed successfully | I: Message processed successfully — all 1 event(s) completed]",
+      "environment": "Production (devsim)"
+    },
+    {
+      "ts": "2026-09-08T07-45-39-326Z",
+      "status": "fail",
+      "durationMs": 171327.34600000002,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: three packs in one dispense: the platform ACCEPTED a dispense it should refuse — http=200 raw=\"S - Successful\" state=SUCCESS polls=6 logs=[I: Dispensing event processed successfully | I: Message processed successfully — all 1 event(s) completed]",
+      "environment": "Production (devsim)"
+    },
+    {
       "ts": "2026-09-08T06-48-13-028Z",
       "status": "fail",
       "durationMs": 82283,

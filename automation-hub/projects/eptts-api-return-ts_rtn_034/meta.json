@@ -10,8 +10,17 @@
     "testcaseId": "TS_RTN_034"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "fail",
+  "lastStatus": "pass",
   "runs": [
+    {
+      "ts": "2026-09-08T08-01-58-244Z",
+      "status": "pass",
+      "durationMs": 61469,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "Production (devsim)"
+    },
     {
       "ts": "2026-09-06T13-10-52-355Z",
       "status": "fail",
@@ -36,5 +45,10 @@
     "write"
   ],
   "folder": "EPTTS APIs / api-return",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "Production (devsim)": "pass",
+    "ngrok relay": "fail",
+    "(no environment)": "pass"
+  }
 }
