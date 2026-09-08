@@ -13,6 +13,16 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-08T13-28-25-895Z",
+      "status": "fail",
+      "durationMs": 463,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: pharmacy history does not disclose manufacturer events",
+      "environment": "Production (devsim)"
+    },
+    {
       "ts": "2026-09-08T08-05-38-459Z",
       "status": "fail",
       "durationMs": 899,

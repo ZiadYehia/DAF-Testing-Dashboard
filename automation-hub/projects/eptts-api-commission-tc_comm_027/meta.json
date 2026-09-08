@@ -10,8 +10,26 @@
     "testcaseId": "TC_COMM_027"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "fail",
+  "lastStatus": "pass",
   "runs": [
+    {
+      "ts": "2026-09-08T13-45-27-811Z",
+      "status": "pass",
+      "durationMs": 12067,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "Production (devsim)"
+    },
+    {
+      "ts": "2026-09-08T12-38-35-086Z",
+      "status": "pass",
+      "durationMs": 11628,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "Production (devsim)"
+    },
     {
       "ts": "2026-09-08T08-49-05-179Z",
       "status": "fail",
@@ -106,7 +124,7 @@
   "folder": "EPTTS APIs / api-commission",
   "engine": "api",
   "lastStatusByEnv": {
-    "Production (devsim)": "fail",
+    "Production (devsim)": "pass",
     "ngrok relay": "fail",
     "(no environment)": "fail"
   }

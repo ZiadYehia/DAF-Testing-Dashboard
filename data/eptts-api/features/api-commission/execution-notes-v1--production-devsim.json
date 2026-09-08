@@ -1,7 +1,7 @@
 {
-  "TC_COMM_025": "platform validation gap: an empty eventTime is accepted and processed successfully",
-  "TC_COMM_026": "platform validation gap: a non-ISO-8601 eventTime is accepted and processed successfully",
-  "TC_COMM_027": "platform validation gap: an empty eventTimeZoneOffset is accepted and processed successfully",
-  "TC_COMM_028": "platform validation gap: eventTimeZoneOffset +99:99 is accepted and processed successfully",
-  "TC_COMM_034": "platform validation gap: a disposition outside the CBV vocabulary is accepted (presence is checked, validity is not)"
+  "TC_COMM_025": "Previously a known platform gap; the platform now behaves correctly. Remove the expected-failure marker for this case in automation-hub/lib/eptts-cases/.",
+  "TC_COMM_026": "Previously a known platform gap; the platform now behaves correctly. Remove the expected-failure marker for this case in automation-hub/lib/eptts-cases/.",
+  "TC_COMM_027": "Previously a known platform gap; the platform now behaves correctly. Remove the expected-failure marker for this case in automation-hub/lib/eptts-cases/.",
+  "TC_COMM_028": "Previously a known platform gap; the platform now behaves correctly. Remove the expected-failure marker for this case in automation-hub/lib/eptts-cases/.",
+  "TC_COMM_034": "Previously a known platform gap; the platform now behaves correctly. Remove the expected-failure marker for this case in automation-hub/lib/eptts-cases/."
 }

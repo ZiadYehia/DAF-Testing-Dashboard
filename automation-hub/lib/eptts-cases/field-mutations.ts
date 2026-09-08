@@ -202,11 +202,15 @@ export type MutationName = keyof typeof MUTATIONS
  * hides the fact that this endpoint gets it right.
  */
 export const KNOWN_GAPS: Partial<Record<MutationName, string>> = {
-  emptyEventTime: 'an empty eventTime is accepted and processed successfully',
-  invalidEventTime: 'a non-ISO-8601 eventTime is accepted and processed successfully',
-  emptyOffset: 'an empty eventTimeZoneOffset is accepted and processed successfully',
-  invalidOffset: 'eventTimeZoneOffset +99:99 is accepted and processed successfully',
-  invalidDisposition: 'a disposition outside the CBV vocabulary is accepted (presence is checked, validity is not)',
+  // FIXED ON THE PLATFORM, 2026-09-08. eventTime, eventTimeZoneOffset and disposition are all
+  // validated now: 18 cases across commission, destruction, receiving, shipping, return and
+  // return receiving flipped from "accepted" to a correct refusal in one run. Their markers are
+  // deleted rather than opted out per feature, because the gap is gone everywhere it was
+  // recorded — a marker left behind would keep asserting a defect the platform has repaired,
+  // which is how a fixed bug quietly becomes a permanent one in the report.
+  //
+  // emptyEpcList stays: it was fixed feature by feature (destruction, commission and return
+  // receiving opted out via `validates`) and any feature not yet opted out may still accept it.
   emptyEpcList: 'an event with zero EPCs is accepted and reported successful',
 }
 

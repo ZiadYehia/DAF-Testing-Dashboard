@@ -10,8 +10,26 @@
     "testcaseId": "TS_RECV_028"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "fail",
+  "lastStatus": "pass",
   "runs": [
+    {
+      "ts": "2026-09-08T13-45-51-754Z",
+      "status": "pass",
+      "durationMs": 46840,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "Production (devsim)"
+    },
+    {
+      "ts": "2026-09-08T13-01-36-450Z",
+      "status": "pass",
+      "durationMs": 47191,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "Production (devsim)"
+    },
     {
       "ts": "2026-09-08T08-56-27-226Z",
       "status": "fail",
@@ -78,7 +96,7 @@
   "folder": "EPTTS APIs / api-receiving",
   "engine": "api",
   "lastStatusByEnv": {
-    "Production (devsim)": "fail",
+    "Production (devsim)": "pass",
     "ngrok relay": "fail",
     "(no environment)": "fail"
   }

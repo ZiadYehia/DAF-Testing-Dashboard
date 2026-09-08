@@ -10,8 +10,26 @@
     "testcaseId": "TC_DEST_020"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "fail",
+  "lastStatus": "pass",
   "runs": [
+    {
+      "ts": "2026-09-08T13-45-41-856Z",
+      "status": "pass",
+      "durationMs": 24605,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "Production (devsim)"
+    },
+    {
+      "ts": "2026-09-08T12-42-31-958Z",
+      "status": "pass",
+      "durationMs": 23331,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "Production (devsim)"
+    },
     {
       "ts": "2026-09-08T07-18-00-657Z",
       "status": "fail",
@@ -90,7 +108,7 @@
   "folder": "EPTTS APIs / api-destruction",
   "engine": "api",
   "lastStatusByEnv": {
-    "Production (devsim)": "fail",
+    "Production (devsim)": "pass",
     "ngrok relay": "fail",
     "(no environment)": "fail"
   }

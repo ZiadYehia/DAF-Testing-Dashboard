@@ -20,6 +20,11 @@ None of the EPCIS event-time fields is validated. All four of these commissionin
 
 **Covers test cases:** `TC_COMM_025`, `TC_COMM_026`, `TC_COMM_027`, `TC_COMM_028`, `TC_DEST_019`, `TC_DEST_020`, `TS_RECV_029`, `TS_RECV_030`, `TS_RTN_032`, `TS_RTN_033`, `TS_RTRV_030`, `TS_RTRV_031`, `TC_SHIP_025`, `TC_SHIP_026`, `TC_SHIP_039`
 
+**FIXED ON THE PLATFORM, verified 2026-09-08 on devsim.** Every case this report covers now
+reaches a correct refusal, confirmed by a targeted re-run after the suite's expected-failure
+markers were removed. Left on the board rather than withdrawn because it is filed in Jira —
+a human should close the ticket rather than have the report vanish from under it.
+
 ---
 
 **Steps to Reproduce:**

@@ -25,6 +25,11 @@ refuses a zero-EPC event outright — "epcList is required and must not be empty
 empty-epcList half is fixed. Destruction and return receiving refuse it too. What remains is a
 document whose eventList is empty being accepted, which no validation catches.
 
+**FIXED ON THE PLATFORM, verified 2026-09-08 on devsim.** Every case this report covers now
+reaches a correct refusal, confirmed by a targeted re-run after the suite's expected-failure
+markers were removed. Left on the board rather than withdrawn because it is filed in Jira —
+a human should close the ticket rather than have the report vanish from under it.
+
 ---
 
 **Steps to Reproduce:**

@@ -13,6 +13,16 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-08T12-37-22-686Z",
+      "status": "fail",
+      "durationMs": 60,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: no username field: a half-supplied credential should be rejected, not ignored",
+      "environment": "Production (devsim)"
+    },
+    {
       "ts": "2026-09-08T07-13-02-628Z",
       "status": "fail",
       "durationMs": 68,

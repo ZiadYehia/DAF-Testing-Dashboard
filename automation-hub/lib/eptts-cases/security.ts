@@ -525,7 +525,8 @@ const INPUT: ApiCase[] = [
   },
   {
     id: 'TC_SEC_029', feature: FEATURE, title: 'a document with zero events is rejected',
-    expectFail: 'platform validation gap: an empty eventList is accepted (202 I001) instead of rejected',
+    // Marker removed 2026-09-08: a zero-event document is refused now. It used to be
+    // accepted with 202 I001, which is what DW-959 was filed on.
     run: async () => {
       const doc = epcisDocument([], { senderGln: MFG(), receiverGln: MFG() })
       const res = await postMasar('manufacturer', '/scp/SendEPCIS', doc)

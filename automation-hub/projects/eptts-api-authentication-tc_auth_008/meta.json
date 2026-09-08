@@ -13,6 +13,16 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-08T12-37-22-622Z",
+      "status": "fail",
+      "durationMs": 72,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: an empty password: a half-supplied credential should be rejected, not ignored",
+      "environment": "Production (devsim)"
+    },
+    {
       "ts": "2026-09-08T07-13-02-591Z",
       "status": "fail",
       "durationMs": 65,

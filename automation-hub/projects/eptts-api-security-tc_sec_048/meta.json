@@ -13,6 +13,16 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-08T13-30-25-995Z",
+      "status": "fail",
+      "durationMs": 11767,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: auth failed for role \"ef_manufacturer\": 401 {\"statusCode\":401,\"timestamp\":\"2026-09-08T13:30:39.910Z\",\"path\":\"/registry-service/api/v1/auth\",\"method\":\"POST\",\"correlationId\":\"no-context\",\"message\":\"Http Exception\"} — check EPTTS_EF_MAH_APIKEY in automation-hub/.env (keys cannot be re-read from the platform; if lost they must be rotated again)",
+      "environment": "Production (devsim)"
+    },
+    {
       "ts": "2026-09-08T08-07-35-790Z",
       "status": "fail",
       "durationMs": 13022,

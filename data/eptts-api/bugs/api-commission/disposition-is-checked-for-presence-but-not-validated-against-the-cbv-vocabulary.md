@@ -20,6 +20,11 @@ found_at: '2026-08-31T10:05:00.000Z'
 
 **Covers test cases:** `TC_COMM_034`, `TS_RECV_028`, `TS_RTRV_029`
 
+**FIXED ON THE PLATFORM, verified 2026-09-08 on devsim.** Every case this report covers now
+reaches a correct refusal, confirmed by a targeted re-run after the suite's expected-failure
+markers were removed. Left on the board rather than withdrawn because it is filed in Jira —
+a human should close the ticket rather than have the report vanish from under it.
+
 ---
 
 **Steps to Reproduce:**

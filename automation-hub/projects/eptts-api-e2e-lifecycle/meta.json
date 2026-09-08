@@ -9,6 +9,16 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-08T12-51-34-290Z",
+      "status": "fail",
+      "durationMs": 141999,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: platform verdict on the event: expected MsgStatusQuery → SUCCESS, actual FAILED — Return event failed: Source GLN 6220000000013 (Test Pharmacy 1) is a pharmacy, but must be a branch or distributor or manufacturer for this type of return. | Message processing failed — 1 of 1 event(s) encountered errors",
+      "environment": "Production (devsim)"
+    },
+    {
       "ts": "2026-09-08T09-56-23-342Z",
       "status": "fail",
       "durationMs": 153291,

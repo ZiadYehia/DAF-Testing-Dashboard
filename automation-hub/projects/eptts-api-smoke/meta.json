@@ -9,6 +9,16 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-08T13-38-09-364Z",
+      "status": "fail",
+      "durationMs": 28641,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": false,
+      "error": "Error: rejection states a reason",
+      "environment": "Production (devsim)"
+    },
+    {
       "ts": "2026-09-07T14-53-23-441Z",
       "status": "fail",
       "durationMs": 25429.300000000003,
@@ -34,6 +44,7 @@
   "folder": "EPTTS APIs",
   "engine": "api",
   "lastStatusByEnv": {
+    "Production (devsim)": "fail",
     "ngrok relay": "fail",
     "(no environment)": "pass"
   }

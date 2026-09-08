@@ -13,6 +13,16 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-08T13-30-05-350Z",
+      "status": "fail",
+      "durationMs": 70490,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: auth failed for role \"ef_pharmacy\": 401 {\"statusCode\":401,\"timestamp\":\"2026-09-08T13:31:17.978Z\",\"path\":\"/registry-service/api/v1/auth\",\"method\":\"POST\",\"correlationId\":\"no-context\",\"message\":\"Http Exception\"} — check EPTTS_EF_PHARMACY_APIKEY in automation-hub/.env (keys cannot be re-read from the platform; if lost they must be rotated again)",
+      "environment": "Production (devsim)"
+    },
+    {
       "ts": "2026-09-08T08-07-12-250Z",
       "status": "fail",
       "durationMs": 72527,

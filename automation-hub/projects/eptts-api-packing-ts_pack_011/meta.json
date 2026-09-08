@@ -13,6 +13,16 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-08T12-54-58-728Z",
+      "status": "fail",
+      "durationMs": 23456,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: same child under two parents in one document: the platform ACCEPTED input it should refuse — http=200 raw=\"S - Successful\" state=SUCCESS polls=6 logs=[I: Packing event processed successfully | W: Packing event skipped — no new identifiers to process | I: Message processed successfully — all 2 event(s) completed]",
+      "environment": "Production (devsim)"
+    },
+    {
       "ts": "2026-09-08T08-51-19-182Z",
       "status": "fail",
       "durationMs": 27182,

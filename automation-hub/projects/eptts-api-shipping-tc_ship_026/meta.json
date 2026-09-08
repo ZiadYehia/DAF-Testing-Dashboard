@@ -10,8 +10,26 @@
     "testcaseId": "TC_SHIP_026"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "fail",
+  "lastStatus": "pass",
   "runs": [
+    {
+      "ts": "2026-09-08T13-48-35-790Z",
+      "status": "pass",
+      "durationMs": 35046,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "Production (devsim)"
+    },
+    {
+      "ts": "2026-09-08T13-34-49-396Z",
+      "status": "pass",
+      "durationMs": 35059,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "Production (devsim)"
+    },
     {
       "ts": "2026-09-08T09-28-55-006Z",
       "status": "fail",
@@ -60,7 +78,7 @@
   "folder": "EPTTS APIs / api-shipping",
   "engine": "api",
   "lastStatusByEnv": {
-    "Production (devsim)": "fail",
+    "Production (devsim)": "pass",
     "ngrok relay": "fail",
     "(no environment)": "fail"
   }

@@ -136,19 +136,15 @@ const MUTATIONS: Mut[] = [
   { id: 'TC_COMM_024', what: 'an unknown event type', mutate: (d) => { ev(d).type = 'TeleportEvent' } },
   {
     id: 'TC_COMM_025', what: 'an empty eventTime', mutate: (d) => { ev(d).eventTime = '' },
-    gap: 'an empty eventTime is accepted and processed successfully',
   },
   {
     id: 'TC_COMM_026', what: 'a non-ISO-8601 eventTime', mutate: (d) => { ev(d).eventTime = '05-05-2026 10:00' },
-    gap: 'a non-ISO-8601 eventTime is accepted and processed successfully',
   },
   {
     id: 'TC_COMM_027', what: 'an empty eventTimeZoneOffset', mutate: (d) => { ev(d).eventTimeZoneOffset = '' },
-    gap: 'an empty eventTimeZoneOffset is accepted and processed successfully',
   },
   {
     id: 'TC_COMM_028', what: 'an invalid eventTimeZoneOffset', mutate: (d) => { ev(d).eventTimeZoneOffset = '+99:99' },
-    gap: 'eventTimeZoneOffset +99:99 is accepted and processed successfully',
   },
   { id: 'TC_COMM_029', what: 'an empty action', mutate: (d) => { ev(d).action = '' } },
   { id: 'TC_COMM_030', what: 'an invalid action', mutate: (d) => { ev(d).action = 'MODIFY' } },
@@ -159,7 +155,6 @@ const MUTATIONS: Mut[] = [
     id: 'TC_COMM_034', what: 'an invalid disposition', mutate: (d) => { ev(d).disposition = 'teleported' },
     // TC_COMM_033 (empty) IS refused as a missing mandatory field, so the presence check
     // exists — but the value is never checked against the CBV vocabulary.
-    gap: 'a disposition outside the CBV vocabulary is accepted (presence is checked, validity is not)',
   },
   { id: 'TC_COMM_035', what: 'an unsupported schemaVersion', mutate: (d) => { d.schemaVersion = '9.9' } },
   { id: 'TC_COMM_036', what: 'an empty readPoint identifier', mutate: (d) => { ev(d).readPoint = { id: '' } } },
