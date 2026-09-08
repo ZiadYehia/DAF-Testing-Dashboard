@@ -9,6 +9,24 @@
   "lastStatus": "pass",
   "runs": [
     {
+      "ts": "2026-09-08T08-40-22-688Z",
+      "status": "pass",
+      "durationMs": 134701,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "Production (devsim)"
+    },
+    {
+      "ts": "2026-09-08T07-08-57-565Z",
+      "status": "pass",
+      "durationMs": 136576,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "Production (devsim)"
+    },
+    {
       "ts": "2026-08-31T23-27-25-252Z",
       "status": "pass",
       "durationMs": 89373.099,
@@ -25,5 +43,9 @@
     "returns"
   ],
   "folder": "EPTTS APIs",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "Production (devsim)": "pass",
+    "(no environment)": "pass"
+  }
 }

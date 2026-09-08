@@ -45,6 +45,8 @@ const ANSI = /\u001b\[[0-9;]*m/g
 
 interface Spec {
   title: string
+  /** e.g. "projects/eptts-api-e2e-lifecycle/test.spec.ts" — how a journey is identified. */
+  file?: string
   tests?: {
     status?: string
     results?: {
@@ -77,6 +79,40 @@ async function main() {
 
   let recorded = 0, skipped = 0, noProject = 0, withEvidence = 0, replaced = 0
   const missing: string[] = []
+
+  /**
+   * JOURNEY SPECS ARE ONE PROJECT WITH MANY TESTS, so they cannot be matched by case id.
+   *
+   * Every other project holds a single case whose id is in the test title, and that is what
+   * the loop below keys on. A journey's tests are titled "STEP 00", "STEP 01" and so on, so
+   * they matched nothing and their runs were never recorded: eptts-api-e2e-lifecycle's newest
+   * Hub run was a relay run from the previous day while three devsim runs had happened since.
+   *
+   * They are keyed on the spec's own `file` path instead, which names the project directly.
+   * One run record per project, failing if ANY step failed — for a serial journey that is the
+   * honest summary, because a later step cannot be judged once an earlier one has broken the
+   * chain.
+   */
+  const journeys = new Map<string, { status: 'pass' | 'fail'; durationMs: number; ts: string; error?: string; attachments: { name: string; path?: string }[] }>()
+  for (const sp of specs) {
+    // Both separators: the JSON report uses forward slashes, a hand-passed path may not.
+    const m = /(?:^|[\\/])projects[\\/]([^\\/]+)[\\/]/.exec(sp.file ?? '')
+    if (!m) continue
+    const t = sp.tests?.[0]
+    if (!t || t.status === 'skipped') continue
+    const r = t.results?.[0] ?? {}
+    const name = m[1]
+    const prev = journeys.get(name)
+    const failed = r.status !== 'passed'
+    const err = r.error?.message ? r.error.message.replace(ANSI, '').split('\n')[0].trim() : undefined
+    journeys.set(name, {
+      status: failed || prev?.status === 'fail' ? 'fail' : 'pass',
+      durationMs: (prev?.durationMs ?? 0) + (r.duration ?? 0),
+      ts: prev?.ts ?? tsFolder(r.startTime ?? new Date().toISOString()),
+      error: prev?.error ?? (failed ? err : undefined),
+      attachments: (prev?.attachments?.length ? prev.attachments : (r.attachments ?? [])),
+    })
+  }
 
   for (const sp of specs) {
     const caseId = (sp.title.match(/^(T[CS]_[A-Z]+_\d+)/) ?? [])[1]
@@ -146,6 +182,43 @@ async function main() {
 
     if (hasApiLog) withEvidence++
     recorded++
+  }
+
+  for (const [name, j] of journeys) {
+    if (!(await readMeta(name))) { noProject++; missing.push(`${name} (no meta.json)`); continue }
+    const wanted = ['api-log.html', 'api-exchanges.json', 'api-postman-collection.json']
+    const present = j.attachments.filter((a) => wanted.includes(a.name) && a.path)
+    let hasApiLog = false
+    if (WRITE) {
+      const dir = runDir(name, j.ts)
+      await fs.mkdir(dir, { recursive: true })
+      for (const a of present) {
+        try {
+          await fs.copyFile(a.path!, path.join(dir, a.name))
+          if (a.name === 'api-log.html') hasApiLog = true
+        } catch { /* artifact pruned since the run */ }
+      }
+      await fs.writeFile(path.join(dir, 'result.json'),
+        JSON.stringify({ status: j.status, durationMs: j.durationMs, error: j.error, hasVideo: false,
+          hasTrace: false, hasApiLog, executed: true, source: 'cli', journey: true,
+          environment: ENVIRONMENT ?? null }, null, 2), 'utf8')
+      const existing = await readMeta(name)
+      if (existing?.runs?.some((x) => x.ts === j.ts)) {
+        await writeMeta({ ...existing, runs: existing.runs.filter((x) => x.ts !== j.ts) })
+        replaced++
+      }
+      await recordRun(name, {
+        ts: j.ts, status: j.status, durationMs: Math.round(j.durationMs),
+        hasVideo: false, hasTrace: false, hasApiLog,
+        ...(j.error ? { error: j.error } : {}),
+        ...(ENVIRONMENT ? { environment: ENVIRONMENT } : {}),
+      })
+    } else {
+      hasApiLog = present.some((a) => a.name === 'api-log.html')
+    }
+    if (hasApiLog) withEvidence++
+    recorded++
+    console.log(`  journey ${name}: ${j.status}`)
   }
 
   console.log(`environment: ${ENVIRONMENT ?? '(none)'}`)

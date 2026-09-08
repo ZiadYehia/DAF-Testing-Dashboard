@@ -9,6 +9,36 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-08T09-56-23-342Z",
+      "status": "fail",
+      "durationMs": 153291,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: platform verdict on the event: expected MsgStatusQuery → SUCCESS, actual FAILED — Return event failed: Source GLN 6220000000013 (Test Pharmacy 1) is a pharmacy, but must be a branch or distributor or manufacturer for this type of return. | Message processing failed — 1 of 1 event(s) encountered errors",
+      "environment": "Production (devsim)"
+    },
+    {
+      "ts": "2026-09-08T08-37-55-620Z",
+      "status": "fail",
+      "durationMs": 145755,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: platform verdict on the event: expected MsgStatusQuery → SUCCESS, actual FAILED — Return event failed: Source GLN 6220000000013 (Test Pharmacy 1) is a pharmacy, but must be a branch or distributor or manufacturer for this type of return. | Message processing failed — 1 of 1 event(s) encountered errors",
+      "environment": "Production (devsim)"
+    },
+    {
+      "ts": "2026-09-08T07-06-26-827Z",
+      "status": "fail",
+      "durationMs": 149386,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: platform verdict on the event: expected MsgStatusQuery → SUCCESS, actual FAILED — Return event failed: Source GLN 6220000000013 (Test Pharmacy 1) is a pharmacy, but must be a branch or distributor or manufacturer for this type of return. | Message processing failed — 1 of 1 event(s) encountered errors",
+      "environment": "Production (devsim)"
+    },
+    {
       "ts": "2026-09-07T20-20-02-411Z",
       "status": "fail",
       "durationMs": 20480.904,
@@ -50,6 +80,7 @@
   "folder": "EPTTS APIs",
   "engine": "api",
   "lastStatusByEnv": {
+    "Production (devsim)": "fail",
     "ngrok relay": "fail"
   }
 }
