@@ -13,6 +13,16 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-08T06-46-50-680Z",
+      "status": "fail",
+      "durationMs": 23462,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: TC_DEST_019 a non-ISO-8601 eventTime: the platform ACCEPTED input it should refuse — http=200 raw=\"S - Successful\" state=SUCCESS polls=6 logs=[I: Destruction event processed successfully | I: Message processed successfully — all 1 event(s) completed]",
+      "environment": "Production (devsim)"
+    },
+    {
       "ts": "2026-09-07T22-14-52-074Z",
       "status": "fail",
       "durationMs": 14321,
@@ -70,6 +80,7 @@
   "folder": "EPTTS APIs / api-destruction",
   "engine": "api",
   "lastStatusByEnv": {
+    "Production (devsim)": "fail",
     "ngrok relay": "fail",
     "(no environment)": "fail"
   }

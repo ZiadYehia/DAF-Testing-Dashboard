@@ -13,6 +13,16 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-08T06-54-22-873Z",
+      "status": "fail",
+      "durationMs": 82065,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: the refusal names the Dawana channel",
+      "environment": "Production (devsim)"
+    },
+    {
       "ts": "2026-09-07T22-16-21-661Z",
       "status": "fail",
       "durationMs": 2733,
@@ -76,6 +86,7 @@
   "folder": "EPTTS APIs / api-dispensing",
   "engine": "api",
   "lastStatusByEnv": {
+    "Production (devsim)": "fail",
     "ngrok relay": "fail",
     "(no environment)": "pass"
   }
