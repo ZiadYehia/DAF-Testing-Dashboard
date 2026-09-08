@@ -13,6 +13,15 @@
   "lastStatus": "pass",
   "runs": [
     {
+      "ts": "2026-09-08T09-15-56-132Z",
+      "status": "pass",
+      "durationMs": 76388,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "Production (devsim)"
+    },
+    {
       "ts": "2026-09-08T07-57-32-106Z",
       "status": "pass",
       "durationMs": 73052,

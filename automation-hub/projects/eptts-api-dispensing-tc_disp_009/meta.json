@@ -10,8 +10,17 @@
     "testcaseId": "TC_DISP_009"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "never_run",
+  "lastStatus": "pass",
   "runs": [
+    {
+      "ts": "2026-09-08T08-49-37-810Z",
+      "status": "pass",
+      "durationMs": 3140.5740000000005,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": false,
+      "environment": "Production (devsim)"
+    },
     {
       "ts": "2026-08-31T23-12-46-086Z",
       "status": "pass",
@@ -27,5 +36,9 @@
     "blocked"
   ],
   "folder": "EPTTS APIs / api-dispensing",
-  "engine": "api"
+  "engine": "api",
+  "lastStatusByEnv": {
+    "Production (devsim)": "pass",
+    "(no environment)": "pass"
+  }
 }

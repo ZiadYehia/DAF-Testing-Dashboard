@@ -13,6 +13,16 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-08T08-51-33-984Z",
+      "status": "fail",
+      "durationMs": 29478,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: mixed-GTIN pack: http=200 raw=\"E - Application Error\" state=FAILED polls=6 logs=[E: Packing event failed: Cannot mix Dawana-integrated and non-Dawana-integrated products in the same SSCC (854138688575099844). All packs in an aggregation must share the same integration type. | E: Message processing failed — 1 of 1 event(s) encountered errors]",
+      "environment": "Production (devsim)"
+    },
+    {
       "ts": "2026-09-08T07-31-04-007Z",
       "status": "fail",
       "durationMs": 23857,

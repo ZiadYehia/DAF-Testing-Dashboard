@@ -1,5 +1,4 @@
 {
-  "TC_COMM_003": "platform validation gap: re-commissioning an existing SGTIN succeeds",
   "TC_COMM_011": "platform validation gap: re-commissioning with a different batch succeeds",
   "TC_COMM_012": "platform validation gap: re-commissioning with a different expiry succeeds",
   "TC_COMM_025": "platform validation gap: an empty eventTime is accepted and processed successfully",
