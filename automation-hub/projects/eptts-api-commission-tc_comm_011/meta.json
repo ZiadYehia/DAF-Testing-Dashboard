@@ -10,8 +10,17 @@
     "testcaseId": "TC_COMM_011"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "fail",
+  "lastStatus": "pass",
   "runs": [
+    {
+      "ts": "2026-09-08T12-30-21-338Z",
+      "status": "pass",
+      "durationMs": 23977,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "Production (devsim)"
+    },
     {
       "ts": "2026-09-08T08-48-27-532Z",
       "status": "fail",
@@ -113,7 +122,7 @@
   "folder": "EPTTS APIs / api-commission",
   "engine": "api",
   "lastStatusByEnv": {
-    "Production (devsim)": "fail",
+    "Production (devsim)": "pass",
     "ngrok relay": "fail",
     "(no environment)": "fail"
   }

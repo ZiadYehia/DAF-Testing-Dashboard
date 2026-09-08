@@ -21,7 +21,11 @@ An EPCIS event whose required list is present but **empty** is accepted and repo
 `S - Successful`. It is not rejected synchronously, and `MsgStatusQuery` reports the message
 and every event inside it as processed.
 
-**Covers test cases:** `TC_SHIP_007`, `TC_SHIP_021`, `TS_RECV_007`, `TS_RTRV_006`, `TS_RTRV_010`, `TS_RTN_007`, `TS_RTN_009`, `TS_RTN_025`, `TC_DEST_005`
+**Covers test cases:** `TC_SHIP_007`, `TC_SHIP_021`, `TS_RECV_007`, `TS_RTRV_006`, `TS_RTN_007`, `TS_RTN_009`, `TS_RTN_025`
+
+**Re-scoped 2026-09-08.** `TS_RTRV_010` and `TC_DEST_005` are withdrawn: return receiving and
+destruction now refuse an empty `epcList` correctly. The seven remaining cases still accept an
+empty `sourceList`, `destinationList` or `bizTransactionList` on devsim.
 
 ---
 

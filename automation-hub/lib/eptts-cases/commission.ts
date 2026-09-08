@@ -279,44 +279,62 @@ const specialCases: ApiCase[] = [
   },
   {
     id: 'TC_COMM_011', feature: FEATURE, slow: true,
-    title: 're-commissioning the same SGTIN with a different batch is refused',
+    title: 're-commissioning the same SGTIN with a different batch is skipped, keeping the original',
     /**
-     * This case reported PASS while proving nothing.
+     * SKIP, NOT REFUSE — the same rule as TC_COMM_003, per the product owner 2026-09-08. The
+     * duplicate is ignored, and what matters is that ignoring it does not quietly rewrite the
+     * pack: the FIRST commission's batch has to survive.
      *
-     * It used to set the second lot to `OTHER-${uniqueSerial()}` — 24 characters — and the
-     * platform answered "batch exceeds 20 characters". expectRejected saw a rejection and was
-     * satisfied, so the re-commissioning rule was never reached. With a lot inside the limit
-     * the platform returns "S - Successful": the re-commission IS accepted.
+     * Two earlier versions of this case were wrong in different ways. The first set the second
+     * lot to 24 characters, so the platform answered "batch exceeds 20 characters" and
+     * expectRejected was satisfied by a rejection that had nothing to do with re-commissioning.
+     * The second kept the length inside the limit and expected a refusal that never comes.
      *
-     * The lot is now short enough to stay clear of that limit, and the rejection has to name
-     * the pack or the duplicate for the assertion to count.
+     * The lot stays short enough that a length complaint cannot stand in for the rule.
      */
-    expectFail: 'platform validation gap: re-commissioning with a different batch succeeds',
     run: async () => {
       const sgtin = freshSgtin()
-      await expectAccepted('manufacturer', validDoc([sgtin]), 'first commission')
+      const first = validDoc([sgtin])
+      const originalLot = ilmd(first)['cbvmda:lotNumber'] as string
+      await expectAccepted('manufacturer', first, 'first commission')
+
       const doc = validDoc([sgtin])
-      // 20 characters is the platform's limit; keep well inside it so a length complaint
-      // cannot stand in for the rule under test.
+      // 20 characters is the platform's limit; keep well inside it.
       ilmd(doc)['cbvmda:lotNumber'] = `OTHER-${runId().slice(0, 8)}`
-      await expectRejected('manufacturer', doc, 'same SGTIN, different batch',
-        /already|exists|duplicate|commission|sgtin|pack/i)
+      await expectAccepted('manufacturer', doc, 'same SGTIN, different batch')
+
+      const v = await packOf('manufacturer', sgtin)
+      console.log(`[comm] batch after the duplicate: ${v.pack?.batchNumber} (sent OTHER-…)`)
+      expect(v.pack?.batchNumber,
+        'the duplicate is skipped, so the ORIGINAL batch must survive — a changed batch here ' +
+        'would mean the re-commission silently rewrote an existing pack').toBe(originalLot)
     },
   },
   {
     id: 'TC_COMM_012', feature: FEATURE, slow: true,
-    title: 're-commissioning the same SGTIN with a different expiry is refused',
-    // Worse than a plain duplicate: this silently REWRITES an existing pack's expiry.
-    // This used to add "note a different *batch* IS correctly refused, so this looks like an
-    // oversight". That was wrong, and it came from TC_COMM_011's false pass: a different batch
-    // is accepted too. The gap is not an oversight in one field — no ilmd change is checked.
-    expectFail: 'platform validation gap: re-commissioning with a different expiry succeeds',
+    title: 're-commissioning the same SGTIN with a different expiry is skipped, keeping the original',
+    /**
+     * SKIP, NOT REFUSE, and the expiry is the field worth watching.
+     *
+     * This case previously claimed the re-commission "silently REWRITES an existing pack's
+     * expiry", which is what DW-958 was filed on. Measured on devsim 2026-09-08 it does NOT:
+     * the second document's expiry is ignored along with the rest of the event, and the pack
+     * keeps the first commission's date. Accepting the duplicate is the intended skip; the
+     * overwrite is the part that would have been a defect, and it does not happen.
+     */
     run: async () => {
       const sgtin = freshSgtin()
       await expectAccepted('manufacturer', validDoc([sgtin]), 'first commission')
+
       const doc = validDoc([sgtin])
       ilmd(doc)['cbvmda:itemExpirationDate'] = '2029-06-30'
-      await expectRejected('manufacturer', doc, 'same SGTIN, different expiry')
+      await expectAccepted('manufacturer', doc, 'same SGTIN, different expiry')
+
+      const v = await packOf('manufacturer', sgtin)
+      console.log(`[comm] expiry after the duplicate: ${v.pack?.expiryDate} (sent 2029-06-30)`)
+      expect(v.pack?.expiryDate,
+        'the duplicate is skipped, so the ORIGINAL expiry must survive — 2029-06-30 here would ' +
+        'mean an existing pack was silently rewritten').toBe('2030-12-31')
     },
   },
   {

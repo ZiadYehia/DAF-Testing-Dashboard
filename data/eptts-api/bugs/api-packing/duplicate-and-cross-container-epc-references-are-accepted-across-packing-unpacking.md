@@ -1,7 +1,7 @@
 ---
 title: >-
-  [Validation] Duplicate EPCs in one event, and a child claimed by two parents,
-  are accepted across packing, unpacking, destruction, receiving and returns
+  [Validation] A child is accepted under two parent SSCCs in one request, and
+  unpacking accepts a child the SSCC does not contain
 status: draft
 jira_key: null
 reported_at: null
@@ -19,7 +19,14 @@ found_at: '2026-09-01T01:15:00.000Z'
 An event that names the same EPC twice, or names a pack that does not belong to the container
 it references, is accepted and reported `S - Successful`.
 
-**Covers test cases:** `TS_PACK_009`, `TS_PACK_011`, `TS_UNPK_005`, `TC_DEST_008`, `TS_RECV_015`, `TS_RTN_021`
+**Covers test cases:** `TS_PACK_011`, `TS_UNPK_005`
+
+**Re-scoped 2026-09-08.** The duplicate-EPC half of this report is withdrawn: the product owner
+confirms a repeated EPC in one event is SKIPPED rather than refused, so `TS_PACK_009`,
+`TC_DEST_008`, `TS_RECV_015` and `TS_RTN_021` are correct behaviour and now assert the repeat
+leaves the pack unchanged. What remains is the cross-container half, which is a different
+defect: a child accepted under two parents at once, and a child unpacked from a container that
+never held it. Both still reproduce on devsim.
 
 ---
 

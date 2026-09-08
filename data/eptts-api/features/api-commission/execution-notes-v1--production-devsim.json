@@ -1,6 +1,4 @@
 {
-  "TC_COMM_011": "platform validation gap: re-commissioning with a different batch succeeds",
-  "TC_COMM_012": "platform validation gap: re-commissioning with a different expiry succeeds",
   "TC_COMM_025": "platform validation gap: an empty eventTime is accepted and processed successfully",
   "TC_COMM_026": "platform validation gap: a non-ISO-8601 eventTime is accepted and processed successfully",
   "TC_COMM_027": "platform validation gap: an empty eventTimeZoneOffset is accepted and processed successfully",

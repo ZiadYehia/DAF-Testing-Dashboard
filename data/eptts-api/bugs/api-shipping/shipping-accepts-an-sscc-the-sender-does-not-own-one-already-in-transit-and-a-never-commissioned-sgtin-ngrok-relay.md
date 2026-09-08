@@ -19,7 +19,13 @@ environment: ngrok relay
 ---
 `POST /scp/SendEPCIS` processes a shipping event without checking that the sender owns the EPCs, that they are not already in transit, that they belong to another open shipment, or that they exist at all. Each returns `S - Successful` and writes a custody transfer into the traceability record, so the record can show goods moving from a party that never held them, moving twice at once, or moving without ever having been commissioned.
 
-**Covers test cases:** `TC_SHIP_014`, `TC_SHIP_015`, `TC_SHIP_018`, `TC_SHIP_019`
+**Covers test cases:** `TC_SHIP_014`, `TC_SHIP_018`
+
+**Re-scoped 2026-09-08.** `TC_SHIP_015` (an SSCC already in transit) and `TC_SHIP_019` (an SGTIN
+already in another shipment) are withdrawn: the product owner confirms a repeat shipment is
+SKIPPED, and both cases now prove the repeat leaves status, custody and container untouched.
+What remains is shipping an SSCC the sender does not own and shipping a never-commissioned
+SGTIN, neither of which is a repeat of anything.
 
 ---
 

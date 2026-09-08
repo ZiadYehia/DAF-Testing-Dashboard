@@ -1,7 +1,7 @@
 ---
 title: >-
-  [Commissioning] An empty epcList is accepted, and an empty-string EPC is
-  misclassified as an SSCC
+  [Validation] A document carrying zero events is accepted, and an empty-string
+  EPC is misclassified as an SSCC
 status: draft
 jira_key: null
 reported_at: null
@@ -18,7 +18,12 @@ found_at: '2026-08-31T10:05:00.000Z'
 ---
 Two related EPC-list defects:
 
-**Covers test cases:** `TC_COMM_004` `TC_SEC_029`
+**Covers test cases:** `TC_SEC_029`
+
+**Re-scoped 2026-09-08.** `TC_COMM_004` is withdrawn from this report: commissioning now
+refuses a zero-EPC event outright — "epcList is required and must not be empty" — so the
+empty-epcList half is fixed. Destruction and return receiving refuse it too. What remains is a
+document whose eventList is empty being accepted, which no validation catches.
 
 ---
 
