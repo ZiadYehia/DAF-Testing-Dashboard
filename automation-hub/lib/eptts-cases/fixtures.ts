@@ -156,7 +156,14 @@ export async function atPharmacy(
   // Defaults to dispensable, but a caller can force a Dawana-integrated product when the
   // point of the test IS the Dawana refusal — that rule can only be observed on a pack the
   // pharmacy actually holds, because the event-sequence check fires first.
-  const r = await receivedAtBranch(count, { dispensable: opts.dispensable ?? true })
+  //
+  // `...opts` MATTERS. This used to rebuild the options object as
+  // `{ dispensable: opts.dispensable ?? true }`, which dropped an explicit `gtin` on the
+  // floor and quietly substituted the default dispensable product. TC_DISP_034 asked for a
+  // Dawana-integrated GTIN, silently got the non-Dawana one, dispensed it successfully and
+  // reported the missing Dawana refusal as a defect. commissioned() already gives an
+  // explicit gtin precedence over `dispensable`, so forwarding both is safe.
+  const r = await receivedAtBranch(count, { ...opts, dispensable: opts.dispensable ?? true })
   await step('branch', epcisDocument(
     [shippingEvent({
       epcList: [r.sscc], sourceSgln: sglnOf('branch'), destinationSgln: sglnOf('pharmacy'),

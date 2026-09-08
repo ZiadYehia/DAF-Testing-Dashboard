@@ -13,7 +13,7 @@
   "TC_DISP_012": "pass",
   "TC_DISP_013": "pass",
   "TC_DISP_014": "pass",
-  "TC_DISP_015": "fail",
+  "TC_DISP_015": "pass",
   "TC_DISP_016": "pass",
   "TC_DISP_017": "pass",
   "TC_DISP_018": "pass",
@@ -32,7 +32,7 @@
   "TC_DISP_031": "pass",
   "TC_DISP_032": "pass",
   "TC_DISP_033": "pass",
-  "TC_DISP_034": "fail",
+  "TC_DISP_034": "pass",
   "TC_DISP_035": "pass",
   "TC_DISP_036": "pass",
   "TC_DISP_037": "pass"

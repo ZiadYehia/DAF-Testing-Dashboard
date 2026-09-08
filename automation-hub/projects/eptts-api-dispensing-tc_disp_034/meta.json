@@ -10,8 +10,27 @@
     "testcaseId": "TC_DISP_034"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "fail",
+  "lastStatus": "pass",
   "runs": [
+    {
+      "ts": "2026-09-08T09-49-32-037Z",
+      "status": "pass",
+      "durationMs": 86656,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "Production (devsim)"
+    },
+    {
+      "ts": "2026-09-08T09-45-30-330Z",
+      "status": "fail",
+      "durationMs": 113199,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: the refusal names the Dawana channel (product 05413868110456)",
+      "environment": "Production (devsim)"
+    },
     {
       "ts": "2026-09-08T07-25-41-498Z",
       "status": "fail",
@@ -96,7 +115,7 @@
   "folder": "EPTTS APIs / api-dispensing",
   "engine": "api",
   "lastStatusByEnv": {
-    "Production (devsim)": "fail",
+    "Production (devsim)": "pass",
     "ngrok relay": "fail",
     "(no environment)": "pass"
   }

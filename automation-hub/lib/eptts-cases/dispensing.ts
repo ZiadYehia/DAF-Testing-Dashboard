@@ -27,12 +27,13 @@
  * *for the intended reason*. Tightening them means paying the fixture cost.
  */
 import { expect } from '@playwright/test'
-import {
-  dispensation, packOf, describeMsgStatus, errorOf,
-  epcisDocument, dispensingEvent, destructionEvent, submitAndPoll,
-  dispenseCancelEvent, patientReturnEvent,
-  freshDispensableSgtin, sglnOf, glnFor,
-  type EpcisDocument, type Role,
+import {
+  dispensation, packOf, describeMsgStatus, errorOf,
+  epcisDocument, dispensingEvent, destructionEvent, submitAndPoll,
+  dispenseCancelEvent, patientReturnEvent,
+  dawanaGtin, registryProduct,
+  freshDispensableSgtin, sglnOf, glnFor,
+  type EpcisDocument, type Role,
 } from '../eptts-api'
 import type { ApiCase } from './index'
 import { atPharmacy, commissioned, inTransitToBranch } from './fixtures'
@@ -296,10 +297,32 @@ const business: ApiCase[] = [
   },
   {
     id: 'TC_DISP_015', feature: FEATURE, slow: true,
-    title: 'dispensing with duplicate SGTINs in the EPC list is refused',
+    title: 'dispensing with duplicate SGTINs in the EPC list is skipped, not applied twice',
+    /**
+     * THE RULE IS SKIP, NOT REFUSE — same as a duplicate commission (TC_COMM_003), confirmed
+     * by the product owner 2026-09-08. Naming the same pack twice in one dispense does not
+     * invalidate the message; the repeat is skipped and the pack is dispensed once.
+     *
+     * A duplicate that is genuinely skipped and one that is applied twice look IDENTICAL in
+     * the response — both answer "S - Successful". So the assertion is on the pack: dispensed
+     * exactly once, custody unmoved. A second application would have to show up as a state
+     * beyond 'dispensed' or as moved custody, and neither may happen.
+     */
     run: async () => {
       const a = await atPharmacy(1)
-      await expectRefused('pharmacy', dispDoc([a.sgtins[0], a.sgtins[0]]), 'duplicate EPCs')
+      const sgtin = a.sgtins[0]
+      const r = await dispense('pharmacy', dispDoc([sgtin, sgtin]))
+      const said = r.msg ? describeMsgStatus(r.msg) : JSON.stringify(r.body)
+      console.log(`[disp] duplicate EPCs: ${said}`)
+      expect(r.status, `duplicate EPCs: acknowledged — got ${r.status}`).toBeLessThan(400)
+      expect(r.msg?.state, `duplicate EPCs: the repeat must be skipped, not rejected — ${said}`)
+        .toBe('SUCCESS')
+
+      const v = await packOf('pharmacy', sgtin)
+      const seen = `status=${v.pack?.status} currentGln=${v.pack?.currentGln}`
+      expect(v.pack?.status, `the pack is dispensed once. ${seen}`).toBe('dispensed')
+      expect(v.pack?.currentGln, `dispensing must not move custody. ${seen}`)
+        .toBe(glnFor('pharmacy'))
     },
   },
   {
@@ -338,16 +361,28 @@ const business: ApiCase[] = [
     title: 'dispensing a Dawana-integrated product through this API is refused',
     run: async () => {
       // Not in the sheet, but it is the single most likely reason a real dispensing
-      // integration fails: 27 of the manufacturer's 30 products are Dawana-integrated and
-      // must go through the Dawana channel instead. Worth pinning down explicitly.
-      // The pack must be AT the pharmacy, on a Dawana GTIN. Commissioning one and dispensing
-      // it straight away instead hits "DISPENSING requires prior receiving" first, so the
-      // Dawana rule is never reached and the test proves nothing about it.
-      const dawana = await atPharmacy(1, { dispensable: false })
+      // integration fails: Dawana-integrated products must go through the Dawana channel
+      // instead. Worth pinning down explicitly.
+      //
+      // THE PRODUCT IS DISCOVERED, NOT CONFIGURED. This used to ask atPharmacy for a
+      // "not dispensable" GTIN, which resolves from EPTTS_MFG_GTINS — and on devsim that is
+      // 05413868110449, whose registry record says isDawanaIntegration FALSE. So the dispense
+      // succeeded, no refusal mentioned Dawana, and the case reported a defect that did not
+      // exist. dawanaGtin() reads the registry and fails naming the tenant when it has no
+      // Dawana product, which records as blocked instead of as a false finding.
+      //
+      // The pack must also be AT the pharmacy. Commissioning one and dispensing it straight
+      // away hits "DISPENSING requires prior receiving" first, so the Dawana rule is never
+      // reached and the test proves nothing about it.
+      const gtin = await dawanaGtin()
+      const product = await registryProduct(gtin)
+      console.log(`[disp] Dawana product from the registry: ${gtin} ` +
+        `(isDawanaIntegration=${product?.isDawanaIntegration}, dispenseType=${product?.dispenseType})`)
+      const dawana = await atPharmacy(1, { gtin })
       const r = await dispense('pharmacy', dispDoc([dawana.sgtins[0]]))
       const all = JSON.stringify(r.body) + JSON.stringify(r.msg?.body)
       console.log(`[disp] Dawana product -> ${r.status} ${r.msg ? describeMsgStatus(r.msg) : ''}`)
-      expect(all, 'the refusal names the Dawana channel').toMatch(/Dawana/i)
+      expect(all, `the refusal names the Dawana channel (product ${gtin})`).toMatch(/Dawana/i)
     },
   },
 ]

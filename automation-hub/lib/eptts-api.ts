@@ -1416,6 +1416,75 @@ export function freshPartialSgtin(): string {
   return sgtinFor(firstGtin(MFG_PARTIAL_DISPENSE_GTINS, 'EPTTS_MFG_PARTIAL_GTINS', 'partial-dispense'), MFG_GCP_LENGTH, uniqueSerial())
 }
 
+/**
+ * THE REGISTRY IS THE SOURCE OF TRUTH FOR WHAT A PRODUCT IS.
+ *
+ * Which GTINs exist, and which are Dawana-integrated, is tenant data — so a case that
+ * depends on a product HAVING a property must read that property rather than trust a
+ * configured list. TC_DISP_034 is why: it asks whether dispensing a Dawana-integrated
+ * product is refused, picked its product from EPTTS_MFG_GTINS, and got 05413868110449 —
+ * which is not Dawana-integrated at all. The dispense went through, the refusal never
+ * mentioned Dawana, and the case reported a defect that did not exist.
+ *
+ * Read from the registry, not masar: GET masar /products answers 200 with an EMPTY list for
+ * this manufacturer on devsim, while the registry returns all ten of its products. A lookup
+ * against masar would therefore find no Dawana product and silently skip the case.
+ *
+ * Cached for the run. Every case that needs it asks the same question, and the answer cannot
+ * change under us — nothing in the suite edits the product catalogue.
+ */
+export interface RegistryProduct {
+  gtin: string
+  isDawanaIntegration?: boolean
+  dispenseType?: string
+  isActive?: boolean
+  pricingReviewStatus?: string
+  unitPriceCents?: string
+  gcpLength?: number
+  stripsPerPack?: number
+  name?: string
+}
+
+let registryProductCache: RegistryProduct[] | null = null
+
+/** Every product the manufacturer owns, straight from the registry. */
+export async function registryProducts(role: Role = 'manufacturer'): Promise<RegistryProduct[]> {
+  if (registryProductCache) return registryProductCache
+  const res = await rawRequest('GET', 'registry',
+    `products?mahGln=${glnFor(role)}&limit=50`,
+    { headers: await bearer(role), label: 'products (registry)' })
+  const body = (await bodyOf(res)) as Record<string, unknown> | RegistryProduct[] | null
+  const list = Array.isArray(body)
+    ? body
+    : ((body?.items ?? body?.products ?? body?.data ?? []) as RegistryProduct[])
+  registryProductCache = list
+  return list
+}
+
+/**
+ * A GTIN whose registry record really says isDawanaIntegration — or a failure naming the
+ * tenant, so the case is recorded BLOCKED rather than as a defect. A tenant with no
+ * Dawana product cannot exercise the Dawana rule, and pretending otherwise is how
+ * TC_DISP_034 came to report a refusal that never happened.
+ */
+export async function dawanaGtin(): Promise<string> {
+  const products = await registryProducts()
+  const hit = products.find((p) => p.isDawanaIntegration === true && p.isActive !== false)
+  if (!hit) {
+    throw new Error(
+      'no Dawana-integrated GTIN is configured for this environment — ' +
+      `the registry lists ${products.length} product(s) for this manufacturer and none has ` +
+      'isDawanaIntegration true, so the Dawana refusal cannot be exercised here.',
+    )
+  }
+  return hit.gtin
+}
+
+/** The registry's own view of one product, for asserting against what a case assumed. */
+export async function registryProduct(gtin: string): Promise<RegistryProduct | undefined> {
+  return (await registryProducts()).find((p) => p.gtin === gtin)
+}
+
 export const MFG_GCP_LENGTH = envInt('EPTTS_MFG_GCP_LENGTH', 8)
 /** The manufacturer's GS1 Company Prefix, for minting SSCCs. */
 export const MFG_COMPANY_PREFIX = process.env.EPTTS_MFG_COMPANY_PREFIX?.trim() || '84353083'

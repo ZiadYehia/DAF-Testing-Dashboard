@@ -67,7 +67,7 @@ function isInfrastructureFailure(error) {
  */
 function isUnmetPrecondition(error) {
   if (!error) return false
-  return /no (?:commissionable|dispensable|partial-dispense) GTIN is configured for this environment/i.test(error)
+  return /no (?:commissionable|dispensable|partial-dispense|Dawana-integrated) GTIN is configured for this environment/i.test(error)
     // NOT the Dawana refusal. It was listed here while every product on the relay tenant really
     // was isDawanaIntegration:true, which made the refusal correct and the case merely
     // un-runnable. That is no longer so: all seven products now read
