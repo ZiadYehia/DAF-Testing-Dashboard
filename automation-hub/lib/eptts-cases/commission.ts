@@ -203,14 +203,20 @@ const specialCases: ApiCase[] = [
     title: 'commission a new pack with a valid request body',
     run: async () => {
       const sgtin = freshSgtin()
-      await expectAccepted('manufacturer', validDoc([sgtin]), 'single commission')
+      const doc = validDoc([sgtin])
+      const sentLot = ilmd(doc)['cbvmda:lotNumber'] as string
+      await expectAccepted('manufacturer', doc, 'single commission')
 
       const v = await packOf('manufacturer', sgtin)
       expect(v.verified, 'the pack exists after commissioning').toBe(true)
       expect(v.pack?.status, 'a commissioned pack is active').toBe('active')
       expect(v.pack?.currentGln, 'owned by the commissioning manufacturer').toBe(MFG())
       expect(v.pack?.expiryDate, 'the ilmd expiry is stored').toBe('2030-12-31')
-      expect(v.pack?.batchNumber, 'the ilmd lot is stored').toBeTruthy()
+      // Compared against the lot ACTUALLY SENT, not merely "something is there". toBeTruthy
+      // passed on any stored value, so a commission that reported success while storing an
+      // earlier or defaulted lot would have gone unnoticed — which is the same
+      // success-but-nothing-applied failure TC_COMM_003 exists to catch.
+      expect(v.pack?.batchNumber, `the ilmd lot is stored as sent (${sentLot})`).toBe(sentLot)
     },
   },
   {
@@ -228,16 +234,47 @@ const specialCases: ApiCase[] = [
   },
   {
     id: 'TC_COMM_003', feature: FEATURE, slow: true,
-    title: 're-commissioning an already-commissioned pack is refused',
-    // The sheet marks this POSITIVE, expecting the pack to simply stay commissioned. A
-    // reviewer flagged that as wrong — "how is that positive? the system should reject an
-    // already commissioned pack" — and they are right: accepting a duplicate breaks
-    // serialisation integrity. Confirmed accepted on 2026-08-31.
-    expectFail: 'platform validation gap: re-commissioning an existing SGTIN succeeds',
+    title: 're-commissioning an already-commissioned pack is skipped, not re-applied',
+    /**
+     * THE RULE IS SKIP, NOT REFUSE — confirmed by the product owner 2026-09-08.
+     *
+     * This case has had the wrong expectation twice. The sheet marked it POSITIVE meaning
+     * "the pack simply stays commissioned"; a reviewer then argued the platform should reject
+     * a duplicate outright, and it was rewritten to expect a refusal and marked as a platform
+     * gap when the refusal did not come. Neither is right. A duplicate commission is a no-op:
+     * the message is accepted and the second event is skipped, leaving the pack as the first
+     * commission left it.
+     *
+     * SO THE ONLY THING THAT PROVES IT IS THE READ-BACK. Measured 2026-09-08 on devsim, the
+     * second message answers "S - Successful" and logs "Commission (Items) event processed
+     * successfully — all 1 event(s) completed" — exactly what an applied commission logs.
+     * Nothing in the response distinguishes skipped from applied. So the second document
+     * deliberately carries a DIFFERENT lot and expiry: if the platform had re-applied it, the
+     * pack would now read LOT-SECOND / 2031-06-30, and asserting the original values is what
+     * catches a re-apply masquerading as a skip.
+     */
     run: async () => {
       const sgtin = freshSgtin()
       await expectAccepted('manufacturer', validDoc([sgtin]), 'first commission')
-      await expectRejected('manufacturer', validDoc([sgtin]), 'second commission of the same SGTIN')
+      const first = await packOf('manufacturer', sgtin)
+      const originalLot = first.pack?.batchNumber
+      expect(originalLot, 'the first commission stored its lot').toBeTruthy()
+
+      const second = validDoc([sgtin])
+      ilmd(second)['cbvmda:lotNumber'] = 'LOT-SECOND'
+      ilmd(second)['cbvmda:itemExpirationDate'] = '2031-06-30'
+      await expectAccepted('manufacturer', second, 'second commission of the same SGTIN')
+
+      const after = await packOf('manufacturer', sgtin)
+      const seen = `status=${after.pack?.status} batch=${after.pack?.batchNumber} expiry=${after.pack?.expiryDate}`
+      console.log(`[comm] after re-commissioning: ${seen}`)
+      expect(after.pack?.batchNumber,
+        `the duplicate must be SKIPPED, not re-applied — the lot changed to the second ` +
+        `document's value. ${seen}`).toBe(originalLot)
+      expect(after.pack?.expiryDate,
+        `the duplicate must be SKIPPED — the expiry took the second document's value. ${seen}`)
+        .toBe('2030-12-31')
+      expect(after.pack?.status, `the pack stays active. ${seen}`).toBe('active')
     },
   },
   {
