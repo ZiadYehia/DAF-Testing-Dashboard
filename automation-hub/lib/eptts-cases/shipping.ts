@@ -206,10 +206,30 @@ const shippingBusiness: ApiCase[] = [
   },
   {
     id: 'TC_SHIP_015', feature: SHIP, slow: true,
-    title: 'shipping an SSCC that is already in transit is refused',
+    title: 'shipping an SSCC that is already in transit is skipped, not shipped twice',
+    /**
+     * THE RULE IS SKIP, NOT REFUSE — product owner, 2026-09-08. Re-shipping stock that is
+     * already in transit does not invalidate the message; the repeat is ignored and the pack
+     * stays in the shipment it is already in.
+     *
+     * This case was briefly written the other way, so it is worth being explicit about what
+     * "skipped" has to mean here for the skip to be safe: the pack must come out of it
+     * IN THE STATE THE FIRST SHIPMENT LEFT IT — same custody, still in transit. A repeat that
+     * silently re-pointed a shipment or moved custody would also answer "S - Successful",
+     * and that is the outcome these assertions exist to rule out.
+     */
     run: async () => {
       const t = await inTransitToBranch(1)
-      await expectRejected('manufacturer', shipDoc([t.sscc], 'manufacturer', 'branch'), 'double shipment')
+      const before = await packOf('manufacturer', t.sgtins[0])
+      await expectAccepted('manufacturer', shipDoc([t.sscc], 'manufacturer', 'branch'),
+        'double shipment')
+      const after = await packOf('manufacturer', t.sgtins[0])
+      const seen = `status=${after.pack?.status} gln=${after.pack?.currentGln} ` +
+        `(before: status=${before.pack?.status} gln=${before.pack?.currentGln})`
+      console.log(`[ship] after the repeat shipment: ${seen}`)
+      expect(after.pack?.status, `still in the first shipment. ${seen}`).toBe(before.pack?.status)
+      expect(after.pack?.currentGln, `the repeat must not move custody. ${seen}`)
+        .toBe(before.pack?.currentGln)
     },
   },
   {
@@ -235,11 +255,34 @@ const shippingBusiness: ApiCase[] = [
   },
   {
     id: 'TC_SHIP_019', feature: SHIP, slow: true,
-    title: 'shipping an SGTIN already in another shipment is refused',
+    title: 'shipping an SGTIN already in another shipment is skipped, not shipped twice',
+    /**
+     * THE RULE IS SKIP, NOT REFUSE — product owner, 2026-09-08. Re-shipping stock that is
+     * already in transit does not invalidate the message; the repeat is ignored and the pack
+     * stays in the shipment it is already in.
+     *
+     * This case was briefly written the other way, so it is worth being explicit about what
+     * "skipped" has to mean here for the skip to be safe: the pack must come out of it
+     * IN THE STATE THE FIRST SHIPMENT LEFT IT — same custody, still in transit. A repeat that
+     * silently re-pointed a shipment or moved custody would also answer "S - Successful",
+     * and that is the outcome these assertions exist to rule out.
+     */
     run: async () => {
       const t = await inTransitToBranch(1)
-      await expectRejected('manufacturer',
-        shipDoc([t.sgtins[0]], 'manufacturer', 'branch'), 'child already in an open shipment')
+      const before = await packOf('manufacturer', t.sgtins[0])
+      await expectAccepted('manufacturer', shipDoc([t.sgtins[0]], 'manufacturer', 'branch'),
+        'child already in an open shipment')
+      const after = await packOf('manufacturer', t.sgtins[0])
+      const seen = `status=${after.pack?.status} gln=${after.pack?.currentGln} ` +
+        `parentSscc=${after.pack?.parentSscc} (before: status=${before.pack?.status} ` +
+        `gln=${before.pack?.currentGln} parentSscc=${before.pack?.parentSscc})`
+      console.log(`[ship] after re-shipping the child alone: ${seen}`)
+      expect(after.pack?.status, `still in the first shipment. ${seen}`).toBe(before.pack?.status)
+      expect(after.pack?.currentGln, `the repeat must not move custody. ${seen}`)
+        .toBe(before.pack?.currentGln)
+      // And it must not have been pulled out of the SSCC it was shipped inside.
+      expect(after.pack?.parentSscc, `still inside its original container. ${seen}`)
+        .toBe(before.pack?.parentSscc)
     },
   },
   {
