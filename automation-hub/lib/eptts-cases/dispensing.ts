@@ -135,30 +135,49 @@ const business: ApiCase[] = [
     id: 'TC_DISP_002', feature: FEATURE, slow: true,
     title: 'a pharmacy dispenses multiple valid SGTINs in one request',
     run: async () => {
-      // THE SHEET AND THE PLATFORM DISAGREE, and the platform has the better argument.
+      // THE TWO DEPLOYMENTS DISAGREE, so this case asserts CONSISTENCY rather than a verdict.
       //
-      // The sheet marks multi-EPC dispensing POSITIVE. The platform refuses it outright:
-      // "Dispense event must contain exactly 1 EPC, got 3". That is coherent — a dispense is
+      // The sheet marks multi-EPC dispensing POSITIVE. The relay refuses it outright with
+      // "Dispense event must contain exactly 1 EPC, got 3", which is coherent — a dispense is
       // recorded against one prescription line, so one event per pack keeps the audit trail
-      // attributable. Batching would make it impossible to say which pack went to whom.
+      // attributable. Devsim accepts the same document and dispenses all three.
       //
-      // So this asserts the real behaviour and records the divergence, rather than failing
-      // forever against a sheet assumption. Worth confirming with the PO that one-per-request
-      // is intended rather than a limitation.
+      // This used to hard-code the relay's answer via expectRefused, so on devsim it reported
+      // a failure while the packs really had been dispensed — a true statement about the sheet
+      // dressed up as a defect, and it never checked whether all three packs actually moved.
+      //
+      // What is NOT defensible either way is a half-applied batch: accepted but only some
+      // packs dispensed, or refused with some dispensed anyway. That is what this now catches,
+      // and it is the same class of bug TC_SHIP_014 found in shipping.
       const a = await atPharmacy(3)
-      await expectRefused('pharmacy', dispDoc(a.sgtins), 'three packs in one dispense')
+      const r = await dispense('pharmacy', dispDoc(a.sgtins))
+      const accepted = r.status < 400 && r.msg?.state === 'SUCCESS'
+      const said = r.msg ? describeMsgStatus(r.msg) : JSON.stringify(r.body)
+      console.log(`[disp] three packs in one dispense: ${accepted ? 'ACCEPTED' : 'refused'} — ${said}`)
 
-      // And the packs must be untouched by the refusal — a rejected batch must not
-      // partially apply.
-      for (const s of a.sgtins) {
-        const v = await packOf('pharmacy', s)
-        expect(v.pack?.status, `${s} was NOT dispensed by the refused batch`).not.toBe('dispensed')
+      // Read back EVERY pack, not a sample. The post-state cap used to stop at two, so a
+      // 3-EPC dispense left the third pack's fate unrecorded.
+      const after = []
+      for (const s of a.sgtins) after.push({ sgtin: s, pack: (await packOf('pharmacy', s)).pack })
+      const dispensed = after.filter((x) => x.pack?.status === 'dispensed')
+      const seen = after.map((x) => `${x.sgtin.slice(-6)}=${x.pack?.status}`).join(' ')
+
+      if (accepted) {
+        expect(dispensed.length,
+          `the platform accepted a 3-pack dispense but only ${dispensed.length} of 3 are ` +
+          `dispensed — a half-applied batch. ${seen}`).toBe(a.sgtins.length)
+        for (const x of after) {
+          expect.soft(x.pack?.currentGln,
+            `dispensing must not move custody. ${x.sgtin} ${seen}`).toBe(glnFor('pharmacy'))
+        }
+      } else {
+        assertNotIncidental(said, 'three packs in one dispense')
+        expect(dispensed.length,
+          `the batch was refused, so no pack may be dispensed — ${dispensed.length} of 3 are. ` +
+          `${seen}`).toBe(0)
+        // One at a time is then the supported path, and the packs are still untouched.
+        await expectDispensed('pharmacy', dispDoc([a.sgtins[0]]), 'one pack per request', [a.sgtins[0]])
       }
-
-      // One at a time is the supported path, so prove that still works.
-      await expectDispensed('pharmacy', dispDoc([a.sgtins[0]]), 'one pack per request', [a.sgtins[0]])
-      const first = await packOf('pharmacy', a.sgtins[0])
-      expect(first.pack?.status, 'the single dispense applied').toBe('dispensed')
     },
   },
   {

@@ -706,7 +706,19 @@ export async function submitAndPoll(
  * twice. It must stay the first read after the poll settles, because the epoch boundary is set
  * there.
  */
-const MAX_POST_STATE_EPCS = 2
+/**
+ * How many EPCs of one message get read back.
+ *
+ * Was 2, which silently under-reported. A dispense of three packs recorded only two
+ * post-states, so the evidence read "verified 2 items" for a 3-EPC event and the third pack's
+ * fate was simply absent — it looked like the suite had checked and found nothing wrong.
+ *
+ * 10 covers every real multi-EPC case in the suite while still bounding the pathological one
+ * (a security case submits 5000 EPCs, and reading those would dwarf the run). When the cap
+ * does bite it now says so in the log, because "3 of 3" and "2 of 3, truncated" must not look
+ * the same to whoever reads the evidence.
+ */
+const MAX_POST_STATE_EPCS = 10
 
 async function recordPostState(role: Role, document: EpcisDocument, msg: MsgStatus): Promise<void> {
   if (process.env.EPTTS_VERIFY_EFFECTS === '0') return
@@ -716,11 +728,18 @@ async function recordPostState(role: Role, document: EpcisDocument, msg: MsgStat
   if (!event) return
   // VerifyProduct takes a serialized identifier — an SGTIN or an SSCC — so the parent and the
   // children are both askable, and a bare GTIN is not (it answers 500).
-  const epcs = [
+  const all = [
     ...(Array.isArray(event.epcList) ? event.epcList as string[] : []),
     ...(Array.isArray(event.childEPCs) ? event.childEPCs as string[] : []),
     ...(typeof event.parentID === 'string' ? [event.parentID] : []),
-  ].filter((e) => /^urn:epc:id:(sgtin|sscc):/.test(e)).slice(0, MAX_POST_STATE_EPCS)
+  ].filter((e) => /^urn:epc:id:(sgtin|sscc):/.test(e))
+  const epcs = all.slice(0, MAX_POST_STATE_EPCS)
+  if (all.length > epcs.length) {
+    console.log(
+      `[post-state] reading back ${epcs.length} of ${all.length} EPCs — capped at ` +
+      `MAX_POST_STATE_EPCS. The rest are NOT described below.`,
+    )
+  }
 
   for (const epc of epcs) {
     try {
