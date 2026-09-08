@@ -401,10 +401,21 @@ const receivingBusiness: ApiCase[] = [
   },
   {
     id: 'TS_RECV_015', feature: RECV, slow: true,
-    title: 'receiving with duplicate EPCs is refused',
+    title: 'receiving with duplicate EPCs is skipped, not applied twice',
+    /**
+     * THE RULE IS SKIP, NOT REFUSE — product owner, 2026-09-08, same as TC_COMM_003 and
+     * TC_DISP_015. Naming the same EPC twice in one request does not invalidate the message;
+     * the repeat is ignored and the operation applies once.
+     *
+     * A skipped repeat and one applied twice both answer "S - Successful", so the assertion
+     * has to be on the state afterwards, not on the response.
+     */
     run: async () => {
       const t = await inTransitToBranch(1)
-      await expectRejected('branch', recvDoc([t.sscc, t.sscc], 'branch', 'manufacturer'), 'duplicate EPCs')
+      // expectReceived asserts custody actually moved to the branch and the pack is active —
+      // received once, which is what a skipped duplicate must look like.
+      await expectReceived('branch', recvDoc([t.sscc, t.sscc], 'branch', 'manufacturer'),
+        'duplicate EPCs', t.sgtins)
     },
   },
   {

@@ -106,10 +106,25 @@ const business: ApiCase[] = [
   },
   {
     id: 'TC_DEST_008', feature: FEATURE, slow: true,
-    title: 'destroying with duplicate SGTINs in the EPC list is refused',
+    title: 'destroying with duplicate SGTINs in the EPC list is skipped, not applied twice',
+    /**
+     * THE RULE IS SKIP, NOT REFUSE — product owner, 2026-09-08, same as TC_COMM_003 and
+     * TC_DISP_015. Naming the same EPC twice in one request does not invalidate the message;
+     * the repeat is ignored and the operation applies once.
+     *
+     * A skipped repeat and one applied twice both answer "S - Successful", so the assertion
+     * has to be on the state afterwards, not on the response.
+     */
     run: async () => {
       const c = await commissioned(1)
-      await expectRejected('manufacturer', destroyDoc([c.sgtins[0], c.sgtins[0]]), 'duplicate EPCs')
+      const sgtin = c.sgtins[0]
+      const { submitStatus, msg } = await submitAndPoll('manufacturer', destroyDoc([sgtin, sgtin]))
+      expect(submitStatus, `duplicate EPCs: acknowledged — got ${submitStatus}`).toBe(202)
+      expect(msg.state, `duplicate EPCs: the repeat is skipped, not rejected — ${describeMsgStatus(msg)}`)
+        .toBe('SUCCESS')
+      // Destroyed exactly once. A second application has nowhere to go from 'destroyed', so
+      // the state itself is the proof.
+      await expectDestroyed(sgtin)
     },
   },
   {

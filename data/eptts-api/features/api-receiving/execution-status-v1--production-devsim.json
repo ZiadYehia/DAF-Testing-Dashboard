@@ -13,7 +13,7 @@
   "TS_RECV_012": "pass",
   "TS_RECV_013": "pass",
   "TS_RECV_014": "pass",
-  "TS_RECV_015": "fail",
+  "TS_RECV_015": "pass",
   "TS_RECV_016": "blocked",
   "TS_RECV_017": "blocked",
   "TS_RECV_018": "blocked",

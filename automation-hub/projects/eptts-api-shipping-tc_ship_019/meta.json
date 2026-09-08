@@ -13,6 +13,16 @@
   "lastStatus": "fail",
   "runs": [
     {
+      "ts": "2026-09-08T10-42-40-708Z",
+      "status": "fail",
+      "durationMs": 47567,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "error": "Error: child already in an open shipment: the platform ACCEPTED input it should refuse — http=200 raw=\"S - Successful\" state=SUCCESS polls=6 logs=[I: Shipping event processed successfully | I: Message processed successfully — all 1 event(s) completed]",
+      "environment": "Production (devsim)"
+    },
+    {
       "ts": "2026-09-08T09-27-29-416Z",
       "status": "fail",
       "durationMs": 47549,

@@ -227,10 +227,21 @@ export const PACKING_CASES: ApiCase[] = [
   },
   {
     id: 'TS_PACK_009', feature: PACK, slow: true,
-    title: 'packing with duplicate child EPCs is refused',
+    title: 'packing with duplicate child EPCs is skipped, not applied twice',
+    /**
+     * THE RULE IS SKIP, NOT REFUSE — product owner, 2026-09-08, same as TC_COMM_003 and
+     * TC_DISP_015. Naming the same EPC twice in one request does not invalidate the message;
+     * the repeat is ignored and the operation applies once.
+     *
+     * A skipped repeat and one applied twice both answer "S - Successful", so the assertion
+     * has to be on the state afterwards, not on the response.
+     */
     run: async () => {
       const c = await commissioned(1)
-      await expectRejected(aggDoc(freshSscc(), [c.sgtins[0], c.sgtins[0]], 'ADD'), 'duplicate children')
+      const sscc = freshSscc()
+      await expectAccepted(aggDoc(sscc, [c.sgtins[0], c.sgtins[0]], 'ADD'), 'duplicate children')
+      // Parented once, to this SSCC, still held by the manufacturer.
+      await expectParent(c.sgtins[0], sscc)
     },
   },
   {
@@ -298,12 +309,23 @@ export const PACKING_CASES: ApiCase[] = [
   },
   {
     id: 'TS_PACK_016', feature: PACK, slow: true,
-    title: 'a duplicate packing request is refused',
+    title: 'a duplicate packing request is skipped, leaving the pack as it was',
+    /**
+     * THE RULE IS SKIP, NOT REFUSE — product owner, 2026-09-08, same as TC_COMM_003 and
+     * TC_DISP_015. Naming the same EPC twice in one request does not invalidate the message;
+     * the repeat is ignored and the operation applies once.
+     *
+     * A skipped repeat and one applied twice both answer "S - Successful", so the assertion
+     * has to be on the state afterwards, not on the response.
+     */
     run: async () => {
       const c = await commissioned(1)
       const sscc = freshSscc()
       await expectAccepted(aggDoc(sscc, c.sgtins, 'ADD'), 'first pack')
-      await expectRejected(aggDoc(sscc, c.sgtins, 'ADD'), 'identical second pack')
+      await expectParent(c.sgtins[0], sscc)
+      await expectAccepted(aggDoc(sscc, c.sgtins, 'ADD'), 'identical second pack')
+      // Unchanged: same parent, same holder. Not double-parented, not detached.
+      await expectParent(c.sgtins[0], sscc)
     },
   },
   {
@@ -439,11 +461,22 @@ export const UNPACKING_CASES: ApiCase[] = [
   },
   {
     id: 'TS_UNPK_011', feature: UNPK, slow: true,
-    title: 'a duplicate unpacking request is refused',
+    title: 'a duplicate unpacking request is skipped, leaving the pack unparented',
+    /**
+     * THE RULE IS SKIP, NOT REFUSE — product owner, 2026-09-08, same as TC_COMM_003 and
+     * TC_DISP_015. Naming the same EPC twice in one request does not invalidate the message;
+     * the repeat is ignored and the operation applies once.
+     *
+     * A skipped repeat and one applied twice both answer "S - Successful", so the assertion
+     * has to be on the state afterwards, not on the response.
+     */
     run: async () => {
       const p = await packed(1)
       await expectAccepted(aggDoc(p.sscc, p.sgtins, 'DELETE'), 'first unpack')
-      await expectRejected(aggDoc(p.sscc, p.sgtins, 'DELETE'), 'identical second unpack')
+      await expectNoParent(p.sgtins[0])
+      await expectAccepted(aggDoc(p.sscc, p.sgtins, 'DELETE'), 'identical second unpack')
+      // Still unparented and still the manufacturer's — the repeat changed nothing.
+      await expectNoParent(p.sgtins[0])
     },
   },
 ]

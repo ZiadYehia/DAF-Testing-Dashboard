@@ -10,8 +10,17 @@
     "testcaseId": "TS_UNPK_011"
   },
   "createdAt": "2026-08-31T10:30:00.000Z",
-  "lastStatus": "fail",
+  "lastStatus": "pass",
   "runs": [
+    {
+      "ts": "2026-09-08T10-42-54-831Z",
+      "status": "pass",
+      "durationMs": 48146,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": true,
+      "environment": "Production (devsim)"
+    },
     {
       "ts": "2026-09-08T09-34-24-794Z",
       "status": "fail",
@@ -69,7 +78,7 @@
   "folder": "EPTTS APIs / api-unpacking",
   "engine": "api",
   "lastStatusByEnv": {
-    "Production (devsim)": "fail",
+    "Production (devsim)": "pass",
     "ngrok relay": "fail",
     "(no environment)": "fail"
   }

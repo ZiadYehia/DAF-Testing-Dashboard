@@ -159,10 +159,27 @@ const returnBusiness: ApiCase[] = [
   },
   {
     id: 'TS_RTN_021', feature: RTN, slow: true,
-    title: 'returning with duplicate EPCs is refused',
+    title: 'returning with duplicate EPCs is skipped, not applied twice',
+    /**
+     * THE RULE IS SKIP, NOT REFUSE — product owner, 2026-09-08, same as TC_COMM_003 and
+     * TC_DISP_015. Naming the same EPC twice in one request does not invalidate the message;
+     * the repeat is ignored and the operation applies once.
+     *
+     * A skipped repeat and one applied twice both answer "S - Successful", so the assertion
+     * has to be on the state afterwards, not on the response.
+     */
     run: async () => {
       const r = await receivedAtBranch(1)
-      await expectRejected('branch', returnShipDoc([r.sscc, r.sscc], 'branch', 'manufacturer'), 'duplicate EPCs')
+      await expectAccepted('branch', returnShipDoc([r.sscc, r.sscc], 'branch', 'manufacturer'),
+        'duplicate EPCs')
+      const v = await packOf('branch', r.sgtins[0])
+      const seen = `status=${v.pack?.status} gln=${v.pack?.currentGln}`
+      console.log(`[rtn] after the duplicate return: ${seen}`)
+      // Returned once: no longer ordinary branch stock, and custody stays with the branch
+      // until the manufacturer receives it.
+      expect(v.pack?.status, `no longer ordinary branch stock. ${seen}`).not.toBe('active')
+      expect(v.pack?.currentGln, `custody stays with the branch until receipt. ${seen}`)
+        .toBe(glnFor('branch'))
     },
   },
   {
