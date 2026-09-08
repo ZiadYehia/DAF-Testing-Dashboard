@@ -659,6 +659,88 @@ export async function pollMsgStatus(
   }
 }
 
+/**
+ * PLAIN ENGLISH FOR EVERY SUBMISSION, so a run log reads as a story rather than as JSON.
+ *
+ * Anyone reading a failure — a developer, a PO, someone at a demo — should be able to see
+ * what the test asked the platform to do without decoding an EPCIS document. Derived from
+ * the document itself rather than a hand-written label, so it cannot drift out of step with
+ * what was actually sent, and so it covers all 400-odd cases without touching any of them.
+ */
+const BIZ_STEP_ENGLISH: Record<string, string> = {
+  commissioning: 'commission',
+  // Just the verb: the container is described separately as "into"/"out of container X".
+  packing: 'pack',
+  unpacking: 'unpack',
+  shipping: 'ship',
+  receiving: 'receive',
+  retail_selling: 'dispense to a patient',
+  destroying: 'destroy',
+  decommissioning: 'decommission',
+  inspecting: 'inspect',
+  repackaging: 'repackage',
+  holding: 'hold',
+}
+
+/**
+ * "the distributor" instead of "5413868.00010.0". An SGLN means nothing to a reader at a
+ * demo, and the whole point of the narration is that it needs no decoding. Falls back to the
+ * raw identifier for a party this tenant has not configured — which is itself informative,
+ * because a case aiming at an unregistered GLN is usually doing so deliberately.
+ */
+function partyName(sgln: string): string {
+  const roles: Role[] = ['manufacturer', 'branch', 'pharmacy']
+  for (const r of roles) {
+    try { if (sglnOf(r) === sgln) return r === 'branch' ? 'distributor' : r } catch { /* unconfigured */ }
+  }
+  return `party ${sgln.split(':').pop()}`
+}
+
+/** One line of English describing what a document asks the platform to do. */
+export function describeDocument(role: Role, document: EpcisDocument): string {
+  const ev = document.epcisBody?.eventList?.[0] as Record<string, unknown> | undefined
+  const events = document.epcisBody?.eventList?.length ?? 0
+  if (!ev) return `${role}: submit a document carrying ${events} event(s)`
+
+  const bizStep = String(ev.bizStep ?? '').replace(/^urn:epcglobal:cbv:bizstep:/, '')
+  const verb = BIZ_STEP_ENGLISH[bizStep] ?? (bizStep ? `perform "${bizStep}" on` : 'submit')
+  const epcs = Array.isArray(ev.epcList) ? ev.epcList.length : 0
+  const children = Array.isArray(ev.childEPCs) ? ev.childEPCs.length : 0
+  const parent = typeof ev.parentID === 'string' ? ev.parentID : null
+
+  const what: string[] = []
+  if (epcs) what.push(`${epcs} pack${epcs === 1 ? '' : 's'}`)
+  if (children) what.push(`${children} pack${children === 1 ? '' : 's'}`)
+  // Containers read better as a clause than as another item in the list, so they are
+  // appended after the join rather than pushed into it.
+  const container = parent
+    ? ` ${bizStep === 'unpacking' ? 'out of' : 'into'} container ${parent.split('.').pop()}`
+    : ''
+
+  const extras: string[] = []
+  const dest = (ev.destinationList as { destination?: string }[] | undefined)?.[0]?.destination
+  if (dest) extras.push(`to the ${partyName(dest)}`)
+  const src = (ev.sourceList as { source?: string }[] | undefined)?.[0]?.source
+  if (src) extras.push(`from the ${partyName(src)}`)
+  const disposition = String(ev.disposition ?? '').replace(/^urn:epcglobal:cbv:disp:/, '')
+  if (disposition && disposition !== 'active') extras.push(`leaving them "${disposition}"`)
+  if (events > 1) extras.push(`in a document of ${events} events`)
+
+  return `${role}: ${verb} ${what.join(' and ') || '(no EPCs)'}${container}${extras.length ? ' ' + extras.join(', ') : ''}`
+}
+
+/** What the platform made of it, in the same register. */
+function describeOutcome(submitStatus: number, msg: MsgStatus): string {
+  if (submitStatus >= 400) return `refused on the spot with HTTP ${submitStatus}`
+  if (msg.timedOut) return 'accepted, but never reached a verdict before the timeout'
+  if (msg.state === 'SUCCESS') return 'accepted and processed successfully'
+  if (msg.state === 'FAILED') {
+    const why = msg.logs.find((l) => /^E/i.test(l.type ?? '') || /failed|invalid|not allowed|cannot/i.test(l.message ?? ''))
+    return `accepted for processing, then REFUSED: ${why?.message ?? msg.raw ?? 'no reason given'}`
+  }
+  return `accepted, verdict "${msg.raw ?? msg.state}"`
+}
+
 /** Convenience: submit, assert 202-ish, then poll. Returns the instanceIdentifier + status. */
 export async function submitAndPoll(
   role: Role,
@@ -676,6 +758,12 @@ export async function submitAndPoll(
       }
     : await pollMsgStatus(role, iid, { timeoutMs: opts.timeoutMs })
 
+  // The story of this submission, in one pair of lines. EPTTS_NARRATE=0 silences it for a
+  // throughput run.
+  if (process.env.EPTTS_NARRATE !== '0') {
+    console.log(`  → ${describeDocument(role, document)}`)
+    console.log(`  ← ${describeOutcome(res.status(), msg)}`)
+  }
   await recordPostState(role, document, msg)
   return { submitStatus: res.status(), submitBody, instanceIdentifier: iid, msg }
 }
@@ -1251,16 +1339,20 @@ export interface ProductRecord {
 }
 
 /**
- * One product from GET /products.
+ * One product, from the REGISTRY's catalogue.
  *
- * Deliberately not via `/VerifyProduct`, which is the natural place to ask about a product and
- * is currently answering 500 E901 for every GTIN. `/products` is the working read.
+ * Deliberately not `/VerifyProduct`, which is the natural place to ask about a product and
+ * answers 500 E901 for a bare GTIN.
+ *
+ * And no longer masar's GET /products?limit=200 — that route now answers 404. Before it
+ * disappeared it had already gone quietly wrong: it returned 200 with an EMPTY list for this
+ * manufacturer while the registry held all ten of its products, so a lookup found nothing and
+ * every caller read that as "no such product" rather than "asked the wrong service". The
+ * registry is the catalogue's owner, so it is the only place worth asking:
+ * GET :8445/registry-service/api/v1/products?mahGln=<gln>&limit=50.
  */
 export async function productByGtin(role: Role, gtin: string): Promise<ProductRecord | null> {
-  const res = await getMasar(role, '/products?limit=200')
-  if (!res.ok()) return null
-  const body = await res.json().catch(() => null) as { items?: ProductRecord[] } | null
-  const hit = (body?.items ?? []).find((p) => p.gtin === gtin)
+  const hit = (await registryProducts(role)).find((p) => p.gtin === gtin) as ProductRecord | undefined
   if (!hit) return null
   return {
     ...hit,
