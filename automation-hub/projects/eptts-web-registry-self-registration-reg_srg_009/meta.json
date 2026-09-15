@@ -1,0 +1,26 @@
+{
+  "name": "eptts-web-registry-self-registration-reg_srg_009",
+  "title": "REG_SRG_009 — Validate that a complete company data step is accepted, validated against GS1 and unlocks the next step",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "REG_SRG_009",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "registry-self-registration",
+    "testcaseId": "REG_SRG_009"
+  },
+  "createdAt": "2026-09-09T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "registry",
+    "self-registration",
+    "onboarding",
+    "unauthenticated",
+    "write",
+    "irreversible",
+    "attended"
+  ],
+  "folder": "EPTTS Web / registry-self-registration",
+  "engine": "playwright"
+}

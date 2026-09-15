@@ -73,3 +73,54 @@ Price-band table driving per-unit fees (from-price, to-price, fee per unit). Cha
 
 - Documented from live discovery against production on 2026-08-31; UI elements above are what the page actually rendered, not a specification.
 - Test cases are all `new_added` — none has been executed yet.
+
+- **Role-gated, confirmed 2026-09-08.** This page is not reachable as a manufacturer: the
+  portal renders only three nav items for that role and Configuration is not among them. The
+  UI Elements above are the Platform Admin view.
+- The mode is readable from `GET /masar-service/api/v1/billing/posture` on port 8446, which
+  answers `{"mode":...,"enforce":...,"record":...}`. Prefer it over the dropdown when asserting
+  what the tenant is actually doing.
+- The billing portal uses Keycloak client **`billing-portal`**, not `masar-dashboard`.
+
+## Verified live 2026-09-08 (as Platform Admin)
+
+**There is no "Fee Configuration" heading.** The Route row and the UI Elements table above record
+one, but the page does not render it. Its actual section headings are:
+
+- `Billing mode — applies live, no redeploy`
+- `Pricing equation — price bands`
+- `Product catalog`
+- `Bank account (for bank transfers)`  ← not previously documented
+- `Other billing settings`
+
+That matters beyond tidiness: an absence assertion naming a heading nobody renders passes for
+every role, so BIL_CFG_009's role-isolation check was vacuous until it was pointed at
+`Billing mode` and `Pricing equation` instead.
+
+**Stable button ids**, all on this one page:
+
+| id | label |
+|---|---|
+| `save-mode` | Apply mode |
+| `band-add` | + Add band |
+| `bands-save` | Save bands |
+| `catalog-resync` | ↻ Re-sync product catalog |
+| `save-bank-account` | Save bank account |
+| `save-eservice` | Save |
+| `save-cur` | Save |
+
+`#c-mode` option values are `off` / `shadow` / `advisory` / `enforce`, with the labels the UI
+Elements table already records.
+
+**`Apply mode` raises a native `window.confirm` ONLY for `enforce`** — the bundle guards it with
+`confirm(c("config.billingMode.confirmEnforce"))`. Playwright dismisses dialogs by default, so a
+spec switching to Enforce without a dialog handler silently changes nothing.
+
+**The authority is `GET /billing/posture`, not the dropdown.** It answers e.g.
+`{"mode":"advisory","record":true,"enforce":false,"serviceEnabled":true,"source":"default(advisory)"}`.
+`source` distinguishes an explicitly-set mode from the default. It is **404 on :8444** and **403
+to a manufacturer** on :8446 ("available to: Daf admin, support, Finance"), so only an admin
+session can read it.
+
+The `Bank account (for bank transfers)` section is where the beneficiary details shown in the
+bank-transfer dialog come from — see `billing-payments`.

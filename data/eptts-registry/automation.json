@@ -1,0 +1,107 @@
+{
+  "slug": "eptts-registry",
+  "baseUrlEnv": "EPTTS_REGISTRY_BASE_URL",
+  "credentialEnvs": [
+    "EPTTS_WEB_ADMIN_USERNAME",
+    "EPTTS_WEB_ADMIN_PASSWORD"
+  ],
+  "_notes": [
+    "The MASTER DATA REGISTRY portal (:8445). Realm `masar`, and the SSO cookie is shared with",
+    ":8444 and :8446, so a browser already signed in elsewhere lands here without a password.",
+    "",
+    "EPTTS_REGISTRY_BASE_URL IS NOT EPTTS_REGISTRY_API_URL.",
+    "The existing EPTTS_REGISTRY_API_URL is https://192.168.225.195:8445/registry-service/api/v1",
+    "and is what lib/eptts-api.ts's registryBase() uses for B2B auth. This one is the bare origin,",
+    "https://192.168.225.195:8445, because baseUrl(slug) is joined with browser paths. Reusing the",
+    "API URL here would resolve every page under the API path. Both must exist.",
+    "",
+    "THE PORTAL IS URL-ADDRESSABLE VIA ?tab=, WHICH THE FEATURE DOCS DO NOT SAY.",
+    "workflow.md for every registry-* feature describes nav-label routing only (`Route: Parties`),",
+    "which implies the emoji nav buttons are the sole way in. They are not: :8444/products",
+    "redirects to :8445/?tab=products, so `?tab=<name>` is a real, linkable route. Prefer it over",
+    "clicking emoji labels — the labels carry live counts (`🏢 Parties (50+)`) that change under",
+    "you, and two feature docs already disagree about the same nav item's text.",
+    "",
+    "No disclaimer modal and no language step: the disclaimer is a :8444 component, and this",
+    "portal's language control is a <select id=\"lang-switch\"> that already reads English.",
+    "",
+    "portal's shell has not been inspected while authenticated as this account. Narrow it to the",
+    "",
+    "Every step is onlyIfVisible so the flow is idempotent.",
+    "",
+    "WHY THE POST-LOGIN WAIT IS SHORT (12s, not 45s).",
+    "auth.setup.ts logs in to EVERY registered app on the first browser replay after the state's",
+    "TTL lapses, and it writes EMPTY_STATE when a login fails. For this portal the login is",
+    "EXPECTED to fail while the account has TOTP enabled, so that timeout is paid on every TTL",
+    "window by whichever replay happens to run first — including replays that never touch this",
+    "portal. A real login reaches the shell in a couple of seconds, so 12s is generous for the",
+    "success path while keeping the guaranteed-failure path cheap.",
+    "",
+    "Consequently .auth/<slug>.json for this portal is expected to hold EMPTY_STATE, and NO spec",
+    "should use stateFor('<slug>'). Specs use the hand-captured, role-suffixed state that",
+    "auth.setup.ts does not own — .auth/<slug>-<role>.json, written by scripts/capture-state.mjs",
+    "and resolved via capturedStateFor(). This mirrors how pages/eptts-web/roles.ts already keeps",
+    "non-admin states out of setup's way.",
+    "",
+    "",
+    "ON 2FA: THE OTP REQUIREMENT WAS REMOVED FROM THE DEVSIM ACCOUNTS ON 2026-09-08.",
+    "Until then every live account (janssen2@masar.com, and the admin) answered the password step",
+    "with a One-time code prompt, which no declarative step can satisfy -- auth.setup.ts timed out",
+    "and wrote EMPTY_STATE every run. It is gone now, verified by this flow completing unattended,",
+    "so the normal path works again and specs use stateFor('<slug>').",
+    "",
+    "If it ever comes back, the fallback is already built rather than needing rediscovery:",
+    "  node automation-hub/scripts/capture-state.mjs --portal <slug> --role admin",
+    "writes .auth/<slug>-<role>.json, which auth.setup.ts does not own and cannot overwrite, and",
+    "lib/captured-state.ts reads it with an actionable error when it is missing or stale. An admin",
+    "capture is also mirrored onto .auth/<slug>.json so existing projects keep working."
+  ],
+  "login": [
+    {
+      "action": "goto",
+      "url": "{base}/"
+    },
+    {
+      "action": "waitForVisible",
+      "locator": {
+        "kind": "css",
+        "value": "#username, nav[aria-label=\"Master Data Registry\"], aside.sidebar"
+      },
+      "timeoutMs": 45000
+    },
+    {
+      "action": "fill",
+      "locator": {
+        "kind": "id",
+        "value": "username"
+      },
+      "value": "{env:EPTTS_WEB_ADMIN_USERNAME}",
+      "onlyIfVisible": true
+    },
+    {
+      "action": "fill",
+      "locator": {
+        "kind": "id",
+        "value": "password"
+      },
+      "value": "{env:EPTTS_WEB_ADMIN_PASSWORD}",
+      "onlyIfVisible": true
+    },
+    {
+      "action": "click",
+      "locator": {
+        "kind": "id",
+        "value": "kc-login"
+      },
+      "onlyIfVisible": true
+    },
+    {
+      "action": "waitForVisible",
+      "locator": {
+        "kind": "css",
+        "value": "nav[aria-label=\"Master Data Registry\"], aside.sidebar"
+      },
+      "timeoutMs": 45000
+    }
+  ]
+}

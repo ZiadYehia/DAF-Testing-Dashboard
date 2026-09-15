@@ -1,0 +1,25 @@
+{
+  "name": "eptts-web-shipping-web_shp_010",
+  "title": "WEB_SHP_010 — Validate that shipping succeeds with an unpaid invoice when the billing mode is Advisory",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_SHP_010",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-shipping",
+    "testcaseId": "WEB_SHP_010"
+  },
+  "createdAt": "2026-09-08T12:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "shipping",
+    "write",
+    "irreversible",
+    "billing-gate",
+    "attended"
+  ],
+  "folder": "EPTTS Web / web-shipping",
+  "engine": "playwright"
+}

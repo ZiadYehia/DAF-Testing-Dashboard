@@ -1,0 +1,26 @@
+{
+  "name": "eptts-web-billing-payments-bil_pay_003",
+  "title": "BIL_PAY_003 — Validate that a bank transfer can be submitted against a pending invoice and is held for approval without settling it",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "BIL_PAY_003",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "billing-payments",
+    "testcaseId": "BIL_PAY_003"
+  },
+  "createdAt": "2026-09-08T12:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "billing",
+    "portal8446",
+    "write",
+    "payments",
+    "irreversible",
+    "attended"
+  ],
+  "folder": "EPTTS Web / billing-payments",
+  "engine": "playwright"
+}

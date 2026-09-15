@@ -1,0 +1,26 @@
+{
+  "name": "eptts-web-shipping-web_shp_011",
+  "title": "WEB_SHP_011 — Validate that shipping succeeds under Enforce once the invoice is paid",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_SHP_011",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-shipping",
+    "testcaseId": "WEB_SHP_011"
+  },
+  "createdAt": "2026-09-08T12:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "shipping",
+    "write",
+    "irreversible",
+    "billing-gate",
+    "tenant-setting",
+    "attended"
+  ],
+  "folder": "EPTTS Web / web-shipping",
+  "engine": "playwright"
+}

@@ -1,0 +1,26 @@
+{
+  "name": "eptts-web-billing-configuration-bil_cfg_008",
+  "title": "BIL_CFG_008 — Validate that the billing mode applies live and is reported by the platform posture",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "BIL_CFG_008",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "billing-configuration",
+    "testcaseId": "BIL_CFG_008"
+  },
+  "createdAt": "2026-09-08T12:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "billing",
+    "portal8446",
+    "write",
+    "tenant-setting",
+    "irreversible",
+    "attended"
+  ],
+  "folder": "EPTTS Web / billing-configuration",
+  "engine": "playwright"
+}

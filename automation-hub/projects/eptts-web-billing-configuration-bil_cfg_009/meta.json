@@ -1,0 +1,26 @@
+{
+  "name": "eptts-web-billing-configuration-bil_cfg_009",
+  "title": "BIL_CFG_009 — Validate that a manufacturer cannot reach the fee configuration page",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "BIL_CFG_009",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "billing-configuration",
+    "testcaseId": "BIL_CFG_009"
+  },
+  "createdAt": "2026-09-08T12:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "billing",
+    "portal8446",
+    "readonly",
+    "roleBlocked",
+    "security",
+    "attended"
+  ],
+  "folder": "EPTTS Web / billing-configuration",
+  "engine": "playwright"
+}

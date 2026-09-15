@@ -1,0 +1,24 @@
+{
+  "name": "eptts-web-billing-invoices-bil_inv_010",
+  "title": "BIL_INV_010 — Validate that the invoice total equals the billing charge plus the eService fee",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "BIL_INV_010",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "billing-invoices",
+    "testcaseId": "BIL_INV_010"
+  },
+  "createdAt": "2026-09-08T12:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "billing",
+    "portal8446",
+    "readonly",
+    "attended"
+  ],
+  "folder": "EPTTS Web / billing-invoices",
+  "engine": "playwright"
+}

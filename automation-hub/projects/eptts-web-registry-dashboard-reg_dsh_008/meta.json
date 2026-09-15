@@ -1,0 +1,25 @@
+{
+  "name": "eptts-web-registry-dashboard-reg_dsh_008",
+  "title": "REG_DSH_008 — Validate that the inspector reaches the Master Data Registry portal with the onboarding rights the platform grants it",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "REG_DSH_008",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "registry-dashboard",
+    "testcaseId": "REG_DSH_008"
+  },
+  "createdAt": "2026-09-08T12:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "registry",
+    "portal8445",
+    "readonly",
+    "roleBlocked",
+    "security",
+    "attended"
+  ],
+  "folder": "EPTTS Web / registry-dashboard",
+  "engine": "playwright"
+}

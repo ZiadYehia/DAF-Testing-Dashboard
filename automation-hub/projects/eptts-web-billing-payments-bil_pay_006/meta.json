@@ -1,0 +1,26 @@
+{
+  "name": "eptts-web-billing-payments-bil_pay_006",
+  "title": "BIL_PAY_006 — Validate that manual payment is not available to a manufacturer, in the interface and in the API",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "BIL_PAY_006",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "billing-payments",
+    "testcaseId": "BIL_PAY_006"
+  },
+  "createdAt": "2026-09-08T12:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "billing",
+    "portal8446",
+    "readonly",
+    "payments",
+    "security",
+    "attended"
+  ],
+  "folder": "EPTTS Web / billing-payments",
+  "engine": "playwright"
+}

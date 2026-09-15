@@ -1,0 +1,24 @@
+{
+  "name": "eptts-web-registry-self-registration-reg_srg_005",
+  "title": "REG_SRG_005 — Validate that a company GCP outside 4 to 12 digits is refused",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "REG_SRG_005",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "registry-self-registration",
+    "testcaseId": "REG_SRG_005"
+  },
+  "createdAt": "2026-09-09T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "registry",
+    "self-registration",
+    "onboarding",
+    "unauthenticated",
+    "read-only"
+  ],
+  "folder": "EPTTS Web / registry-self-registration",
+  "engine": "playwright"
+}

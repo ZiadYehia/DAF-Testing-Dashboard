@@ -1,0 +1,94 @@
+{
+  "slug": "eptts-billing",
+  "baseUrlEnv": "EPTTS_BILLING_BASE_URL",
+  "credentialEnvs": [
+    "EPTTS_WEB_MFG_USERNAME",
+    "EPTTS_WEB_MFG_PASSWORD"
+  ],
+  "_notes": [
+    "The BILLING PORTAL (:8446) is a separate Keycloak client from the dashboard.",
+    "Realm is still `masar`, but the client is `billing-portal`, not `masar-dashboard` — confirmed",
+    "from the portal's own /runtime-env.js. Same realm means the SSO cookie is shared, so a browser",
+    "already signed in to :8444 lands here without re-entering a password.",
+    "",
+    "The portal has its own API base too: https://192.168.225.195:8446/masar-service/api/v1",
+    "(EPTTS_BILLING_API_URL). It is NOT the :8444 masar-service, and billing endpoints are only",
+    "served here.",
+    "",
+    "LOGGED IN AS THE MANUFACTURER, DELIBERATELY.",
+    "The billing portal is role-scoped, and the role changes what exists on the page rather than",
+    "just what is enabled. As a manufacturer the nav has three items (Dashboard, Unbilled",
+    "Operations, Invoices); as Platform Admin it has five (adding Reports and Configuration).",
+    "More importantly, the per-invoice `💰 Pay` action ONLY renders for the MAH that owes the",
+    "invoice — an admin never sees it. Discovery done as admin therefore recorded the Invoices row",
+    "actions as Details/CSV/PDF and missed the entire payment surface. Cases that need the admin",
+    "view (billing mode, manual payment, bank-transfer approval) build their own state instead.",
+    "",
+    "NO DISCLAIMER AND NO LANGUAGE STEP HERE.",
+    "The production-access disclaimer modal is a :8444 component (app-disclaimer-modal) and does",
+    "not exist on this portal. The language control is a <select> labelled `Language`, not the",
+    ":8444 `EN` button, and it already reads English on load — so there is nothing to switch and",
+    "login-config.ts's step vocabulary (which has no selectOption action) is sufficient as-is.",
+    "",
+    "",
+    "ON 2FA: THE OTP REQUIREMENT WAS REMOVED FROM THE DEVSIM ACCOUNTS ON 2026-09-08.",
+    "Until then every live account (janssen2@masar.com, and the admin) answered the password step",
+    "with a One-time code prompt, which no declarative step can satisfy -- auth.setup.ts timed out",
+    "and wrote EMPTY_STATE every run. It is gone now, verified by this flow completing unattended,",
+    "so the normal path works again and specs use stateFor('<slug>').",
+    "",
+    "If it ever comes back, the fallback is already built rather than needing rediscovery:",
+    "  node automation-hub/scripts/capture-state.mjs --portal <slug> --role admin",
+    "writes .auth/<slug>-<role>.json, which auth.setup.ts does not own and cannot overwrite, and",
+    "lib/captured-state.ts reads it with an actionable error when it is missing or stale. An admin",
+    "capture is also mirrored onto .auth/<slug>.json so existing projects keep working."
+  ],
+  "login": [
+    {
+      "action": "goto",
+      "url": "{base}/"
+    },
+    {
+      "action": "waitForVisible",
+      "locator": {
+        "kind": "css",
+        "value": "#username, nav[aria-label=\"Billing Portal\"], aside"
+      },
+      "timeoutMs": 45000
+    },
+    {
+      "action": "fill",
+      "locator": {
+        "kind": "id",
+        "value": "username"
+      },
+      "value": "{env:EPTTS_WEB_MFG_USERNAME}",
+      "onlyIfVisible": true
+    },
+    {
+      "action": "fill",
+      "locator": {
+        "kind": "id",
+        "value": "password"
+      },
+      "value": "{env:EPTTS_WEB_MFG_PASSWORD}",
+      "onlyIfVisible": true
+    },
+    {
+      "action": "click",
+      "locator": {
+        "kind": "id",
+        "value": "kc-login"
+      },
+      "onlyIfVisible": true
+    },
+    {
+      "action": "waitForVisible",
+      "locator": {
+        "kind": "css",
+        "value": "nav[aria-label=\"Billing Portal\"], aside"
+      },
+      "timeoutMs": 12000
+    }
+  ]
+}

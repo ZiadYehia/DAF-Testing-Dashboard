@@ -1,0 +1,26 @@
+{
+  "name": "eptts-web-shipping-web_shp_009",
+  "title": "WEB_SHP_009 — Validate that shipping is blocked while an invoice is unpaid and the billing mode is Enforce",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_SHP_009",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-shipping",
+    "testcaseId": "WEB_SHP_009"
+  },
+  "createdAt": "2026-09-08T12:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "shipping",
+    "write",
+    "irreversible",
+    "billing-gate",
+    "tenant-setting",
+    "attended"
+  ],
+  "folder": "EPTTS Web / web-shipping",
+  "engine": "playwright"
+}

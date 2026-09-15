@@ -30,11 +30,37 @@
     "The final waitForVisible is the assertion. Once English is active the toggle reads AR, so",
     "seeing an AR button is proof the switch actually happened rather than a hope that it did.",
     "",
-    "The two steps before the language switch dismiss a PRODUCTION-ACCESS DISCLAIMER modal",
+    "The steps before the language switch dismiss a PRODUCTION-ACCESS DISCLAIMER modal",
     "(\"Authorized Access Only...\") that appears on login. It is a real modal backdrop, so it",
-    "intercepts every click underneath — including the EN toggle. Left in place it does not fail",
+    "intercepts every click underneath - including the EN toggle. Left in place it does not fail",
     "with 'modal is open'; it fails with a click timeout on whatever the test tried to press next,",
-    "which is a much harder thing to diagnose. Tick the acknowledgement, then Accept."
+    "which is a much harder thing to diagnose.",
+    "",
+    "THERE ARE THREE ACKNOWLEDGEMENTS, AND ALL THREE ARE REQUIRED.",
+    "The modal's Accept button is bound to `disabled: !allConsentsGiven()`, where allConsentsGiven",
+    "is termsAccepted && privacyAccepted && consentFormAccepted. An earlier version of this file",
+    "clicked a single `input[type=checkbox]` selector - and because login-runner.ts calls .first()",
+    "on every click locator, that ticked ONE of the three and left Accept permanently disabled.",
+    "The failure surfaced as a click timeout on the EN toggle underneath the still-open backdrop.",
+    "",
+    "The three boxes are PrimeNG p-checkbox components with stable inputIds",
+    "(disclaimer-consent-terms / -privacy / -form). We click their <label for=...> rather than the",
+    "inputs themselves: PrimeNG visually hides the real input behind a styled box, and a label",
+    "click is the native, reliable way to toggle it. The component resets all three to false every",
+    "time the modal opens, so there is no partial state to inherit from a previous run.",
+    "",
+    "",
+    "ON 2FA: THE OTP REQUIREMENT WAS REMOVED FROM THE DEVSIM ACCOUNTS ON 2026-09-08.",
+    "Until then every live account (janssen2@masar.com, and the admin) answered the password step",
+    "with a One-time code prompt, which no declarative step can satisfy -- auth.setup.ts timed out",
+    "and wrote EMPTY_STATE every run. It is gone now, verified by this flow completing unattended,",
+    "so the normal path works again and specs use stateFor('<slug>').",
+    "",
+    "If it ever comes back, the fallback is already built rather than needing rediscovery:",
+    "  node automation-hub/scripts/capture-state.mjs --portal <slug> --role admin",
+    "writes .auth/<slug>-<role>.json, which auth.setup.ts does not own and cannot overwrite, and",
+    "lib/captured-state.ts reads it with an actionable error when it is missing or stale. An admin",
+    "capture is also mirrored onto .auth/<slug>.json so existing projects keep working."
   ],
   "login": [
     {
@@ -87,7 +113,23 @@
       "action": "click",
       "locator": {
         "kind": "css",
-        "value": "app-disclaimer-modal input[type=checkbox], .disclaimer-backdrop input[type=checkbox]"
+        "value": "label[for=\"disclaimer-consent-terms\"]"
+      },
+      "onlyIfVisible": true
+    },
+    {
+      "action": "click",
+      "locator": {
+        "kind": "css",
+        "value": "label[for=\"disclaimer-consent-privacy\"]"
+      },
+      "onlyIfVisible": true
+    },
+    {
+      "action": "click",
+      "locator": {
+        "kind": "css",
+        "value": "label[for=\"disclaimer-consent-form\"]"
       },
       "onlyIfVisible": true
     },

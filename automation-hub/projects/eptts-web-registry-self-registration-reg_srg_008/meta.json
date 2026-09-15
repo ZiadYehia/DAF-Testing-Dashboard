@@ -1,0 +1,37 @@
+{
+  "name": "eptts-web-registry-self-registration-reg_srg_008",
+  "title": "REG_SRG_008 — Validate that the mandatory focal point and district fields are enforced and reported",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "REG_SRG_008",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "registry-self-registration",
+    "testcaseId": "REG_SRG_008"
+  },
+  "createdAt": "2026-09-09T10:30:00.000Z",
+  "lastStatus": "pass",
+  "runs": [
+    {
+      "ts": "2026-09-09T13-35-45-080Z",
+      "status": "pass",
+      "durationMs": 63312,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": false,
+      "environment": "Production (devsim)"
+    }
+  ],
+  "tags": [
+    "registry",
+    "self-registration",
+    "onboarding",
+    "unauthenticated",
+    "read-only"
+  ],
+  "folder": "EPTTS Web / registry-self-registration",
+  "engine": "playwright",
+  "lastStatusByEnv": {
+    "Production (devsim)": "pass"
+  }
+}

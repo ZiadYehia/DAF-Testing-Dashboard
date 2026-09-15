@@ -1,0 +1,37 @@
+{
+  "name": "eptts-web-registry-self-registration-reg_srg_007",
+  "title": "REG_SRG_007 — Validate that a national ID expiry date not written as MM/YYYY is refused",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "REG_SRG_007",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "registry-self-registration",
+    "testcaseId": "REG_SRG_007"
+  },
+  "createdAt": "2026-09-09T10:30:00.000Z",
+  "lastStatus": "pass",
+  "runs": [
+    {
+      "ts": "2026-09-09T13-34-39-036Z",
+      "status": "pass",
+      "durationMs": 65754,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": false,
+      "environment": "Production (devsim)"
+    }
+  ],
+  "tags": [
+    "registry",
+    "self-registration",
+    "onboarding",
+    "unauthenticated",
+    "read-only"
+  ],
+  "folder": "EPTTS Web / registry-self-registration",
+  "engine": "playwright",
+  "lastStatusByEnv": {
+    "Production (devsim)": "pass"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "eptts-web-billing-invoices-bil_inv_009",
+  "title": "BIL_INV_009 — Validate that a completed packing import increases the pending invoice by the packs it created",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "BIL_INV_009",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "billing-invoices",
+    "testcaseId": "BIL_INV_009"
+  },
+  "createdAt": "2026-09-08T12:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "billing",
+    "portal8446",
+    "write",
+    "irreversible",
+    "attended"
+  ],
+  "folder": "EPTTS Web / billing-invoices",
+  "engine": "playwright"
+}

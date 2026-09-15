@@ -1,0 +1,24 @@
+{
+  "name": "eptts-web-registry-self-registration-reg_srg_006",
+  "title": "REG_SRG_006 — Validate that a focal point national ID which is not exactly 14 digits is refused",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "REG_SRG_006",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "registry-self-registration",
+    "testcaseId": "REG_SRG_006"
+  },
+  "createdAt": "2026-09-09T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "registry",
+    "self-registration",
+    "onboarding",
+    "unauthenticated",
+    "read-only"
+  ],
+  "folder": "EPTTS Web / registry-self-registration",
+  "engine": "playwright"
+}

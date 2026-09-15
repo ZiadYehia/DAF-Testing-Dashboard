@@ -1,0 +1,25 @@
+{
+  "name": "eptts-web-commissioning-packing-csv-web_csv_009",
+  "title": "WEB_CSV_009 \u2014 Validate that a valid commissioning and packing CSV imports and creates the packs and the aggregation it declares",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_CSV_009",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-commissioning-packing-csv",
+    "testcaseId": "WEB_CSV_009"
+  },
+  "createdAt": "2026-09-08T12:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "csv",
+    "write",
+    "irreversible",
+    "attended"
+  ],
+  "folder": "EPTTS Web / web-commissioning-packing-csv",
+  "engine": "playwright",
+  "lastStatusByEnv": {}
+}

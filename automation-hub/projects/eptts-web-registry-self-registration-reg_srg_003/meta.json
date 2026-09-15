@@ -1,0 +1,24 @@
+{
+  "name": "eptts-web-registry-self-registration-reg_srg_003",
+  "title": "REG_SRG_003 — Validate that the company identity comes from the EDA Company Profile and cannot be edited by the applicant",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "REG_SRG_003",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "registry-self-registration",
+    "testcaseId": "REG_SRG_003"
+  },
+  "createdAt": "2026-09-09T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "registry",
+    "self-registration",
+    "onboarding",
+    "unauthenticated",
+    "read-only"
+  ],
+  "folder": "EPTTS Web / registry-self-registration",
+  "engine": "playwright"
+}

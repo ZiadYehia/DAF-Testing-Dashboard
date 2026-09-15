@@ -37,3 +37,48 @@ the test-case table, which holds only the 13 columns.
 **Not yet executed against production.** Every case is `Under Testing` / `new_added`.
 
 The source spreadsheet recorded these statuses against **staging**, by a different tester: Under Testing 8. Those are retained here as history only — they are not evidence of coverage in this environment, so they are deliberately not carried into the Status column.
+
+### BIL_INV_009 - BIL_INV_011, added 2026-09-08
+
+Written from live discovery against devsim, driven **as the manufacturer**. That matters for
+this feature specifically, because the Invoices page is role-shaped and every earlier pass ran
+as Platform Admin:
+
+| | as Platform Admin | as the manufacturer |
+|---|---|---|
+| Columns | 10, including `MAH GLN` | 9, no `MAH GLN` |
+| Filters | search, status, MAH GLN, from, to | search, status, from, to |
+| Row actions on a Pending invoice | Details, CSV, PDF | Details, CSV, PDF, **`Pay`** |
+
+So the ALL-CAPS 10-column list in `workflow.md` describes the admin view. The headers also
+render Title Case (`Billing charge`); the capitalisation in the docs is a CSS `text-transform`
+that the admin-era capture read as text. Assert columns case-insensitively.
+
+`BIL_INV_011` exists because of that difference: the absence of `MAH GLN` for a manufacturer is
+a tenant-isolation property worth asserting, not merely a cosmetic variation.
+
+`BIL_INV_009` depends on `WEB_CSV_009` having run, since it asserts the invoice raised by a
+known packing import. `BIL_INV_010` is independent and can run against whatever is listed.
+
+Two `Pending` invoices already existed for GLN 5413868000009 on 2026-09-08 -
+`INV-20260908-000006` (1 piece, 7.00 EGP) and `INV-20260908-000002` (434 pieces, 3038.00 EGP) -
+so these cases do not require the CSV import to run first.
+
+### BIL_INV_009 was corrected on 2026-09-08, and why
+
+As first written it asserted that a packing import "raises a pending invoice whose Pieces equals
+the packs imported". That is wrong about how this platform bills, and running WEB_CSV_009 twice
+showed it: no new invoice appeared either time. Instead the MAH's single open pending invoice
+ACCUMULATED -- `INV-20260908-000002` was observed at 434, then 473, then 654 pieces across one
+day as work continued, and the two imports from WEB_CSV_009 and WEB_CSV_010 are somewhere inside
+that growth.
+
+So the billing model is one open invoice per MAH that grows until it is settled, not one invoice
+per operation. An equality assertion could only ever pass on a tenant where nothing else was
+happening.
+
+The case now reads the Pieces value before the import and asserts it increases by AT LEAST the
+packs created. "At least" rather than "exactly" is deliberate and is the honest bound available:
+devsim is shared, other parties pack while a case runs, and the counts above moved by more than
+this suite created. A case that demanded an exact delta would fail for reasons that have nothing
+to do with the code under test.

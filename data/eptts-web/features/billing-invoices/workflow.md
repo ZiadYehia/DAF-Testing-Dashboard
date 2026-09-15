@@ -61,3 +61,12 @@ Issued invoices with piece counts, billing charge, e-service fee, total and paym
 
 - Documented from live discovery against production on 2026-08-31; UI elements above are what the page actually rendered, not a specification.
 - Test cases are all `new_added` — none has been executed yet.
+
+- **Re-documented 2026-09-08 as the manufacturer.** The UI Elements and column list above were
+  captured as Platform Admin and describe that role's view. As a manufacturer the table has 9
+  columns (no `MAH GLN`), there is no `f-gln` filter, and every `Pending` invoice carries a
+  fourth row action, `Pay`, which an admin never sees. Payment itself is documented as its own
+  feature, `billing-payments` (`EPTTS_BIL_06`).
+- The column labels render Title Case; the ALL-CAPS above is a CSS `text-transform`.
+- The billing portal uses Keycloak client **`billing-portal`** and serves its own API at
+  `https://192.168.225.195:8446/masar-service/api/v1`.

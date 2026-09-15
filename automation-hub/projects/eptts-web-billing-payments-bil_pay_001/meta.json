@@ -1,0 +1,39 @@
+{
+  "name": "eptts-web-billing-payments-bil_pay_001",
+  "title": "BIL_PAY_001 — Validate that the payment method chooser offers exactly the methods the platform reports as available for the acting role",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "BIL_PAY_001",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "billing-payments",
+    "testcaseId": "BIL_PAY_001"
+  },
+  "createdAt": "2026-09-08T12:00:00.000Z",
+  "lastStatus": "fail",
+  "runs": [
+    {
+      "ts": "2026-09-09T13-41-20-535Z",
+      "status": "fail",
+      "durationMs": 71448.153,
+      "hasVideo": true,
+      "hasTrace": true,
+      "hasApiLog": false,
+      "error": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m",
+      "environment": "Production (devsim)"
+    }
+  ],
+  "tags": [
+    "dashboard",
+    "billing",
+    "portal8446",
+    "readonly",
+    "payments",
+    "attended"
+  ],
+  "folder": "EPTTS Web / billing-payments",
+  "engine": "playwright",
+  "lastStatusByEnv": {
+    "Production (devsim)": "fail"
+  }
+}

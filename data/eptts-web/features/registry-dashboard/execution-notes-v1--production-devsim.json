@@ -1,0 +1,3 @@
+{
+  "REG_DSH_008": "Passed 2026-09-09. The inspector reaches the registry portal and IS granted onboarding: the sidebar offers Dashboard, Parties, Prefixes, Products and Register Pharmacy, and the page states \"Backend enforces ADMIN/INSPECTOR role\". It is not an admin - Administration is absent, which is the only nav difference between the two roles. A bug filed against this on the strength of eptts-mobile documenting inspector as read-only was RETRACTED: that describes the MOBILE inspector, a different surface with a different permission set."
+}

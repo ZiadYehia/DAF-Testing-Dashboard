@@ -26,6 +26,12 @@
 import fs from 'fs/promises'
 import path from 'path'
 import { PROJECTS_DIR, runDir, readMeta, writeMeta, recordRun } from '../automation-hub/store'
+// The SHARED classifier, deliberately required rather than reimplemented: its own docblock
+// explains that a second copy drifts the moment one caller learns a new failure mode.
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { isInfrastructureFailure } = require('../src/lib/infrastructure-failure.cjs') as {
+  isInfrastructureFailure: (error?: string | null) => boolean
+}
 
 const argv = process.argv.slice(2)
 const WRITE = argv.includes('--write')
@@ -93,6 +99,8 @@ async function main() {
    * honest summary, because a later step cannot be judged once an earlier one has broken the
    * chain.
    */
+  /** Runs withheld because the platform was unreachable — reported, never recorded. */
+  const infrastructure: string[] = []
   const journeys = new Map<string, { status: 'pass' | 'fail'; durationMs: number; ts: string; error?: string; attachments: { name: string; path?: string }[] }>()
   for (const sp of specs) {
     // Both separators: the JSON report uses forward slashes, a hand-passed path may not.
@@ -105,6 +113,25 @@ async function main() {
     const prev = journeys.get(name)
     const failed = r.status !== 'passed'
     const err = r.error?.message ? r.error.message.replace(ANSI, '').split('\n')[0].trim() : undefined
+    /**
+     * AN OUTAGE IS NOT A RUN RESULT, HERE EITHER.
+     *
+     * The other two recording paths — scripts/eptts-record-run.js and the Hub's run route — both
+     * refuse to record a 5xx/connection failure as a verdict, for the reason the shared classifier
+     * documents: one two-minute outage took out 94 tests and would have invented ~80 defects that
+     * do not exist. This script had no such guard, so the same outage that was correctly WITHHELD
+     * from the test-case status was still written into the project's run history as a red `fail` —
+     * the two halves of the same screen disagreeing about the same case, which is the exact problem
+     * this script exists to fix.
+     *
+     * Measured 2026-09-09: the EDA Company Profile service answered 503 "EDA Company Profile API
+     * unreachable" and four REG_SRG projects would have been recorded as failing on their own code.
+     */
+    if (failed && isInfrastructureFailure(err)) {
+      infrastructure.push(`${name}: ${err ?? '(no message)'}`)
+      continue
+    }
+
     journeys.set(name, {
       status: failed || prev?.status === 'fail' ? 'fail' : 'pass',
       durationMs: (prev?.durationMs ?? 0) + (r.duration ?? 0),
@@ -226,6 +253,13 @@ async function main() {
   if (replaced) console.log(`replaced an earlier record for the same run: ${replaced}`)
   console.log(`skipped (no run to record): ${skipped}`)
   if (noProject) console.log(`no Hub project: ${noProject} -> ${missing.slice(0, 8).join(', ')}`)
+  if (infrastructure.length) {
+    console.log(
+      `\nNOT RECORDED — ${infrastructure.length} run(s) failed because the platform was ` +
+        `unreachable, which is not a verdict on the code. Re-run these:`,
+    )
+    for (const line of infrastructure) console.log('   ' + line)
+  }
   if (!WRITE) console.log('\n(dry run — pass --write)')
 }
 

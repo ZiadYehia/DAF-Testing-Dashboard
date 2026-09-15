@@ -1,0 +1,26 @@
+{
+  "name": "eptts-web-billing-payments-bil_pay_002",
+  "title": "BIL_PAY_002 — Validate that a pending invoice can be paid by Geidea card payment and is then recorded as paid",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "BIL_PAY_002",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "billing-payments",
+    "testcaseId": "BIL_PAY_002"
+  },
+  "createdAt": "2026-09-08T12:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "billing",
+    "portal8446",
+    "write",
+    "payments",
+    "irreversible",
+    "attended"
+  ],
+  "folder": "EPTTS Web / billing-payments",
+  "engine": "playwright"
+}

@@ -1,0 +1,24 @@
+{
+  "name": "eptts-web-registry-self-registration-reg_srg_004",
+  "title": "REG_SRG_004 — Validate that a company GLN which is not exactly 13 digits is refused",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "REG_SRG_004",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "registry-self-registration",
+    "testcaseId": "REG_SRG_004"
+  },
+  "createdAt": "2026-09-09T10:30:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "registry",
+    "self-registration",
+    "onboarding",
+    "unauthenticated",
+    "read-only"
+  ],
+  "folder": "EPTTS Web / registry-self-registration",
+  "engine": "playwright"
+}

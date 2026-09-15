@@ -1,0 +1,37 @@
+{
+  "name": "eptts-web-registry-self-registration-reg_srg_001",
+  "title": "REG_SRG_001 — Validate that self-registration offers the six entity types and starts without a platform login",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "REG_SRG_001",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "registry-self-registration",
+    "testcaseId": "REG_SRG_001"
+  },
+  "createdAt": "2026-09-09T10:30:00.000Z",
+  "lastStatus": "pass",
+  "runs": [
+    {
+      "ts": "2026-09-09T13-32-06-489Z",
+      "status": "pass",
+      "durationMs": 730,
+      "hasVideo": false,
+      "hasTrace": false,
+      "hasApiLog": false,
+      "environment": "Production (devsim)"
+    }
+  ],
+  "tags": [
+    "registry",
+    "self-registration",
+    "onboarding",
+    "unauthenticated",
+    "read-only"
+  ],
+  "folder": "EPTTS Web / registry-self-registration",
+  "engine": "playwright",
+  "lastStatusByEnv": {
+    "Production (devsim)": "pass"
+  }
+}

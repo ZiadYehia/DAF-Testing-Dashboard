@@ -1,0 +1,24 @@
+{
+  "name": "eptts-web-registry-register-pharmacy-reg_rph_007",
+  "title": "REG_RPH_007 — Validate that a pharmacy is registered with a login account and an activation key, and that its credentials are shown once",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "REG_RPH_007",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "registry-register-pharmacy",
+    "testcaseId": "REG_RPH_007"
+  },
+  "createdAt": "2026-09-08T12:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "registry",
+    "portal8445",
+    "write",
+    "irreversible",
+    "attended"
+  ],
+  "folder": "EPTTS Web / registry-register-pharmacy",
+  "engine": "playwright"
+}

@@ -1,0 +1,27 @@
+{
+  "name": "eptts-web-shipping-web_shp_012",
+  "title": "WEB_SHP_012 — Validate that shipping is blocked under Enforce when the packs are unpaid but their invoice has not been raised yet",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "WEB_SHP_012",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "web-shipping",
+    "testcaseId": "WEB_SHP_012"
+  },
+  "createdAt": "2026-09-09T08:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "shipping",
+    "write",
+    "irreversible",
+    "billing-gate",
+    "tenant-setting",
+    "payment",
+    "attended"
+  ],
+  "folder": "EPTTS Web / web-shipping",
+  "engine": "playwright"
+}

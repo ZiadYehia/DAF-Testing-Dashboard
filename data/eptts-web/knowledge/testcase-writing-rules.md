@@ -78,11 +78,13 @@ consistent in length.
 | `registry-prefixes` | `REG_PFX_###` |
 | `registry-products` | `REG_PRD_###` |
 | `registry-register-pharmacy` | `REG_RPH_###` |
+| `registry-self-registration` | `REG_SRG_###` |
 | `billing-dashboard` | `BIL_DSH_###` |
 | `billing-unbilled-operations` | `BIL_UNB_###` |
 | `billing-invoices` | `BIL_INV_###` |
 | `billing-reports` | `BIL_RPT_###` |
 | `billing-configuration` | `BIL_CFG_###` |
+| `billing-payments` | `BIL_PAY_###` |
 
 | `web-settings-government` | `WEB_SGV_###` |
 | `web-settings-manufacturer` | `WEB_SMF_###` |

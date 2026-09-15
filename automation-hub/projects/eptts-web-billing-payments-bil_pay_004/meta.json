@@ -1,0 +1,26 @@
+{
+  "name": "eptts-web-billing-payments-bil_pay_004",
+  "title": "BIL_PAY_004 — Validate that approving a submitted bank transfer settles the invoice it was submitted against",
+  "app": "eptts-web",
+  "createdVia": "testcase",
+  "linkedTestcaseId": "BIL_PAY_004",
+  "linkedTestcase": {
+    "app": "eptts-web",
+    "feature": "billing-payments",
+    "testcaseId": "BIL_PAY_004"
+  },
+  "createdAt": "2026-09-08T12:00:00.000Z",
+  "lastStatus": "never_run",
+  "runs": [],
+  "tags": [
+    "dashboard",
+    "billing",
+    "portal8446",
+    "write",
+    "payments",
+    "irreversible",
+    "attended"
+  ],
+  "folder": "EPTTS Web / billing-payments",
+  "engine": "playwright"
+}
